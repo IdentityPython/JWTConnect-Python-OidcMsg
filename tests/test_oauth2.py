@@ -9,7 +9,8 @@ from jwkest.jwk import SYMKey
 
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.key_jar import build_keyjar
-from oicmsg.oauth2 import OPTIONAL_LIST_OF_STRINGS
+from oicmsg.oauth2 import OPTIONAL_LIST_OF_STRINGS, OPTIONAL_MESSAGE, \
+    OPTIONAL_LIST_OF_MESSAGES
 from oicmsg.oauth2 import REQUIRED_LIST_OF_STRINGS
 from oicmsg.oauth2 import SINGLE_OPTIONAL_INT
 from oicmsg.oauth2 import SINGLE_OPTIONAL_JSON
@@ -135,6 +136,20 @@ class TestMessage(object):
 
     def test_from_dict(self):
         _dict = {"req_str": "Fair", "req_str_list": ["spike", "lee"],
+                 "opt_int": 9}
+        _msg = DummyMessage()
+        _msg.from_dict(_dict)
+        assert set(_msg.keys()) == set(_dict.keys())
+
+    def test_from_dict_lang_tag_unknown_key(self):
+        _dict = {"req_str": "Fair", "req_str_list": ["spike", "lee"],
+                 "opt_int": 9, 'attribute#se': 'value' }
+        _msg = DummyMessage()
+        _msg.from_dict(_dict)
+        assert set(_msg.keys()) == set(_dict.keys())
+
+    def test_from_dict_lang_tag(self):
+        _dict = {"req_str#se": "Fair", "req_str_list": ["spike", "lee"],
                  "opt_int": 9}
         _msg = DummyMessage()
         _msg.from_dict(_dict)
@@ -767,3 +782,91 @@ def test_get_verify_keys_no_matching_kid():
     keys = []
     msg.get_verify_keys(KEYJARS['A'], keys, {'iss': 'A'}, header, {})
     assert keys == []
+
+
+def test_get_verify_keys_aud():
+    msg = Message()
+    header = {'alg': 'RS256'}
+
+    a_kids = [k.kid for k in
+              KEYJARS['A'].get_verify_key(owner='A', key_type='RSA')]
+    no_kid_issuer = {'A': a_kids}
+
+    keys = []
+    msg.get_verify_keys(KEYJARS['A'], keys, {'aud': 'A'}, header, {},
+                        no_kid_issuer=no_kid_issuer)
+    assert len(keys) == 3
+    assert keys[0].kid in a_kids
+
+
+def test_msg_deserializer():
+    class MsgMessage(Message):
+        c_param = {
+            "msg": OPTIONAL_MESSAGE,
+            "opt_str": SINGLE_OPTIONAL_STRING,
+        }
+
+    _dict = {"req_str": "Fair", "req_str_list": ["spike", "lee"],
+             "opt_int": 9}
+    _msg = DummyMessage()
+    _msg.from_dict(_dict)
+
+    msg = MsgMessage()
+    msg['msg'] = _msg
+    msg['opt_str'] = 'string'
+
+    mjson = msg.to_json()
+    mm = MsgMessage().from_json(mjson)
+
+    assert mm['opt_str'] == 'string'
+    assert set(mm['msg'].keys()) == set(_msg.keys())
+
+
+def test_msg_list_deserializer():
+    class MsgMessage(Message):
+        c_param = {
+            "msgs": OPTIONAL_LIST_OF_MESSAGES,
+            "opt_str": SINGLE_OPTIONAL_STRING,
+        }
+
+    _dict = {"req_str": "Fair", "req_str_list": ["spike", "lee"],
+             "opt_int": 9}
+    _msg = DummyMessage()
+    _msg.from_dict(_dict)
+
+    msg = MsgMessage()
+    msg['msgs'] = [_msg]
+    msg['opt_str'] = 'string'
+
+    mjson = msg.to_json()
+    mm = MsgMessage().from_json(mjson)
+
+    assert mm['opt_str'] == 'string'
+    assert len(mm['msgs']) == 1
+    assert set(mm['msgs'][0].keys()) == set(_msg.keys())
+
+
+def test_msg_list_deserializer_dict():
+    class MsgMessage(Message):
+        c_param = {
+            "msgs": OPTIONAL_LIST_OF_MESSAGES,
+            "opt_str": SINGLE_OPTIONAL_STRING,
+        }
+
+    _dict = {"req_str": "Fair", "req_str_list": ["spike", "lee"],
+             "opt_int": 9}
+
+    msg = MsgMessage()
+    msg['msgs'] = _dict
+    msg['opt_str'] = 'string'
+
+    mjson = msg.to_json()
+    mm = MsgMessage().from_json(mjson)
+
+    assert mm['opt_str'] == 'string'
+    assert len(mm['msgs']) == 1
+    assert set(mm['msgs'][0].keys()) == set(_dict.keys())
+
+
+def test_jwt_aud():
+    body = {'aud': ['https://example.com']}

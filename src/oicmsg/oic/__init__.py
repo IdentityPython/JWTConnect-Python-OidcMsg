@@ -1,30 +1,35 @@
 # encoding: utf-8
 import uuid
 
+from future.backports.urllib.parse import urlencode
 from future.backports.urllib.parse import urlparse
 
 import inspect
 import json
 import logging
+import six
 import sys
 import time
-import urllib
 
-import six
 from jwkest import jws, as_unicode
 
 from oicmsg import oauth2
 from oicmsg import time_util
-from oicmsg.exception import IssuerMismatch, OicMsgError, InvalidRequest
+from oicmsg.exception import InvalidRequest
+from oicmsg.exception import IssuerMismatch
 from oicmsg.exception import MessageException
-from oicmsg.exception import NotForMe
-from oicmsg.exception import VerificationError
+from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.exception import MissingRequiredValue
 from oicmsg.exception import NotAllowedValue
+from oicmsg.exception import NotForMe
+from oicmsg.exception import OicMsgError
 from oicmsg.exception import SchemeError
-from oicmsg.exception import MissingRequiredAttribute
-from oicmsg.oauth2 import OPTIONAL_LIST_OF_SP_SEP_STRINGS, Message
+from oicmsg.exception import VerificationError
+from oicmsg.oauth2 import Message
+from oicmsg.oauth2 import msg_ser
+from oicmsg.oauth2 import OPTIONAL_LIST_OF_SP_SEP_STRINGS
 from oicmsg.oauth2 import OPTIONAL_LIST_OF_STRINGS
+from oicmsg.oauth2 import OPTIONAL_MESSAGE
 from oicmsg.oauth2 import REQUIRED_LIST_OF_SP_SEP_STRINGS
 from oicmsg.oauth2 import REQUIRED_LIST_OF_STRINGS
 from oicmsg.oauth2 import SINGLE_OPTIONAL_INT
@@ -135,35 +140,6 @@ def claims_deser(val, sformat="urlencoded"):
     return Claims().deserialize(val, sformat)
 
 
-def message_deser(val, sformat="urlencoded"):
-    if sformat in ["dict", "json"]:
-        if not isinstance(val, six.string_types):
-            val = json.dumps(val)
-            sformat = "json"
-    return Message().deserialize(val, sformat)
-
-
-def msg_ser(inst, sformat, lev=0):
-    if sformat in ["urlencoded", "json"]:
-        if isinstance(inst, dict) or isinstance(inst, Message):
-            res = inst.serialize(sformat, lev)
-        else:
-            res = inst
-    elif sformat == "dict":
-        if isinstance(inst, Message):
-            res = inst.serialize(sformat, lev)
-        elif isinstance(inst, dict):
-            res = inst
-        elif isinstance(inst, six.string_types):  # Iff ID Token
-            res = inst
-        else:
-            raise MessageException("Wrong type: %s" % type(inst))
-    else:
-        raise OicMsgError("Unknown sformat", inst)
-
-    return res
-
-
 def msg_ser_json(inst, sformat="json", lev=0):
     # sformat = "json" always except when dict
     if lev:
@@ -203,7 +179,7 @@ def claims_ser(val, sformat="urlencoded", lev=0):
         return item.serialize(method=sformat, lev=lev + 1)
 
     if sformat == "urlencoded":
-        res = urllib.urlencode(item)
+        res = urlencode(item)
     elif sformat == "json":
         if lev:
             res = item
@@ -251,9 +227,6 @@ SINGLE_OPTIONAL_REGISTRATION_REQUEST = (Message, False, msg_ser,
                                         registration_request_deser, False)
 SINGLE_OPTIONAL_CLAIMSREQ = (Message, False, msg_ser_json, claims_request_deser,
                              False)
-
-OPTIONAL_MESSAGE = (Message, False, msg_ser, message_deser, False)
-REQUIRED_MESSAGE = (Message, True, msg_ser, message_deser, False)
 
 # ----------------------------------------------------------------------------
 

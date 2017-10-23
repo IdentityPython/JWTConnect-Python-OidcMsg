@@ -245,6 +245,18 @@ class TestKeyJar(object):
 
         assert len(ks.items()) == 2
 
+    def test_issuer_extra_slash(self):
+        ks = KeyJar()
+        ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"},
+                            {"kty": "oct", "key": "a1b2c3d4", "use": "ver"}])
+        ks["http://www.example.org"] = KeyBundle([
+            {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
+            {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}])
+        ks["http://www.example.org"].append(
+            keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"]))
+
+        assert ks.get('sig', 'RSA', 'http://www.example.org/')
+
     def test_remove_key(self):
         ks = KeyJar()
         ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"},

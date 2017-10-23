@@ -22,7 +22,7 @@ from jwkest.jwe import JWE
 from jwkest.jws import JWS
 from jwkest.jwt import JWT
 
-from oicmsg.exception import DecodeError
+from oicmsg.exception import DecodeError, MessageException, OicMsgError
 from oicmsg.exception import FormatError
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.exception import MissingSigningKey
@@ -39,36 +39,6 @@ logger = logging.getLogger(__name__)
 
 
 ERRTXT = "On '%s': %s"
-
-
-def gather_keys(comb, collection, jso, target):
-    try:
-        _id = jso[target]
-    except KeyError:
-        return comb
-
-    try:
-        _col = collection[_id]
-    except KeyError:
-        if _id.endswith("/"):
-            _id = _id[:-1]
-            try:
-                _col = collection[_id]
-            except KeyError:
-                return comb
-        else:
-            return comb
-
-    try:
-        for typ, keys in _col.items():
-            try:
-                comb[typ].update(keys)
-            except KeyError:
-                comb[typ] = keys
-    except KeyError:
-        pass
-
-    return comb
 
 
 def swap_dict(dic):
@@ -715,22 +685,24 @@ class Message(MutableMapping):
                         raise MissingRequiredAttribute("%s" % attribute)
                     continue
 
-            if attribute not in _allowed:
-                continue
-
-            if isinstance(typ, tuple):
-                _ityp = None
-                for _typ in typ:
-                    try:
-                        self._type_check(_typ, _allowed[attribute], val)
-                        _ityp = _typ
-                        break
-                    except ValueError:
-                        pass
-                if _ityp is None:
-                    raise NotAllowedValue(val)
+            try:
+                _allowed_val = _allowed[attribute]
+            except KeyError:
+                pass
             else:
-                self._type_check(typ, _allowed[attribute], val, na)
+                # if isinstance(typ, tuple):
+                #     _ityp = None
+                #     for _typ in typ:
+                #         try:
+                #             self._type_check(_typ, _allowed_val, val)
+                #             _ityp = _typ
+                #             break
+                #         except ValueError:
+                #             pass
+                #     if _ityp is None:
+                #         raise NotAllowedValue(val)
+                # else:
+                self._type_check(typ, _allowed_val, val, na)
 
         return True
 
@@ -935,6 +907,54 @@ def json_deserializer(txt, sformat="urlencoded"):
     return json.loads(txt)
 
 
+def msg_deser(val, sformat="urlencoded"):
+    if isinstance(val, Message):
+        return val
+    elif sformat in ["dict", "json"]:
+        if not isinstance(val, six.string_types):
+            val = json.dumps(val)
+            sformat = "json"
+    return Message().deserialize(val, sformat)
+
+
+def msg_ser(inst, sformat, lev=0):
+    if sformat in ["urlencoded", "json"]:
+        if isinstance(inst, dict) or isinstance(inst, Message):
+            res = inst.serialize(sformat, lev)
+        else:
+            res = inst
+    elif sformat == "dict":
+        if isinstance(inst, Message):
+            res = inst.serialize(sformat, lev)
+        elif isinstance(inst, dict):
+            res = inst
+        elif isinstance(inst, six.string_types):  # Iff ID Token
+            res = inst
+        else:
+            raise MessageException("Wrong type: %s" % type(inst))
+    else:
+        raise OicMsgError("Unknown sformat", inst)
+
+    return res
+
+
+def msg_list_deser(val, sformat="urlencoded", lev=0):
+    if isinstance(val, dict):
+        return [Message(**val)]
+
+    _res = []
+    for v in val:
+        _res.append(msg_deser(v, sformat))
+    return _res
+
+
+def msg_list_ser(val, sformat="urlencoded", lev=0):
+    _res = []
+    for v in val:
+        _res.append(msg_ser(v, sformat))
+    return _res
+
+
 VTYPE = 0
 VREQUIRED = 1
 VSER = 2
@@ -958,6 +978,11 @@ SINGLE_OPTIONAL_JSON = (str, False, json_serializer, json_deserializer,
 REQUIRED = [SINGLE_REQUIRED_STRING, REQUIRED_LIST_OF_STRINGS,
             REQUIRED_LIST_OF_SP_SEP_STRINGS]
 
+OPTIONAL_MESSAGE = (Message, False, msg_ser, msg_deser, False)
+REQUIRED_MESSAGE = (Message, True, msg_ser, msg_deser, False)
+
+OPTIONAL_LIST_OF_MESSAGES = ([Message], False, msg_list_ser, msg_list_deser,
+                             False)
 
 #
 # =============================================================================
