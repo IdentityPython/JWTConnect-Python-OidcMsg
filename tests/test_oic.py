@@ -20,7 +20,7 @@ from oicmsg import time_util
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.exception import NotAllowedValue
 from oicmsg.exception import WrongSigningAlgorithm
-from oicmsg.oic import AccessTokenRequest
+from oicmsg.oic import AccessTokenRequest, CheckSessionRequest, ClaimsRequest
 from oicmsg.oic import AccessTokenResponse
 from oicmsg.oic import AuthnToken
 from oicmsg.oic import AuthorizationErrorResponse
@@ -654,8 +654,31 @@ class TestEndSessionRequest(object):
         assert request["state"] == "state0"
         assert request["id_token_hint"]["aud"] == ["client_1"]
 
-# class CheckSessionRequest(Message):
-# class Claims(Message):
+
+class TestCheckSessionRequest(object):
+    def test_example(self):
+        _symkey = KC_SYM_S.get(alg2keytype("HS256"))
+        csr = CheckSessionRequest(
+            id_token=IDTOKEN.to_jwt(key=_symkey, algorithm="HS256",
+                                    lifetime=300))
+        assert csr.verify(key=_symkey)
+
+
+class TestClaimsRequest(object):
+    def test_example(self):
+        claims = {
+            "name": {"essential": True},
+            "nickname": None,
+            "email": {"essential": True},
+            "verified": {"essential": True},
+            "picture": None
+        }
+
+        cr = ClaimsRequest(userinfo=Claims(**claims),
+                           id_token=Claims(auth_time=None,
+                                           acr={"values": ["2"]}))
+        cr.verify()
+
 # class ClaimsRequest(Message):
 # class ClientRegistrationErrorResponse(oauth2.ErrorResponse):
 # class DiscoveryRequest(Message):
