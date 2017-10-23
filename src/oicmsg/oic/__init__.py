@@ -69,36 +69,36 @@ def json_deser(val, sformat=None, lev=0):
     return json.loads(val)
 
 
-def json_conv(val, sformat=None, lev=0):
-    if isinstance(val, dict):
-        for key, _val in val.items():
-            if _val is None:
-                val[key] = "none"
-            elif _val is True:
-                val[key] = "true"
-            elif _val is False:
-                val[key] = "false"
-
-    return val
-
-
-def json_rest(val, sformat=None, lev=0):
-    if isinstance(val, dict):
-        for key, _val in val.items():
-            if _val == "none":
-                val[key] = None
-            elif _val == "true":
-                val[key] = True
-            elif _val == "false":
-                val[key] = False
-
-    return val
+# def json_conv(val, sformat=None, lev=0):
+#     if isinstance(val, dict):
+#         for key, _val in val.items():
+#             if _val is None:
+#                 val[key] = "none"
+#             elif _val is True:
+#                 val[key] = "true"
+#             elif _val is False:
+#                 val[key] = "false"
+#
+#     return val
+#
+#
+# def json_rest(val, sformat=None, lev=0):
+#     if isinstance(val, dict):
+#         for key, _val in val.items():
+#             if _val == "none":
+#                 val[key] = None
+#             elif _val == "true":
+#                 val[key] = True
+#             elif _val == "false":
+#                 val[key] = False
+#
+#     return val
 
 
 # value type, required, serializer, deserializer, null value allowed
 SINGLE_OPTIONAL_BOOLEAN = (bool, False, None, None, False)
 SINGLE_OPTIONAL_JSON_WN = (dict, False, json_ser, json_deser, True)
-SINGLE_OPTIONAL_JSON_CONV = (dict, False, json_conv, json_rest, True)
+#SINGLE_OPTIONAL_JSON_CONV = (dict, False, json_conv, json_rest, True)
 SINGLE_REQUIRED_INT = (int, True, None, None, False)
 
 
@@ -154,7 +154,9 @@ def msg_ser_json(inst, sformat="json", lev=0):
             raise MessageException("Wrong type: %s" % type(inst))
     else:
         sformat = "json"
-        if isinstance(inst, dict) or isinstance(inst, Message):
+        if isinstance(inst, dict):
+            res = json.dumps(inst)
+        elif isinstance(inst, Message):
             res = inst.serialize(sformat, lev)
         else:
             res = inst
@@ -1018,14 +1020,14 @@ SCOPE2CLAIMS = {
 }
 
 
-def factory(msgtype):
+def factory(msgtype, **kwargs):
     for name, obj in inspect.getmembers(sys.modules[__name__]):
         if inspect.isclass(obj) and issubclass(obj, Message):
             try:
                 if obj.__name__ == msgtype:
-                    return obj
+                    return obj(**kwargs)
             except AttributeError:
                 pass
 
     # Fall back to basic OAuth2 messages
-    return oauth2.factory(msgtype)
+    return oauth2.factory(msgtype, **kwargs)

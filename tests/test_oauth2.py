@@ -10,7 +10,7 @@ from jwkest.jwk import SYMKey
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.key_jar import build_keyjar
 from oicmsg.oauth2 import OPTIONAL_LIST_OF_STRINGS, OPTIONAL_MESSAGE, \
-    OPTIONAL_LIST_OF_MESSAGES
+    OPTIONAL_LIST_OF_MESSAGES, factory
 from oicmsg.oauth2 import REQUIRED_LIST_OF_STRINGS
 from oicmsg.oauth2 import SINGLE_OPTIONAL_INT
 from oicmsg.oauth2 import SINGLE_OPTIONAL_JSON
@@ -870,3 +870,16 @@ def test_msg_list_deserializer_dict():
 
 def test_jwt_aud():
     body = {'aud': ['https://example.com']}
+
+
+def test_factory():
+    dr = factory('ErrorResponse', error='some_error')
+    assert isinstance(dr, ErrorResponse)
+    assert list(dr.keys()) == ['error']
+
+
+def test_factory_auth_response():
+    ar = factory('AuthorizationResponse', client_id='client1', iss='Issuer',
+                 code='1234567')
+    assert isinstance(ar, AuthorizationResponse)
+    assert ar.verify(client_id='client1', iss='Issuer')

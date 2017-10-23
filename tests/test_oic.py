@@ -11,6 +11,7 @@ import pytest
 from jwkest import BadSignature
 from jwkest.jwk import SYMKey
 from jwkest.jws import alg2keytype
+from oicmsg.oauth2 import ErrorResponse
 
 from oicmsg.key_bundle import KeyBundle
 
@@ -20,7 +21,8 @@ from oicmsg import time_util
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.exception import NotAllowedValue
 from oicmsg.exception import WrongSigningAlgorithm
-from oicmsg.oic import AccessTokenRequest, CheckSessionRequest, ClaimsRequest
+from oicmsg.oic import AccessTokenRequest, CheckSessionRequest, ClaimsRequest, \
+    msg_ser_json, factory, DiscoveryRequest
 from oicmsg.oic import AccessTokenResponse
 from oicmsg.oic import AuthnToken
 from oicmsg.oic import AuthorizationErrorResponse
@@ -153,9 +155,27 @@ def test_msg_ser_json():
     pre = AddressClaim(street_address="Kasamark 114", locality="Umea",
                        country="Sweden")
 
-    ser = msg_ser(pre, "json")
+    ser = msg_ser_json(pre, "json")
 
     adc = address_deser(ser, "json")
+    assert _eq(adc.keys(), ['street_address', 'locality', 'country'])
+
+
+def test_msg_ser_json_from_dict():
+    ser = msg_ser_json({'street_address': "Kasamark 114", 'locality': "Umea",
+                   'country': "Sweden"}, "json")
+
+    adc = address_deser(ser, "json")
+    assert _eq(adc.keys(), ['street_address', 'locality', 'country'])
+
+
+def test_msg_ser_json_to_dict():
+    pre = AddressClaim(street_address="Kasamark 114", locality="Umea",
+                       country="Sweden")
+
+    ser = msg_ser_json(pre, "dict")
+
+    adc = address_deser(ser, "dict")
     assert _eq(adc.keys(), ['street_address', 'locality', 'country'])
 
 
@@ -196,6 +216,32 @@ def test_claims_ser_json():
     claims = claims_deser(claims_ser(claims, "json"), sformat="json")
     assert _eq(claims.keys(), ['name', 'nickname', 'email', 'email_verified',
                                'picture'])
+
+
+def test_claims_ser_from_dict_to_json():
+    claims = claims_ser({
+        "name": {"essential": True},
+        "nickname": None,
+        "email": {"essential": True},
+        "email_verified": {"essential": True},
+        "picture": None
+    }, sformat="json")
+    cl = Claims().from_json(claims)
+    assert _eq(cl.keys(), ['name', 'nickname', 'email', 'email_verified',
+                           'picture'])
+
+
+def test_claims_ser_from_dict_to_urlencoded():
+    claims = claims_ser({
+        "name": {"essential": True},
+        "nickname": None,
+        "email": {"essential": True},
+        "email_verified": {"essential": True},
+        "picture": None
+    }, sformat="urlencoded")
+    cl = Claims().from_urlencoded(claims)
+    assert _eq(cl.keys(), ['name', 'nickname', 'email', 'email_verified',
+                           'picture'])
 
 
 class TestProviderConfigurationResponse(object):
@@ -483,6 +529,40 @@ class TestAuthorizationRequest(object):
         with pytest.raises(MissingRequiredAttribute):
             ar.verify()
 
+    def test_claims(self):
+        args = {
+            "client_id": "foobar",
+            "redirect_uri": "http://foobar.example.com/oaclient",
+            "response_type": "code",
+            'scope': 'openid',
+            'claims': {
+                "userinfo":
+                    {
+                        "given_name": {"essential": True},
+                        "nickname": None,
+                        "email": {"essential": True},
+                        "email_verified": {"essential": True},
+                        "picture": None,
+                        "http://example.info/claims/groups": None
+                    },
+                "id_token":
+                    {
+                        "auth_time": {"essential": True},
+                        "acr": {"values": ["urn:mace:incommon:iap:silver"]}
+                    }
+            }
+        }
+        ar = AuthorizationRequest(**args)
+        assert ar.verify()
+
+        ar_url = ar.to_urlencoded()
+        ar2 = AuthorizationRequest().from_urlencoded(ar_url)
+        assert ar2.verify()
+
+        ar_json = ar.to_json()
+        ar3 = AuthorizationRequest().from_json(ar_json)
+        assert ar3.verify()
+
 
 class TestAccessTokenResponse(object):
     def test_faulty_idtoken(self):
@@ -678,6 +758,34 @@ class TestClaimsRequest(object):
                            id_token=Claims(auth_time=None,
                                            acr={"values": ["2"]}))
         cr.verify()
+        _url = cr.to_urlencoded()
+        cr1 = ClaimsRequest().from_urlencoded(_url)
+        cr1.verify()
+
+        _js = cr.to_json()
+        cr1 = ClaimsRequest().from_json(_js)
+        cr1.verify()
+
+
+@pytest.mark.parametrize("bdate", [
+    "1971-11-23", "0000-11-23", "1971"
+])
+def test_birthdate(bdate):
+    uinfo = OpenIDSchema(birthdate=bdate, sub='jarvis')
+    uinfo.verify()
+
+
+def test_factory():
+    dr = factory('DiscoveryRequest', principal='local@domain')
+    assert isinstance(dr, DiscoveryRequest)
+    assert list(dr.keys()) == ['principal']
+
+
+def test_factory_chain():
+    dr = factory('ErrorResponse', error='some_error')
+    assert isinstance(dr, ErrorResponse)
+    assert list(dr.keys()) == ['error']
+
 
 # class ClaimsRequest(Message):
 # class ClientRegistrationErrorResponse(oauth2.ErrorResponse):

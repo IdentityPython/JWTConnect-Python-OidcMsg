@@ -257,6 +257,42 @@ class TestKeyJar(object):
 
         assert ks.get('sig', 'RSA', 'http://www.example.org/')
 
+    def test_issuer_missing_slash(self):
+        ks = KeyJar()
+        ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"},
+                            {"kty": "oct", "key": "a1b2c3d4", "use": "ver"}])
+        ks["http://www.example.org/"] = KeyBundle([
+            {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
+            {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}])
+        ks["http://www.example.org/"].append(
+            keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"]))
+
+        assert ks.get('sig', 'RSA', 'http://www.example.org')
+
+    def test_get_enc(self):
+        ks = KeyJar()
+        ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"},
+                            {"kty": "oct", "key": "a1b2c3d4", "use": "enc"}])
+        ks["http://www.example.org/"] = KeyBundle([
+            {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
+            {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}])
+        ks["http://www.example.org/"].append(
+            keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"]))
+
+        assert ks.get('enc', 'oct')
+
+    def test_get_enc_not_mine(self):
+        ks = KeyJar()
+        ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"},
+                            {"kty": "oct", "key": "a1b2c3d4", "use": "enc"}])
+        ks["http://www.example.org/"] = KeyBundle([
+            {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
+            {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}])
+        ks["http://www.example.org/"].append(
+            keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"]))
+
+        assert ks.get('enc', 'oct', 'http://www.example.org/')
+
     def test_remove_key(self):
         ks = KeyJar()
         ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"},
@@ -515,3 +551,41 @@ def test_load_spomky_keys():
     kj = KeyJar()
     kj.import_jwks(JWKS_SPO, '')
     assert len(kj.get_issuer_keys('')) == 4
+
+
+def test_get_ec():
+    kj = KeyJar()
+    kj.import_jwks(JWKS_SPO, '')
+    k = kj.get('sig', 'EC', alg='ES256')
+    assert k
+
+
+def test_get_ec_wrong_alg():
+    kj = KeyJar()
+    kj.import_jwks(JWKS_SPO, '')
+    k = kj.get('sig', 'EC', alg='ES512')
+    assert k == []
+
+
+def test_keyjar_eq():
+    kj1 = KeyJar()
+    kj1.import_jwks(JWKS_SPO, '')
+
+    kj2 = KeyJar()
+    kj2.import_jwks(JWKS_SPO, '')
+
+    assert kj1 == kj2
+
+
+def test_keys_by_alg_and_usage():
+    kj = KeyJar()
+    kj.import_jwks(JWKS_SPO, '')
+    k = kj.keys_by_alg_and_usage('', 'RS256', 'sig')
+    assert len(k) == 2
+
+
+def test_copy():
+    kj = KeyJar()
+    kj.import_jwks(JWKS_SPO, '')
+    ckj = kj.copy()
+    assert ckj == kj

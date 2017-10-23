@@ -919,7 +919,12 @@ def msg_deser(val, sformat="urlencoded"):
 
 def msg_ser(inst, sformat, lev=0):
     if sformat in ["urlencoded", "json"]:
-        if isinstance(inst, dict) or isinstance(inst, Message):
+        if isinstance(inst, dict):
+            if sformat == 'json':
+                res = json.dumps(inst)
+            else:
+                res = urlencode([(k,v) for k,v in inst.items()])
+        elif isinstance(inst, Message):
             res = inst.serialize(sformat, lev)
         else:
             res = inst
