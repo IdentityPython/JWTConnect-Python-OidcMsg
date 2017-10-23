@@ -453,7 +453,8 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
                 # verify that nothing is change in the original message
                 for key, val in oidr.items():
                     if key in self:
-                        assert self[key] == val
+                        if self[key] != val:
+                            raise ValueError('{} != {}'.format(self[key], val))
 
                 # replace the JWT with the parsed and verified instance
                 self["request"] = oidr
@@ -859,9 +860,11 @@ class Claims(Message):
     pass
 
 
-class ClaimsRequest(MessageWithIdToken):
-    c_param = MessageWithIdToken.c_param.copy()
-    c_param.update({"userinfo": OPTIONAL_MULTIPLE_Claims})
+class ClaimsRequest(Message):
+    c_param = {
+        "userinfo": OPTIONAL_MULTIPLE_Claims,
+        "id_token": OPTIONAL_MULTIPLE_Claims
+    }
 
 
 class OpenIDRequest(AuthorizationRequest):
