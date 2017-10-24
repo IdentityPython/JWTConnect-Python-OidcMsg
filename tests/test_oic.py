@@ -21,8 +21,12 @@ from oicmsg import time_util
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.exception import NotAllowedValue
 from oicmsg.exception import WrongSigningAlgorithm
-from oicmsg.oic import AccessTokenRequest, CheckSessionRequest, ClaimsRequest, \
-    msg_ser_json, factory, DiscoveryRequest
+from oicmsg.oic import AccessTokenRequest
+from oicmsg.oic import CheckSessionRequest
+from oicmsg.oic import ClaimsRequest
+from oicmsg.oic import DiscoveryRequest
+from oicmsg.oic import factory
+from oicmsg.oic import msg_ser_json
 from oicmsg.oic import AccessTokenResponse
 from oicmsg.oic import AuthnToken
 from oicmsg.oic import AuthorizationErrorResponse

@@ -1,20 +1,14 @@
 # pylint: disable=missing-docstring,no-self-use
 import os
 import time
-from datetime import datetime as dt
-from datetime import timedelta
 
 import pytest
-from freezegun import freeze_time
-from jwkest.jwk import RSAKey
 
 from oicmsg.exception import MissingSigningKey
-from oicmsg.key_bundle import dump_jwks
 from oicmsg.key_bundle import keybundle_from_local_file
 from oicmsg.key_bundle import KeyBundle
 from oicmsg.key_jar import build_keyjar
 from oicmsg.key_jar import key_export
-from oicmsg.key_jar import rsa_init
 from oicmsg.key_jar import KeyJar
 from oicmsg.oic import AuthorizationResponse
 

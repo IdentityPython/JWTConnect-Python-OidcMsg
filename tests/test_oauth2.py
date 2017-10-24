@@ -9,8 +9,10 @@ from jwkest.jwk import SYMKey
 
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.key_jar import build_keyjar
-from oicmsg.oauth2 import OPTIONAL_LIST_OF_STRINGS, OPTIONAL_MESSAGE, \
-    OPTIONAL_LIST_OF_MESSAGES, factory
+from oicmsg.oauth2 import factory
+from oicmsg.oauth2 import OPTIONAL_LIST_OF_MESSAGES
+from oicmsg.oauth2 import OPTIONAL_LIST_OF_STRINGS
+from oicmsg.oauth2 import OPTIONAL_MESSAGE
 from oicmsg.oauth2 import REQUIRED_LIST_OF_STRINGS
 from oicmsg.oauth2 import SINGLE_OPTIONAL_INT
 from oicmsg.oauth2 import SINGLE_OPTIONAL_JSON

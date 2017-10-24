@@ -66,23 +66,12 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Topic :: Software Development :: Libraries :: Python Modules"],
-    extras_require={
-        'develop': ["cherrypy==3.2.4"],
-    },
     install_requires=[
-        "requests",
         "pycryptodomex",
         "pyjwkest>=1.3.6",
-        "mako",
-        "beaker",
-        "alabaster",
         "pyOpenSSL",
         "future",
         "six",
-    ] + extra_install_requires,
-    tests_require=[
-        "responses",
-        "testfixtures",
     ],
     zip_safe=False,
     cmdclass={'test': PyTest},
