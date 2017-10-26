@@ -12,7 +12,6 @@ from collections import MutableMapping
 
 import six
 from jwkest import as_unicode
-from jwkest import b64d
 from jwkest import jwe
 from jwkest import jws
 from jwkest.jws import alg2keytype
@@ -39,16 +38,7 @@ from oicmsg.key_jar import update_keyjar
 
 logger = logging.getLogger(__name__)
 
-
 ERRTXT = "On '%s': %s"
-
-
-def swap_dict(dic):
-    return dict([(val, key) for key, val in dic.items()])
-
-
-def jwt_header(txt):
-    return json.loads(b64d(str(txt.split(".")[0])))
 
 
 class Message(MutableMapping):
@@ -69,6 +59,11 @@ class Message(MutableMapping):
         self.verify_ssl = True
 
     def __iter__(self):
+        """
+        Returns an iterator over all the key, value pairs in this class instance
+        
+        :return: iterator
+        """
         return iter(self._dict)
 
     def type(self):
@@ -335,8 +330,17 @@ class Message(MutableMapping):
         return self
 
     def _add_value(self, skey, vtyp, key, val, _deser, null_allowed):
-        # if not val:
-        # return
+        """
+        Main method for adding a value to the instance. Does all the
+        checking on type of value and if among allowed values.
+        
+        :param skey: string version of the key 
+        :param vtyp: Type of value
+        :param key: original representation of the key
+        :param val: The value to add
+        :param _deser: A deserializer for this value type
+        :param null_allowed: Whether null is an allowed value for this key
+        """
 
         if isinstance(val, list):
             if (len(val) == 0 or val[0] is None) and null_allowed is False:
@@ -430,12 +434,26 @@ class Message(MutableMapping):
                     self._dict[skey] = val
 
     def to_json(self, lev=0, indent=None):
+        """
+        Serialize the content of this instance into a JSON string.
+        
+        :param lev: 
+        :param indent: Number of spaces that should be used for indentation 
+        :return: 
+        """
         if lev:
             return self.to_dict(lev + 1)
         else:
             return json.dumps(self.to_dict(1), indent=indent)
 
     def from_json(self, txt, **kwargs):
+        """
+        Convert from a JSON string to an instance of this class.
+        
+        :param txt: The JSON string 
+        :param kwargs: extra keyword arguments
+        :return: The instantiated instance 
+        """
         return self.from_dict(json.loads(txt))
 
     def to_jwt(self, key=None, algorithm="", lev=0, lifetime=0):
@@ -489,7 +507,8 @@ class Message(MutableMapping):
 
     def get_verify_keys(self, keyjar, key, jso, header, jwt, **kwargs):
         """
-        Get keys from a keyjar that can be used to verify a signed JWT
+        Get keys from a keyjar. These keys should be usable to verify a 
+        signed JWT.
 
         :param keyjar: A KeyJar instance
         :param key: List of keys to start with
@@ -675,6 +694,11 @@ class Message(MutableMapping):
         return self.from_dict(jso)
 
     def __str__(self):
+        """
+        Return a string representation of this class
+        
+        :return: A string representation of this class 
+        """
         return '{}'.format(self.to_dict())
 
     def _type_check(self, typ, _allowed, val, na=False):
@@ -753,24 +777,60 @@ class Message(MutableMapping):
         return self._dict.keys()
 
     def __getitem__(self, item):
+        """
+        Return the value of a specified parameter.
+        
+        :param item: 
+        :return: 
+        """
         return self._dict[item]
 
     def get(self, item, default=None):
+        """
+        Return the value of a specific parameter. If the parameter does not
+        have a value return the default value.
+        
+        :param item: The name of the parameter 
+        :param default: Default value
+        :return: The value of the parameter or, if that doesn't exist, 
+            the default value 
+        """
         try:
             return self[item]
         except KeyError:
             return default
 
     def items(self):
+        """
+        Return a list of tuples (key, value) representing all parameters
+        of this class instance that has a value.
+        
+        :return: iterator 
+        """
         return self._dict.items()
 
     def values(self):
         return self._dict.values()
 
     def __contains__(self, item):
+        """
+        Answers the question: does this parameter have a value?
+        
+        :param item: The name of the parameter 
+        :return: True/False
+        """
         return item in self._dict
 
     def request(self, location, fragment_enc=False):
+        """
+        Given a URL this method will add a fragment, a query part or extend
+        a query part if it already exists with the information in this instance.
+        
+        :param location: A URL 
+        :param fragment_enc: Whether the information should be placed in a
+            fragment (True) or in a query part (False)
+        :return: The extended URL 
+        """
         _l = as_unicode(location)
         _qp = as_unicode(self.to_urlencoded())
         if fragment_enc:
@@ -789,6 +849,12 @@ class Message(MutableMapping):
             self._dict[key] = value
 
     def __eq__(self, other):
+        """
+        Compare two message instances. This with another instance.
+        
+        :param other:  The other instance
+        :return: True/False
+        """
         if not isinstance(other, Message):
             return False
         if self.type() != other.type():
@@ -806,20 +872,43 @@ class Message(MutableMapping):
         del self._dict[key]
 
     def __len__(self):
+        """
+        Return the number of parameters that has a value.
+        
+        :return: Number of parameters with a value. 
+        """
         return len(self._dict)
 
     def extra(self):
+        """
+        Return the extra parameters that this instance. Extra meaning those
+        that are not listed in the c_params specification.
+        
+        :return: The key,value pairs for keys that are not in the c_params
+            specification,
+        """
         return dict([(key, val) for key, val in
                      self._dict.items() if key not in self.c_param])
 
     def only_extras(self):
-        extras = [key for key in self._dict.keys() if key in self.c_param]
-        if not extras:
+        """
+        Return True if this instance only has key,value pairs for keys
+        that are not defined in c_params.
+        
+        :return: True/False 
+        """
+        known = [key for key in self._dict.keys() if key in self.c_param]
+        if not known:
             return True
         else:
             return False
 
     def update(self, item):
+        """
+        Update the information in this instance.
+        
+        :param item: a dictionary or a Message instance 
+        """
         if isinstance(item, dict):
             self._dict.update(item)
         elif isinstance(item, Message):
