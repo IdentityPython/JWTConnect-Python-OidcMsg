@@ -682,7 +682,7 @@ def build_keyjar(key_conf, kid_template="", keyjar=None, kidd=None):
 
         if typ == "RSA":
             if "key" in spec:
-                error_to_catch = (FileNotFoundError, IOError,
+                error_to_catch = (OSError, IOError,
                                   DeSerializationNotPossible)
                 try:
                     kb = KeyBundle(source="file://%s" % spec["key"],
