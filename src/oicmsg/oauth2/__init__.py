@@ -22,11 +22,13 @@ from jwkest.jwe import JWE
 from jwkest.jws import JWS
 from jwkest.jwt import JWT
 
-from oicmsg.exception import DecodeError, MessageException, OicMsgError
+from oicmsg.exception import DecodeError
 from oicmsg.exception import FormatError
+from oicmsg.exception import MessageException
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.exception import MissingSigningKey
 from oicmsg.exception import NotAllowedValue
+from oicmsg.exception import OicMsgError
 from oicmsg.exception import ParameterError
 from oicmsg.exception import TooManyValues
 from oicmsg.exception import VerificationError
@@ -50,6 +52,9 @@ def jwt_header(txt):
 
 
 class Message(MutableMapping):
+    """
+    Represents a basic protocol nessage/item in OAuth2/OIDC 
+    """
     c_param = {}
     c_default = {}
     c_allowed_values = {}
@@ -67,12 +72,25 @@ class Message(MutableMapping):
         return iter(self._dict)
 
     def type(self):
+        """
+        Return the type of protocol message this is
+        
+        :return: The name of the message 
+        """
         return self.__class__.__name__
 
     def parameters(self):
+        """
+        Returns a list of all known parameters for this message type.
+        
+        :return: list of parameter names 
+        """
         return self.c_param.keys()
 
     def set_defaults(self):
+        """
+        Based on specification set a parameters value to the default value.
+        """
         for key, val in self.c_default.items():
             self._dict[key] = val
 
@@ -144,9 +162,28 @@ class Message(MutableMapping):
             return urlencode(_val)
 
     def serialize(self, method="urlencoded", lev=0, **kwargs):
+        """
+        Convert this instance to another representation. Which representation 
+        is given by the choice of serialization method.
+        
+        :param method: A serialization method. Presently 'urlencoded', 'json',
+        'jwt' and 'dict' is supported.
+        
+        :param lev: 
+        :param kwargs: Extra key word arguments
+        :return: THe content of this message serialized using a chosen method
+        """
         return getattr(self, "to_%s" % method)(lev=lev, **kwargs)
 
     def deserialize(self, info, method="urlencoded", **kwargs):
+        """
+        Convert from an external representation to an internal.
+        
+        :param info: The input  
+        :param method: The method used to deserialize the info
+        :param kwargs: extra Keyword arguments
+        :return: In the normal case the Message instance
+        """
         try:
             func = getattr(self, "from_%s" % method)
         except AttributeError:
@@ -156,11 +193,11 @@ class Message(MutableMapping):
 
     def from_urlencoded(self, urlencoded, **kwargs):
         """
-        from a string of the application/x-www-form-urlencoded format creates
-        a class instance
+        Starting with a string of the application/x-www-form-urlencoded format 
+        this method creates a class instance
 
         :param urlencoded: The string
-        :return: An instance of the cls class
+        :return: A class instance or raise an exception on error
         """
 
         # parse_qs returns a dictionary with keys and values. The values are
@@ -250,7 +287,7 @@ class Message(MutableMapping):
 
     def from_dict(self, dictionary, **kwargs):
         """
-        Direct translation so the value for one key might be a list or a
+        Direct translation, so the value for one key might be a list or a
         single value.
 
         :param dictionary: The info
