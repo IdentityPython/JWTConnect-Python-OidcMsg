@@ -1020,6 +1020,17 @@ SCOPE2CLAIMS = {
 }
 
 
+def scope2claims(scopes):
+    res = {}
+    for scope in scopes:
+        try:
+            claims = dict([(name, None) for name in SCOPE2CLAIMS[scope]])
+            res.update(claims)
+        except KeyError:
+            continue
+    return res
+
+
 def factory(msgtype, **kwargs):
     for name, obj in inspect.getmembers(sys.modules[__name__]):
         if inspect.isclass(obj) and issubclass(obj, Message):
