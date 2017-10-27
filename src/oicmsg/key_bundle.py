@@ -40,7 +40,11 @@ K2C = {
 
 def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048):
     """
-    :param name: Name of the key file
+    Mints a new RSA key pair and stores it in a file.
+    
+    :param name: Name of the key file. 2 files will be created one with
+        the private key the name without extension and the other containing
+        the public key with '.pub' as extension. 
     :param path: Path to where the key files are stored
     :param size: RSA key size
     :return: RSA key
@@ -69,7 +73,8 @@ def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048):
 
 def rsa_init(spec):
     """
-
+    Initiates a :py:class:`oicmsg.oauth.keybundle.KeyBundle` instance.
+    
     :param spec:
     :return: KeyBundle
     """

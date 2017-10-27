@@ -181,11 +181,9 @@ def add_duration(tid, duration):
 def time_in_a_while(days=0, seconds=0, microseconds=0, milliseconds=0,
                     minutes=0, hours=0, weeks=0):
     """
-    format of timedelta::
-        timedelta([days[, seconds[, microseconds[, milliseconds[,
-        minutes[, hours[, weeks]]]]]]])
+    Will return a time specification for a time sometime in the future.
 
-    :return: UTC time
+    :return: datetime instance using UTC time
     """
     delta = timedelta(days, seconds, microseconds, milliseconds,
                       minutes, hours, weeks)
@@ -195,9 +193,8 @@ def time_in_a_while(days=0, seconds=0, microseconds=0, milliseconds=0,
 def time_a_while_ago(days=0, seconds=0, microseconds=0, milliseconds=0,
                      minutes=0, hours=0, weeks=0):
     """
-    format of timedelta::
-        timedelta([days[, seconds[, microseconds[, milliseconds[,
-        minutes[, hours[, weeks]]]]]]])
+    Will return a time specification for a time sometime in the past.
+        
     :param days:
     :param seconds:
     :param microseconds:
@@ -205,8 +202,7 @@ def time_a_while_ago(days=0, seconds=0, microseconds=0, milliseconds=0,
     :param minutes:
     :param hours:
     :param weeks:
-    :param time_format:
-    :return: datetime instance
+    :return: datetime instance using UTC time
     """
     delta = timedelta(days, seconds, microseconds, milliseconds,
                       minutes, hours, weeks)
