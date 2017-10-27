@@ -25,17 +25,17 @@ from oicmsg.exception import NotForMe
 from oicmsg.exception import OicMsgError
 from oicmsg.exception import SchemeError
 from oicmsg.exception import VerificationError
-from oicmsg.oauth2 import Message
-from oicmsg.oauth2 import msg_ser
-from oicmsg.oauth2 import OPTIONAL_LIST_OF_SP_SEP_STRINGS
-from oicmsg.oauth2 import OPTIONAL_LIST_OF_STRINGS
-from oicmsg.oauth2 import OPTIONAL_MESSAGE
-from oicmsg.oauth2 import REQUIRED_LIST_OF_SP_SEP_STRINGS
-from oicmsg.oauth2 import REQUIRED_LIST_OF_STRINGS
-from oicmsg.oauth2 import SINGLE_OPTIONAL_INT
-from oicmsg.oauth2 import SINGLE_OPTIONAL_JSON
-from oicmsg.oauth2 import SINGLE_OPTIONAL_STRING
-from oicmsg.oauth2 import SINGLE_REQUIRED_STRING
+from oicmsg.message import Message
+from oicmsg.message import msg_ser
+from oicmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
+from oicmsg.message import OPTIONAL_LIST_OF_STRINGS
+from oicmsg.message import OPTIONAL_MESSAGE
+from oicmsg.message import REQUIRED_LIST_OF_SP_SEP_STRINGS
+from oicmsg.message import REQUIRED_LIST_OF_STRINGS
+from oicmsg.message import SINGLE_OPTIONAL_INT
+from oicmsg.message import SINGLE_OPTIONAL_JSON
+from oicmsg.message import SINGLE_OPTIONAL_STRING
+from oicmsg.message import SINGLE_REQUIRED_STRING
 from oicmsg.time_util import utc_time_sans_frac
 
 __author__ = 'Roland Hedberg'
@@ -68,33 +68,6 @@ def json_ser(val, sformat=None, lev=0):
 def json_deser(val, sformat=None, lev=0):
     return json.loads(val)
 
-
-# def json_conv(val, sformat=None, lev=0):
-#     if isinstance(val, dict):
-#         for key, _val in val.items():
-#             if _val is None:
-#                 val[key] = "none"
-#             elif _val is True:
-#                 val[key] = "true"
-#             elif _val is False:
-#                 val[key] = "false"
-#
-#     return val
-#
-#
-# def json_rest(val, sformat=None, lev=0):
-#     if isinstance(val, dict):
-#         for key, _val in val.items():
-#             if _val == "none":
-#                 val[key] = None
-#             elif _val == "true":
-#                 val[key] = True
-#             elif _val == "false":
-#                 val[key] = False
-#
-#     return val
-
-
 # value type, required, serializer, deserializer, null value allowed
 SINGLE_OPTIONAL_BOOLEAN = (bool, False, None, None, False)
 SINGLE_OPTIONAL_JSON_WN = (dict, False, json_ser, json_deser, True)
@@ -106,21 +79,6 @@ def idtoken_deser(val, sformat="urlencoded"):
     # id_token are always serialized as a JWT
     return IdToken().deserialize(val, "jwt")
 
-
-# def idtokenclaim_deser(val, sformat="urlencoded"):
-#     if sformat in ["dict", "json"]:
-#         if not isinstance(val, basestring):
-#             val = json.dumps(val)
-#             sformat = "json"
-#     return IDTokenClaim().deserialize(val, sformat)
-#
-#
-# def userinfo_deser(val, sformat="urlencoded"):
-#     if sformat in ["dict", "json"]:
-#         if not isinstance(val, basestring):
-#             val = json.dumps(val)
-#             sformat = "json"
-#     return UserInfoClaim().deserialize(val, sformat)
 
 def address_deser(val, sformat="urlencoded"):
     if sformat in ["dict", "json"]:

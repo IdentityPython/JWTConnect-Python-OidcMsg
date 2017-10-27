@@ -9,30 +9,31 @@ from jwkest.jwk import SYMKey
 
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.key_jar import build_keyjar
+from oicmsg.message import DecodeError
+from oicmsg.message import json_deserializer
+from oicmsg.message import json_serializer
+from oicmsg.message import OPTIONAL_LIST_OF_MESSAGES
+from oicmsg.message import OPTIONAL_LIST_OF_STRINGS
+from oicmsg.message import OPTIONAL_MESSAGE
+from oicmsg.message import REQUIRED_LIST_OF_STRINGS
+from oicmsg.message import SINGLE_OPTIONAL_INT
+from oicmsg.message import SINGLE_OPTIONAL_JSON
+from oicmsg.message import SINGLE_OPTIONAL_STRING
+from oicmsg.message import SINGLE_REQUIRED_STRING
+from oicmsg.message import sp_sep_list_deserializer
+
 from oicmsg.oauth2 import factory
-from oicmsg.oauth2 import OPTIONAL_LIST_OF_MESSAGES
-from oicmsg.oauth2 import OPTIONAL_LIST_OF_STRINGS
-from oicmsg.oauth2 import OPTIONAL_MESSAGE
-from oicmsg.oauth2 import REQUIRED_LIST_OF_STRINGS
-from oicmsg.oauth2 import SINGLE_OPTIONAL_INT
-from oicmsg.oauth2 import SINGLE_OPTIONAL_JSON
-from oicmsg.oauth2 import SINGLE_OPTIONAL_STRING
-from oicmsg.oauth2 import SINGLE_REQUIRED_STRING
 from oicmsg.oauth2 import AccessTokenRequest
 from oicmsg.oauth2 import AccessTokenResponse
 from oicmsg.oauth2 import AuthorizationErrorResponse
 from oicmsg.oauth2 import AuthorizationRequest
 from oicmsg.oauth2 import AuthorizationResponse
 from oicmsg.oauth2 import CCAccessTokenRequest
-from oicmsg.oauth2 import DecodeError
 from oicmsg.oauth2 import ErrorResponse
 from oicmsg.oauth2 import Message
 from oicmsg.oauth2 import RefreshAccessTokenRequest
 from oicmsg.oauth2 import ROPCAccessTokenRequest
 from oicmsg.oauth2 import TokenErrorResponse
-from oicmsg.oauth2 import json_deserializer
-from oicmsg.oauth2 import json_serializer
-from oicmsg.oauth2 import sp_sep_list_deserializer
 
 __author__ = 'Roland Hedberg'
 
@@ -717,88 +718,6 @@ def test_to_dict_with_raw_types():
     content_fixture = {'c_default': []}
     _dict = msg.to_dict(lev=1)
     assert _dict == content_fixture
-
-
-def test_get_verify_keys_no_kid_multiple_keys():
-    msg = Message()
-    header = {'alg': 'RS256'}
-    keys = []
-    msg.get_verify_keys(KEYJARS['A'], keys, {'iss': 'A'}, header, {})
-    assert keys == []
-
-
-def test_get_verify_keys_no_kid_single_key():
-    msg = Message()
-    header = {'alg': 'RS256'}
-    keys = []
-    msg.get_verify_keys(IKEYJAR, keys, {'iss': 'issuer'}, header, {})
-    assert len(keys) == 1
-
-
-def test_get_verify_keys_no_kid_multiple_keys_no_kid_issuer():
-    msg = Message()
-    header = {'alg': 'RS256'}
-    keys = []
-
-    a_kids = [k.kid for k in
-              KEYJARS['A'].get_verify_key(owner='A', key_type='RSA')]
-    no_kid_issuer = {'A': a_kids}
-
-    msg.get_verify_keys(KEYJARS['A'], keys, {'iss': 'A'}, header, {},
-                        no_kid_issuer=no_kid_issuer)
-    assert len(keys) == 3
-    assert set([k.kid for k in keys]) == set(a_kids)
-
-
-def test_get_verify_keys_no_kid_multiple_keys_no_kid_issuer_lim():
-    msg = Message()
-    header = {'alg': 'RS256'}
-    keys = []
-
-    a_kids = [k.kid for k in
-              KEYJARS['A'].get_verify_key(owner='A', key_type='RSA')]
-    # get rid of one kid
-    a_kids = a_kids[:-1]
-    no_kid_issuer = {'A': a_kids}
-
-    msg.get_verify_keys(KEYJARS['A'], keys, {'iss': 'A'}, header, {},
-                        no_kid_issuer=no_kid_issuer)
-    assert len(keys) == 2
-    assert set([k.kid for k in keys]) == set(a_kids)
-
-
-def test_get_verify_keys_matching_kid():
-    msg = Message()
-    a_kids = [k.kid for k in
-              KEYJARS['A'].get_verify_key(owner='A', key_type='RSA')]
-    header = {'alg': 'RS256', 'kid': a_kids[0]}
-    keys = []
-    msg.get_verify_keys(KEYJARS['A'], keys, {'iss': 'A'}, header, {})
-    assert len(keys) == 1
-    assert keys[0].kid == a_kids[0]
-
-
-def test_get_verify_keys_no_matching_kid():
-    msg = Message()
-    header = {'alg': 'RS256', 'kid': 'aaaaaaa'}
-    keys = []
-    msg.get_verify_keys(KEYJARS['A'], keys, {'iss': 'A'}, header, {})
-    assert keys == []
-
-
-def test_get_verify_keys_aud():
-    msg = Message()
-    header = {'alg': 'RS256'}
-
-    a_kids = [k.kid for k in
-              KEYJARS['A'].get_verify_key(owner='A', key_type='RSA')]
-    no_kid_issuer = {'A': a_kids}
-
-    keys = []
-    msg.get_verify_keys(KEYJARS['A'], keys, {'aud': 'A'}, header, {},
-                        no_kid_issuer=no_kid_issuer)
-    assert len(keys) == 3
-    assert keys[0].kid in a_kids
 
 
 def test_msg_deserializer():
