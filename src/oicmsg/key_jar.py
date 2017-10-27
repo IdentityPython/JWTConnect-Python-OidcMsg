@@ -1,3 +1,4 @@
+import six
 from future.backports.urllib.parse import urlsplit
 
 import copy
@@ -16,6 +17,7 @@ from jwkest.jwk import DeSerializationNotPossible
 from jwkest.jwk import ECKey
 from jwkest.jwk import RSAKey
 from jwkest.jwk import rsa_load
+from jwkest.jws import alg2keytype
 from six import string_types
 
 from oicmsg.exception import MessageException
@@ -57,10 +59,11 @@ class KeyJar(object):
     def __init__(self, ca_certs=None, verify_ssl=True, keybundle_cls=KeyBundle,
                  remove_after=3600):
         """
-
-        :param ca_certs:
+        KeyJar init function
+        
+        :param ca_certs: CA certificates, to be used for HTTPS
         :param verify_ssl: Attempting SSL certificate verification
-        :return:
+        :return: Keyjar instance
         """
         self.spec2key = {}
         self.issuer_keys = {}
@@ -75,10 +78,14 @@ class KeyJar(object):
 
     def add(self, issuer, url, **kwargs):
         """
-
+        Add a set of keys by url. This method will create a 
+        :py:class:`oicmsg.oauth2.keybundle.KeyBundle` instance with the
+        url as source specification.
+        
         :param issuer: Who issued the keys
         :param url: Where can the key/-s be found
         :param kwargs: extra parameters for instantiating KeyBundle
+        :return: A :py:class:`oicmsg.oauth2.keybundle.KeyBundle` instance
         """
 
         if not url:
@@ -477,6 +484,116 @@ class KeyJar(object):
             else:
                 del self.issuer_keys[iss]
 
+    def _add_key(self, issuer, key, key_type='', kid='',
+                 no_kid_issuer=None):
+
+        if issuer not in self:
+            logger.error('Issuer "{}" not in keyjar'.format(issuer))
+            return
+
+        logger.debug('Key set summary for {}: {}'.format(
+            issuer, key_summary(self, issuer)))
+
+        if kid:
+            _key = self.get_key_by_kid(kid, issuer)
+            if _key and _key not in key:
+                key.append(_key)
+                return
+        else:
+            try:
+                kl = self.get_verify_key(owner=issuer, key_type=key_type)
+            except KeyError:
+                pass
+            else:
+                if len(kl) == 1:
+                    if kl[0] not in key:
+                        key.append(kl[0])
+                elif no_kid_issuer:
+                    try:
+                        allowed_kids = no_kid_issuer[issuer]
+                    except KeyError:
+                        return
+                    else:
+                        if allowed_kids:
+                            key.extend([k for k in kl if k.kid in allowed_kids])
+                        else:
+                            key.extend(kl)
+
+    def get_jwt_verify_keys(self, key, jso, header, jwt, **kwargs):
+        """
+        Get keys from a keyjar. These keys should be usable to verify a 
+        signed JWT.
+
+        :param keyjar: A KeyJar instance
+        :param key: List of keys to start with
+        :param jso: The payload of the JWT, expected to be a dictionary.
+        :param header: The header of the JWT
+        :param jwt: A jwkest.jwt.JWT instance
+        :param kwargs: Other key word arguments
+        :return: list of usable keys
+        """
+        try:
+            _kid = header['kid']
+        except KeyError:
+            _kid = ''
+
+        try:
+            _iss = jso["iss"]
+        except KeyError:
+            pass
+        else:
+            # First extend the keyjar if allowed
+            if "jku" in header:
+                if not self.find(header["jku"], _iss):
+                    # This is really questionable
+                    try:
+                        if kwargs["trusting"]:
+                            self.add(jso["iss"],
+                                       header["jku"])
+                    except KeyError:
+                        pass
+
+            # If there is a kid and a key is found with that kid at
+            # the issuer then I'm done
+            if _kid:
+                jwt["kid"] = _kid
+                try:
+                    _key = self.get_key_by_kid(_kid, _iss)
+                    if _key:
+                        key.append(_key)
+                        return key
+                except KeyError:
+                    pass
+
+        try:
+            nki = kwargs['no_kid_issuer']
+        except KeyError:
+            nki = {}
+
+        try:
+            _key_type = alg2keytype(header['alg'])
+        except KeyError:
+            _key_type = ''
+
+        try:
+            self._add_key(kwargs["opponent_id"], key, _key_type, _kid, nki)
+        except KeyError:
+            pass
+
+        for ent in ["iss", "aud", "client_id"]:
+            if ent not in jso:
+                continue
+            if ent == "aud":
+                # list or basestring
+                if isinstance(jso["aud"], six.string_types):
+                    _aud = [jso["aud"]]
+                else:
+                    _aud = jso["aud"]
+                for _e in _aud:
+                    self._add_key(_e, key, _key_type, _kid, nki)
+            else:
+                self._add_key(jso[ent], key, _key_type, _kid, nki)
+        return key
 
 # =============================================================================
 
@@ -602,9 +719,11 @@ def proper_path(path):
 
 def ec_init(spec):
     """
-
-    :param spec: Key specifics of the form
-    {"type": "EC", "crv": "P-256", "use": ["sig"]},
+    Initiate a keybundle with an elliptic curve key. 
+    
+    :param spec: Key specifics of the form::
+        {"type": "EC", "crv": "P-256", "use": ["sig"]}
+    
     :return: A KeyBundle instance
     """
     _key = NISTEllipticCurve.by_name(spec["crv"])
@@ -620,17 +739,23 @@ def ec_init(spec):
 
 def keyjar_init(instance, key_conf, kid_template=""):
     """
-    Configuration of the type:
-    keys = [
-        {"type": "RSA", "key": "cp_keys/key.pem", "use": ["enc", "sig"]},
-        {"type": "EC", "crv": "P-256", "use": ["sig"]},
-        {"type": "EC", "crv": "P-256", "use": ["enc"]}
-    ]
+    Will add to an already existing :py:class:`oicmsg.oauth2.Message` instance
+    or create a new keyjar. As a side effekt the keyjar attribute of the 
+    instance is updated.
+    
+    Configuration of the type::
+    
+        keys = [
+            {"type": "RSA", "key": "cp_keys/key.pem", "use": ["enc", "sig"]},
+            {"type": "EC", "crv": "P-256", "use": ["sig"]},
+            {"type": "EC", "crv": "P-256", "use": ["enc"]}
+        ]
+    
 
     :param instance: server/client instance
     :param key_conf: The key configuration
     :param kid_template: A template by which to build the kids
-    :return: a JWKS
+    :return: a JWKS as a dictionary
     """
 
     jwks, keyjar, kdd = build_keyjar(key_conf, kid_template, instance.keyjar,
@@ -654,16 +779,21 @@ def _new_rsa_key(spec):
 
 def build_keyjar(key_conf, kid_template="", keyjar=None, kidd=None):
     """
-    Configuration of the type:
-    keys = [
-        {"type": "RSA", "key": "cp_keys/key.pem", "use": ["enc", "sig"]},
-        {"type": "EC", "crv": "P-256", "use": ["sig"]},
-        {"type": "EC", "crv": "P-256", "use": ["enc"]}
-    ]
-
+    Initiates a new :py:class:`oicmsg.oauth2.Message` instance and
+    populates it with keys according to the key configuration.
+    
+    Configuration of the type ::
+    
+        keys = [
+            {"type": "RSA", "key": "cp_keys/key.pem", "use": ["enc", "sig"]},
+            {"type": "EC", "crv": "P-256", "use": ["sig"]},
+            {"type": "EC", "crv": "P-256", "use": ["enc"]}
+        ]
+    
+    
     :param key_conf: The key configuration
     :param kid_template: A template by which to build the kids
-    :return: a tuple consisting of a JWKS dictionary, a KeyJar instance
+    :return: A tuple consisting of a JWKS dictionary, a KeyJar instance
         and a representation of which kids that can be used for what.
         Note the JWKS contains private key information !!
     """
