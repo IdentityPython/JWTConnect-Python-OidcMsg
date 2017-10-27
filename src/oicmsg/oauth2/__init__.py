@@ -16,12 +16,18 @@ logger = logging.getLogger(__name__)
 
 
 class ErrorResponse(Message):
+    """
+    The basic error response
+    """
     c_param = {"error": SINGLE_REQUIRED_STRING,
                "error_description": SINGLE_OPTIONAL_STRING,
                "error_uri": SINGLE_OPTIONAL_STRING}
 
 
 class AuthorizationErrorResponse(ErrorResponse):
+    """
+    Authorization error response.
+    """
     c_param = ErrorResponse.c_param.copy()
     c_param.update({"state": SINGLE_OPTIONAL_STRING})
     c_allowed_values = ErrorResponse.c_allowed_values.copy()
@@ -34,6 +40,9 @@ class AuthorizationErrorResponse(ErrorResponse):
 
 
 class TokenErrorResponse(ErrorResponse):
+    """
+    Error response from the token endpoint
+    """
     c_allowed_values = {"error": ["invalid_request", "invalid_client",
                                   "invalid_grant", "unauthorized_client",
                                   "unsupported_grant_type",
@@ -41,6 +50,9 @@ class TokenErrorResponse(ErrorResponse):
 
 
 class AccessTokenRequest(Message):
+    """
+    An access token request
+    """
     c_param = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "code": SINGLE_REQUIRED_STRING,
@@ -53,6 +65,9 @@ class AccessTokenRequest(Message):
 
 
 class AuthorizationRequest(Message):
+    """
+    An authorization request
+    """
     c_param = {
         "response_type": REQUIRED_LIST_OF_SP_SEP_STRINGS,
         "client_id": SINGLE_REQUIRED_STRING,
@@ -63,6 +78,12 @@ class AuthorizationRequest(Message):
 
 
 class AuthorizationResponse(Message):
+    """
+    An authorization response.
+    If *client_id* is returned in the response it will be checked against
+    a client_id value provided when calling the verify method.
+    The same with *iss* (issuer).
+    """
     c_param = {
         "code": SINGLE_REQUIRED_STRING,
         "state": SINGLE_OPTIONAL_STRING,
@@ -93,6 +114,9 @@ class AuthorizationResponse(Message):
 
 
 class AccessTokenResponse(Message):
+    """
+    Access token response
+    """
     c_param = {
         "access_token": SINGLE_REQUIRED_STRING,
         "token_type": SINGLE_REQUIRED_STRING,
@@ -110,6 +134,9 @@ class NoneResponse(Message):
 
 
 class ROPCAccessTokenRequest(Message):
+    """
+    Resource Owner Password Credentials Grant flow access token request
+    """
     c_param = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "username": SINGLE_OPTIONAL_STRING,
@@ -119,6 +146,9 @@ class ROPCAccessTokenRequest(Message):
 
 
 class CCAccessTokenRequest(Message):
+    """
+    Client Credential grant flow access token request
+    """
     c_param = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS
@@ -128,6 +158,9 @@ class CCAccessTokenRequest(Message):
 
 
 class RefreshAccessTokenRequest(Message):
+    """
+    Access token refresh request
+    """
     c_param = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "refresh_token": SINGLE_REQUIRED_STRING,
@@ -144,6 +177,9 @@ class ResourceRequest(Message):
 
 
 class ASConfigurationResponse(Message):
+    """
+    Authorization Server configuration response
+    """
     c_param = {
         "issuer": SINGLE_REQUIRED_STRING,
         "authorization_endpoint": SINGLE_OPTIONAL_STRING,
@@ -167,8 +203,15 @@ class ASConfigurationResponse(Message):
     c_default = {"version": "3.0"}
 
 
-
 def factory(msgtype, **kwargs):
+    """
+    Factory method that can be used to easily instansiate a class instance
+    
+    :param msgtype: The name of the class 
+    :param kwargs: Keyword arguments 
+    :return: An instance of the class or None if the name doesn't match any
+        known class.
+    """
     for name, obj in inspect.getmembers(sys.modules[__name__]):
         if inspect.isclass(obj) and issubclass(obj, Message):
             try:
