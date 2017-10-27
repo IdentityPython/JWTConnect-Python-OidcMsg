@@ -228,7 +228,7 @@ class Message(MutableMapping):
                         self._dict[key] = val[0]
                     else:
                         try:
-                            self._dict[key] = typ(val[0])
+                            self._dict[key] = val[0]
                         except KeyError:
                             raise ParameterError(key)
                 else:
@@ -339,6 +339,9 @@ class Message(MutableMapping):
             if (len(val) == 0 or val[0] is None) and null_allowed is False:
                 return
 
+        if isinstance(vtyp, tuple):
+            vtyp = vtyp[0]
+
         if isinstance(vtyp, list):
             vtype = vtyp[0]
             if isinstance(val, vtype):
@@ -413,8 +416,18 @@ class Message(MutableMapping):
                 elif vtyp is bool:
                     raise ValueError(
                         '"{}", wrong type of value for "{}"'.format(val, skey))
-
-                if isinstance(val, six.string_types):
+                elif vtyp != type(val):
+                    if vtyp == Message:
+                        if type(val) == dict or type(val) in six.string_types:
+                            self._dict[skey] = val
+                            return
+                        else:
+                            raise ValueError(
+                                '"{}", wrong type of value for "{}"'.format(
+                                    val, skey))
+                    raise ValueError(
+                        '"{}", wrong type of value for "{}"'.format(val, skey))
+                if type(val) in six.string_types:
                     self._dict[skey] = val
                 elif isinstance(val, list):
                     if len(val) == 1:

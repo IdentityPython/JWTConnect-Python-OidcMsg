@@ -181,7 +181,8 @@ OPTIONAL_MULTIPLE_Claims = (Message, False, claims_ser, claims_deser, False)
 # SINGLE_OPTIONAL_USERINFO_CLAIM = (Message, False, msg_ser, userinfo_deser)
 # SINGLE_OPTIONAL_ID_TOKEN_CLAIM = (Message, False, msg_ser, idtokenclaim_deser)
 
-SINGLE_OPTIONAL_IDTOKEN = (six.string_types, False, msg_ser, None, False)
+SINGLE_OPTIONAL_IDTOKEN = (Message, False, msg_ser, None, False)
+SINGLE_REQUIRED_IDTOKEN = (Message, True, msg_ser, None, False)
 
 SINGLE_OPTIONAL_REGISTRATION_REQUEST = (Message, False, msg_ser,
                                         registration_request_deser, False)
@@ -257,7 +258,7 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
         # "nonce": SINGLE_OPTIONAL_STRING,
         "access_token": SINGLE_OPTIONAL_STRING,
         "token_type": SINGLE_OPTIONAL_STRING,
-        "id_token": SINGLE_OPTIONAL_IDTOKEN,
+        "id_token": SINGLE_OPTIONAL_IDTOKEN
     })
 
     def verify(self, **kwargs):
@@ -716,7 +717,7 @@ class IdToken(OpenIDSchema):
 
 
 class MessageWithIdToken(Message):
-    c_param = {"id_token": SINGLE_REQUIRED_STRING}
+    c_param = {"id_token": SINGLE_REQUIRED_IDTOKEN}
 
     def verify(self, **kwargs):
         super(MessageWithIdToken, self).verify(**kwargs)
@@ -759,7 +760,7 @@ class CheckIDRequest(Message):
 
 class EndSessionRequest(Message):
     c_param = {
-        "id_token_hint": SINGLE_OPTIONAL_STRING,
+        "id_token_hint": SINGLE_OPTIONAL_IDTOKEN,
         "post_logout_redirect_uri": SINGLE_OPTIONAL_STRING,
         "state": SINGLE_OPTIONAL_STRING
     }

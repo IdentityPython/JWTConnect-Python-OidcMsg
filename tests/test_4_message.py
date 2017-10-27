@@ -256,6 +256,10 @@ class TestMessage(object):
         assert cls.get("missing") is None
         assert cls.get("missing", []) == []
 
+    def test_int_instead_of_string(self):
+        with pytest.raises(ValueError):
+            DummyMessage(req_str=2, req_str_list=['foo'])
+
 
 @pytest.mark.parametrize("keytype,alg", [
     ('RSA', 'RS256'),
