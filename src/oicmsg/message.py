@@ -1,7 +1,3 @@
-import inspect
-
-import sys
-
 from future.backports.urllib.parse import urlencode
 from future.moves.urllib.parse import parse_qs
 
@@ -77,7 +73,7 @@ class Message(MutableMapping):
         
         :return: list of parameter names 
         """
-        return self.c_param.keys()
+        return list(self.c_param.keys())
 
     def set_defaults(self):
         """
