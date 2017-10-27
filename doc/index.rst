@@ -6,14 +6,15 @@
 Welcome to oicmsg's documentation!
 ==================================
 
-This is a module that implements the protocol messages in OpenID Connect/OAuth2.
+This is a module that implements the protocol messages in OAuth2 and
+OpenID Connect.
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-   oicmsg
+   oicmsg/index
    howto/use
    howto/extend
 
