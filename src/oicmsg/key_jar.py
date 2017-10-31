@@ -355,7 +355,7 @@ class KeyJar(object):
     def find(self, source, issuer):
         """
         Find a key bundle
-        :param source: A url
+        :param source: A source url
         :param issuer: The issuer of keys
         """
         try:

@@ -1,12 +1,19 @@
 # pylint: disable=missing-docstring,no-self-use
+import json
 import os
 
-from jwkest.jwk import RSAKey
+import shutil
 
-from oicmsg.key_bundle import dump_jwks, rsa_init
+import pytest
+import time
+from Cryptodome.PublicKey.RSA import RsaKey
+from jwkest.jwk import RSAKey, SYMKey
+from oicmsg.exception import KeyIOError
+
+from oicmsg.key_bundle import create_and_store_rsa_key_pair, dump_jwks
+from oicmsg.key_bundle import rsa_init
 from oicmsg.key_bundle import keybundle_from_local_file
 from oicmsg.key_bundle import KeyBundle
-from oicmsg.key_jar import KeyJar, key_export, build_keyjar
 
 __author__ = 'Roland Hedberg'
 
@@ -168,16 +175,177 @@ JWK2 = {
     ]
 }
 
+if os.path.isdir('keys'):
+    shutil.rmtree('keys')
 
-# def test_key_setup():
-#     x = key_setup()
+
+def test_create_and_store_rsa_key_pair():
+    key = create_and_store_rsa_key_pair()
+    assert isinstance(key, RsaKey)
+
+    # default
+    filename = os.path.join('.', 'oicmsg')
+    assert os.path.isfile(filename)
+    assert os.path.isfile('{}.pub'.format(filename))
+
+    sec_key = create_and_store_rsa_key_pair('seckey', 'keys', size=1024)
+    assert isinstance(sec_key, RsaKey)
+
+    # default
+    filename = os.path.join('keys', 'seckey')
+    assert os.path.isfile(filename)
+    assert os.path.isfile('{}.pub'.format(filename))
 
 
-def test_rsa_init(tmpdir):
-    path = tmpdir.strpath
-    res = rsa_init({'use': ['enc'], 'type': 'RSA', 'size': 1024,
-                    'name': os.path.join(path, "rsa_enc")})
-    assert res
+def test_with_sym_key():
+    kc = KeyBundle({"kty": "oct", "key": "supersecret", "use": "sig"})
+    assert len(kc.get("oct")) == 1
+    assert len(kc.get("rsa")) == 0
+    assert kc.remote is False
+    assert kc.source is None
+
+
+def test_with_2_sym_key():
+    a = {"kty": "oct", "key": "supersecret", "use": "sig"}
+    b = {"kty": "oct", "key": "secret", "use": "enc"}
+    kb = KeyBundle([a, b])
+    assert len(kb.get("oct")) == 2
+    assert len(kb) == 2
+
+    assert kb.get_key_with_kid('kid') is None
+    assert kb.kids() == []
+
+
+def test_remove_sym():
+    a = {"kty": "oct", "key": "supersecret", "use": "sig"}
+    b = {"kty": "oct", "key": "secret", "use": "enc"}
+    kb = KeyBundle([a, b])
+    assert len(kb) == 2
+    keys = kb.get('oct')
+    kb.remove(keys[0])
+    assert len(kb) == 1
+
+
+def test_remove_key_sym():
+    a = {"kty": "oct", "key": "supersecret", "use": "sig"}
+    b = {"kty": "oct", "key": "secret", "use": "enc"}
+    kb = KeyBundle([a, b])
+    assert len(kb) == 2
+    keys = kb.get('oct')
+    kb.remove(keys[0])
+    assert len(kb) == 1
+
+    # This should not work
+    kb.remove_keys_by_type('rsa')
+    # should still be one
+    assert len(kb) == 1
+
+
+def test_rsa_init():
+    kb = rsa_init(
+        {'use': ['enc', 'sig'], 'size': 1024, 'name': 'rsa', 'path': 'keys'})
+    assert kb
+    assert len(kb) == 2
+    assert len(kb.get('rsa')) == 2
+
+
+def test_rsa_init_under_spec():
+    kb = rsa_init(
+        {'use': ['enc', 'sig'], 'size': 1024})
+    assert kb
+    assert len(kb) == 2
+    assert len(kb.get('rsa')) == 2
+
+
+def test_unknown_source():
+    with pytest.raises(KeyIOError):
+        kb = KeyBundle(source='foobar')
+
+
+def test_ignore_unknown_types():
+    kb = KeyBundle({
+            "kid": "q-H9y8iuh3BIKZBbK6S0mH_isBlJsk"
+                   "-u6VtZ5rAdBo5fCjjy3LnkrsoK_QWrlKB08j_PcvwpAMfTEDHw5spepw",
+            "use": "sig",
+            "alg": "EdDSA",
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": "FnbcUAXZ4ySvrmdXK1MrDuiqlqTXvGdAaE4RWZjmFIQ"
+        })
+
+    assert len(kb) == 0
+
+
+def test_remove_rsa():
+    kb = rsa_init(
+        {'use': ['enc', 'sig'], 'size': 1024, 'name': 'rsa', 'path': 'keys'})
+    assert len(kb) == 2
+    keys = kb.get('rsa')
+    assert len(keys) == 2
+    kb.remove(keys[0])
+    assert len(kb) == 1
+
+
+def test_key_mix():
+    kb = rsa_init(
+        {'use': ['enc', 'sig'], 'size': 1024, 'name': 'rsa', 'path': 'keys'})
+    _sym = SYMKey(**{"kty": "oct", "key": "secret", "use": "enc"})
+    kb.append(_sym)
+    assert len(kb) == 3
+    assert len(kb.get('rsa')) == 2
+    assert len(kb.get('oct')) == 1
+
+    kb.remove(_sym)
+
+    assert len(kb) == 2
+    assert len(kb.get('rsa')) == 2
+    assert len(kb.get('oct')) == 0
+
+
+def test_get_all():
+    kb = rsa_init(
+        {'use': ['enc', 'sig'], 'size': 1024, 'name': 'rsa', 'path': 'keys'})
+    _sym = SYMKey(**{"kty": "oct", "key": "secret", "use": "enc"})
+    kb.append(_sym)
+    assert len(kb.get()) == 3
+
+    _k = kb.keys()
+    assert len(_k) == 3
+
+
+def test_keybundle_from_local_der():
+    kb = keybundle_from_local_file(
+        "file://{}".format(os.path.join('keys', 'rsa_enc')), "der", ['enc'])
+    assert len(kb) == 1
+    keys = kb.get('rsa')
+    assert len(keys) == 1
+    assert isinstance(keys[0], RSAKey)
+
+
+def test_keybundle_from_local_der_update():
+    kb = keybundle_from_local_file(
+        "file://{}".format(os.path.join('keys', 'rsa_enc')), "der", ['enc'])
+    assert len(kb) == 1
+    keys = kb.get('rsa')
+    assert len(keys) == 1
+    assert isinstance(keys[0], RSAKey)
+
+    kb.update()
+
+    # Nothing should change
+    assert len(kb) == 1
+    keys = kb.get('rsa')
+    assert len(keys) == 1
+    assert isinstance(keys[0], RSAKey)
+
+
+def test_creat_jwks_sym():
+    a = {"kty": "oct", "key": "supersecret", "use": "sig"}
+    kb = KeyBundle([a])
+    _jwks = kb.jwks()
+    _loc = json.loads(_jwks)
+    assert list(_loc.keys()) == ["keys"]
+    assert set(_loc['keys'][0].keys()) == {'kty', 'use', 'k'}
 
 
 def test_keybundle_from_local_jwk_file():
@@ -186,104 +354,63 @@ def test_keybundle_from_local_jwk_file():
         "jwk",
         ["ver", "sig"])
     assert len(kb) == 1
-    kj = KeyJar()
-    kj.issuer_keys[""] = [kb]
-    keys = kj.get_signing_key()
-    assert len(keys) == 1
-    key = keys[0]
+
+
+def test_update():
+    kc = KeyBundle([{"kty": "oct", "key": "supersecret", "use": "sig"}])
+    assert len(kc.get("oct")) == 1
+    assert len(kc.get("rsa")) == 0
+    assert kc.remote is False
+    assert kc.source is None
+
+    kc.update()  # Nothing should happen
+    assert len(kc.get("oct")) == 1
+    assert len(kc.get("rsa")) == 0
+    assert kc.remote is False
+    assert kc.source is None
+
+
+def test_update_RSA():
+    kc = keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"])
+    assert kc.remote is False
+    assert len(kc.get("oct")) == 0
+    assert len(kc.get("RSA")) == 2
+
+    key = kc.get("RSA")[0]
     assert isinstance(key, RSAKey)
-    assert key.kid == "abc"
+
+    kc.update()
+    assert kc.remote is False
+    assert len(kc.get("oct")) == 0
+    assert len(kc.get("RSA")) == 2
+
+    key = kc.get("RSA")[0]
+    assert isinstance(key, RSAKey)
 
 
-def test_key_export():
-    kj = KeyJar()
-    url = key_export("http://example.com/keys/", "outbound", "secret",
-                     keyjar=kj, sig={"alg": "rsa", "format": ["x509", "jwk"]})
-
-    assert url == "http://example.com/keys/outbound/jwks"
-
-    # Now a jwks should reside in './keys/outbound/jwks'
-
-    kb = KeyBundle(source='file://./keys/outbound/jwks')
-
-    # One key
+def test_outdated():
+    a = {"kty": "oct", "key": "supersecret", "use": "sig"}
+    b = {"kty": "oct", "key": "secret", "use": "enc"}
+    kb = KeyBundle([a, b])
+    keys = kb.keys()
+    now = time.time()
+    keys[0].inactive_since = now - 60
+    kb.remove_outdated(30)
     assert len(kb) == 1
-    # more specifically one RSA key
-    assert len(kb.get('RSA')) == 1
-    k = kb.get('RSA')[0]
-    # For signing
-    assert k.use == 'sig'
 
 
-def test_dump_public_jwks():
-    keys = [
-        {"type": "RSA", "use": ["enc", "sig"]},
-        {"type": "EC", "crv": "P-256", "use": ["sig"]},
-    ]
+def test_dump_jwks():
+    kb1 = rsa_init(
+        {'use': ['enc', 'sig'], 'size': 1024, 'name': 'rsa', 'path': 'keys'})
+    a = {"kty": "oct", "key": "supersecret", "use": "sig"}
+    b = {"kty": "oct", "key": "secret", "use": "enc"}
+    kb2 = KeyBundle([a, b])
+    dump_jwks([kb1, kb2], 'jwks_combo')
 
-    jwks, keyjar, kidd = build_keyjar(keys)
+    # Now read it
 
-    kbl = keyjar.issuer_keys['']
-    dump_jwks(kbl, 'foo.jwks')
-    kb_public = KeyBundle(source='file://./foo.jwks')
-    # All RSA keys
-    for k in kb_public.keys():
-        if k.kty == 'RSA':
-            assert not k.d
-            assert not k.p
-            assert not k.q
-        else:  # MUST be 'EC'
-            assert not k.d
+    nkb = KeyBundle(source='file://jwks_combo', fileformat='jwk')
 
-
-def test_dump_private_jwks():
-    keys = [
-        {"type": "RSA", "use": ["enc", "sig"]},
-        {"type": "EC", "crv": "P-256", "use": ["sig"]},
-    ]
-
-    jwks, keyjar, kidd = build_keyjar(keys)
-
-    kbl = keyjar.issuer_keys['']
-    dump_jwks(kbl, 'foo.jwks', private=True)
-    kb_public = KeyBundle(source='file://./foo.jwks')
-    # All RSA keys
-    for k in kb_public.keys():
-        if k.kty == 'RSA':
-            assert k.d
-            assert k.p
-            assert k.q
-        else:  # MUST be 'EC'
-            assert k.d
-
-
-class TestKeyBundle(object):
-    def test_update(self):
-        kc = KeyBundle([{"kty": "oct", "key": "supersecret", "use": "sig"}])
-        assert len(kc.get("oct")) == 1
-        assert len(kc.get("rsa")) == 0
-        assert kc.remote is False
-        assert kc.source is None
-
-        kc.update()  # Nothing should happen
-        assert len(kc.get("oct")) == 1
-        assert len(kc.get("rsa")) == 0
-        assert kc.remote is False
-        assert kc.source is None
-
-    def test_update_RSA(self):
-        kc = keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"])
-        assert kc.remote is False
-        assert len(kc.get("oct")) == 0
-        assert len(kc.get("RSA")) == 2
-
-        key = kc.get("RSA")[0]
-        assert isinstance(key, RSAKey)
-
-        kc.update()
-        assert kc.remote is False
-        assert len(kc.get("oct")) == 0
-        assert len(kc.get("RSA")) == 2
-
-        key = kc.get("RSA")[0]
-        assert isinstance(key, RSAKey)
+    assert len(nkb) == 2
+    # both RSA keys
+    assert len(nkb.get('rsa')) == 2

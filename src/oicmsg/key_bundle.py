@@ -25,10 +25,9 @@ MALFORMED = "Remote key update from {} failed, malformed JWKS."
 
 logger = logging.getLogger(__name__)
 
-
-def raise_exception(excep, descr, error='service_error'):
-    _err = json.dumps({'error': error, 'error_description': descr})
-    raise excep(_err, 'application/json')
+# def raise_exception(excep, descr, error='service_error'):
+#     _err = json.dumps({'error': error, 'error_description': descr})
+#     raise excep(_err, 'application/json')
 
 
 K2C = {
@@ -38,7 +37,7 @@ K2C = {
 }
 
 
-def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048):
+def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048, use=''):
     """
     Mints a new RSA key pair and stores it in a file.
     
@@ -61,6 +60,9 @@ def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048):
             pass
 
     if name:
+        if use:
+            name = '{}_{}'.format(name, use)
+
         with open(os.path.join(path, name), 'wb') as f:
             f.write(key.exportKey('PEM'))
 
@@ -73,8 +75,16 @@ def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048):
 
 def rsa_init(spec):
     """
-    Initiates a :py:class:`oicmsg.oauth.keybundle.KeyBundle` instance.
+    Initiates a :py:class:`oicmsg.oauth.keybundle.KeyBundle` instance
+    containing newly minted RSA keys according to a spec.
     
+    Example of specification::
+        {'name': 'myrsakey', 'path': 'keystore', 'size':2048, 
+         'use': ['enc', 'sig'] }
+         
+    Using the spec above 2 RSA keys would be minted, one for 
+    encryption and one for signing.
+        
     :param spec:
     :return: KeyBundle
     """
@@ -85,9 +95,9 @@ def rsa_init(spec):
         except KeyError:
             pass
 
-    kb = KeyBundle(keytype="RSA", keyusage=spec["use"])
+    kb = KeyBundle(keytype="RSA")
     for use in spec["use"]:
-        _key = create_and_store_rsa_key_pair(**arg)
+        _key = create_and_store_rsa_key_pair(use=use, **arg)
         kb.append(RSAKey(use=use, key=_key))
     return kb
 
@@ -96,13 +106,20 @@ class KeyBundle(object):
     def __init__(self, keys=None, source="", cache_time=300, verify_ssl=True,
                  fileformat="jwk", keytype="RSA", keyusage=None):
         """
-
-        :param keys: A list of dictionaries
+        Contains a set of keys that have a common origin.
+        The sources can be serveral:
+        - A dictionary provided at the initialization, see keys below.
+        - A list of dictionaries provided at initialization
+        - A file containing one of: JWKS, DER encoded key
+        - A URL pointing to a webpages from which an JWKS can be downloaded
+                 
+        :param keys: A dictionary or a list of dictionaries
             with the keys ["kty", "key", "alg", "use", "kid"]
         :param source: Where the key set can be fetch from
         :param verify_ssl: Verify the SSL cert used by the server
         :param fileformat: For a local file either "jwk" or "der"
         :param keytype: Iff local file and 'der' format what kind of key it is.
+            presently only 'rsa' is supported.
         """
 
         self._keys = []
@@ -167,18 +184,28 @@ class KeyBundle(object):
                     'While loading keys, UnknownKeyType: {}'.format(typ))
 
     def do_local_jwk(self, filename):
+        """
+        Load a JWKS from a local file
+         
+        :param filename: 
+        """
         try:
             self.do_keys(json.loads(open(filename).read())["keys"])
         except KeyError:
             logger.error("Now 'keys' keyword in JWKS")
-            raise_exception(
-                UpdateFailed,
+            raise UpdateFailed(
                 "Local key update from '{}' failed.".format(filename))
         else:
             self.last_updated = time.time()
 
     def do_local_der(self, filename, keytype, keyusage):
-        # This is only for RSA keys
+        """
+        Load a DER encoded file amd create a key from it.
+         
+        :param filename: 
+        :param keytype: Presently only 'rsa' supported
+        :param keyusage: encryption ('enc') or signing ('sig') or both
+        """
         _bkey = rsa_load(filename)
 
         if not keyusage:
@@ -192,6 +219,11 @@ class KeyBundle(object):
         self.last_updated = time.time()
 
     def do_remote(self):
+        """
+        Load a JWKS from a webpage
+
+        :return: True or False if load was successful        
+        """
         args = {"verify": self.verify_ssl}
         if self.etag:
             args["headers"] = {"If-None-Match": self.etag}
@@ -201,8 +233,8 @@ class KeyBundle(object):
             r = requests.get(self.source, **args)
         except Exception as err:
             logger.error(err)
-            raise_exception(UpdateFailed,
-                            REMOTE_FAILED.format(self.source, str(err)))
+            raise UpdateFailed(
+                REMOTE_FAILED.format(self.source, str(err)))
 
         if r.status_code == 304:  # file has not changed
             self.time_out = time.time() + self.cache_time
@@ -211,7 +243,7 @@ class KeyBundle(object):
                 self.do_keys(self.imp_jwks["keys"])
             except KeyError:
                 logger.error("No 'keys' keyword in JWKS")
-                raise_exception(UpdateFailed, "No 'keys' keyword in JWKS")
+                raise UpdateFailed("No 'keys' keyword in JWKS")
             else:
                 return False
         elif r.status_code == 200:  # New content
@@ -220,22 +252,22 @@ class KeyBundle(object):
             self.imp_jwks = self._parse_remote_response(r)
             if not isinstance(self.imp_jwks,
                               dict) or "keys" not in self.imp_jwks:
-                raise_exception(UpdateFailed, MALFORMED.format(self.source))
+                raise UpdateFailed(MALFORMED.format(self.source))
 
             logger.debug("Loaded JWKS: %s from %s" % (r.text, self.source))
             try:
                 self.do_keys(self.imp_jwks["keys"])
             except KeyError:
                 logger.error("No 'keys' keyword in JWKS")
-                raise_exception(UpdateFailed, MALFORMED.format(self.source))
+                raise UpdateFailed(MALFORMED.format(self.source))
 
             try:
                 self.etag = r.headers["Etag"]
             except KeyError:
                 pass
         else:
-            raise_exception(UpdateFailed,
-                            REMOTE_FAILED.format(self.source, r.status_code))
+            raise UpdateFailed(
+                REMOTE_FAILED.format(self.source, r.status_code))
         self.last_updated = time.time()
         return True
 
@@ -294,7 +326,8 @@ class KeyBundle(object):
 
     def get(self, typ=""):
         """
-
+        Return a list of keys. Either all keys or only keys of a specific type
+        
         :param typ: Type of key (rsa, ec, oct, ..)
         :return: If typ is undefined all the keys as a dictionary
             otherwise the appropriate keys in a list
@@ -308,29 +341,34 @@ class KeyBundle(object):
             return self._keys
 
     def keys(self):
+        """
+        Return all keys after having updated them
+        
+        :return: List of all keys 
+        """
         self._uptodate()
 
         return self._keys
 
-    def available_keys(self):
-        return self._keys
-
-    def remove_key(self, typ, val=None):
+    def remove_keys_by_type(self, typ):
         """
-
+        Remove keys that are of a specific kind or kind and value.
+        
         :param typ: Type of key (rsa, ec, oct, ..)
-        :param val: The key itself
         """
-        if val:
-            self._keys = [k for k in self._keys if
-                          not (k.kty == typ and k.key == val.key)]
-        else:
-            self._keys = [k for k in self._keys if not k.kty == typ]
+        _typs = [typ.lower(), typ.upper()]
+        self._keys = [k for k in self._keys if not k.kty in _typs]
 
     def __str__(self):
         return str(self.jwks())
 
     def jwks(self, private=False):
+        """
+        Create a JWKS
+        
+        :param private: Whether private key information should be included.
+        :return: A JWKS representation of the keys in this bundle 
+        """
         self._uptodate()
         keys = list()
         for k in self._keys:
@@ -344,15 +382,36 @@ class KeyBundle(object):
         return json.dumps({"keys": keys})
 
     def append(self, key):
+        """
+        Add a key to list of keys in this bundle
+        
+        :param key: Key to be added 
+        """
         self._keys.append(key)
 
     def remove(self, key):
+        """
+        Remove a specific key from this bundle
+        
+        :param key: The key that should be removed 
+        """
         self._keys.remove(key)
 
     def __len__(self):
+        """
+        The number of keys
+        
+        :return: The number of keys
+        """
         return len(self._keys)
 
     def get_key_with_kid(self, kid):
+        """
+        Return the key that as specific key ID (kid)
+        
+        :param kid: The Key ID 
+        :return: The key or None
+        """
         for key in self._keys:
             if key.kid == kid:
                 return key
@@ -367,6 +426,12 @@ class KeyBundle(object):
         return None
 
     def kids(self):
+        """
+        Return a list of key IDs. Note that list list may be shorter then
+        the list of keys.
+        
+        :return: A list of all the key IDs that exists in this bundle 
+        """
         self._uptodate()
         return [key.kid for key in self._keys if key.kid != ""]
 
@@ -400,8 +465,19 @@ class KeyBundle(object):
 
         self._keys = _kl
 
+    def __contains__(self, key):
+        return key in self._keys
+
 
 def keybundle_from_local_file(filename, typ, usage):
+    """
+    Create a KeyBundle based on the content in a local file
+    
+    :param filename: Name of the file 
+    :param typ: Type of content
+    :param usage: What the key should be used for
+    :return: The created KeyBundle
+    """
     if typ.upper() == "RSA":
         kb = KeyBundle()
         k = RSAKey()
@@ -415,33 +491,17 @@ def keybundle_from_local_file(filename, typ, usage):
             kb.append(_k)
     elif typ.lower() == "jwk":
         kb = KeyBundle(source=filename, fileformat="jwk", keyusage=usage)
+    elif typ.lower() == 'der':
+        kb = KeyBundle(source=filename, fileformat="der", keyusage=usage)
     else:
         raise UnknownKeyType("Unsupported key type")
 
     return kb
 
 
-class RedirectStdStreams(object):
-    def __init__(self, stdout=None, stderr=None):
-        self._stdout = stdout or sys.stdout
-        self._stderr = stderr or sys.stderr
-
-    def __enter__(self):
-        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
-        self.old_stdout.flush()
-        self.old_stderr.flush()
-        sys.stdout, sys.stderr = self._stdout, self._stderr
-
-    def __exit__(self, exc_type, exc_value, trace_back):
-        self._stdout.flush()
-        self._stderr.flush()
-        sys.stdout = self.old_stdout
-        sys.stderr = self.old_stderr
-
-
 def dump_jwks(kbl, target, private=False):
     """
-    Write a JWK to a file
+    Write a JWK to a file. Will ignore symmetric keys !!
 
     :param kbl: List of KeyBundles
     :param target: Name of the file to which everything should be written
