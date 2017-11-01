@@ -72,4 +72,33 @@ and if DER encoded RSA key file instead::
 RSA key would have been been stored in the key bundle. One for
 signing/verifying and the other for encryption/decryption.
 
+You can construct a JWKS from the keys in a KeyBundle instance like this::
 
+    >>> from oicmsg.key_bundle import KeyBundle
+    >>> kb = KeyBundle(source='file://keys/rsa_enc.pub', fileformat='der', keyusage=['sig'])
+    >>> print(kb.jwks())
+    {"keys": [{"n": "vCf2ccIvOs1BoL9SsEs9e0hyANI61VG2WPoXjSSV1_r6OtJntY-E7AI4Y6qsLFbG17Bj5_AIP74wyAxXRC9nvXJTySGbBfv5fhdciKtzXuafa9xSbTeUdJWwnoIxtVsiW6_-F7K_KcaIwxF3Rg1cxZQtjHIUdhK4X_4EYnDhXvc", "kty": "RSA", "use": "sig", "e": "AQAB"}]}
+
+
+To pick out one key based on the Key Identifier (kid) you can do this::
+
+    >>> from oicmsg.key_bundle import KeyBundle
+    >>> print(open('jwks1.json').read())
+    {"keys": [
+        {
+            "n":
+                "zkpUgEgXICI54blf6iWiD2RbMDCOO1jV0VSff1MFFnujM4othfMsad7H1kRo50YM5S_X9TdvrpdOfpz5aBaKFhT6Ziv0nhtcekq1eRl8mjBlvGKCE5XGk-0LFSDwvqgkJoFYInq7bu0a4JEzKs5AyJY75YlGh879k1Uu2Sv3ZZOunfV1O1Orta-NvS-aG_jN5cstVbCGWE20H0vFVrJKNx0Zf-u-aA-syM4uX7wdWgQ-owoEMHge0GmGgzso2lwOYf_4znanLwEuO3p5aabEaFoKNR4K6GjQcjBcYmDEE4CtfRU9AEmhcD1kleiTB9TjPWkgDmT9MXsGxBHf3AKT5w",
+            "e": "AQAB", "kty": "RSA", "kid": "rsa1"},
+        {
+            "k":
+                "YTEyZjBlMDgxMGI4YWU4Y2JjZDFiYTFlZTBjYzljNDU3YWM0ZWNiNzhmNmFlYTNkNTY0NzMzYjE",
+            "kty": "oct"}
+    ]}
+    >>> kb = KeyBundle(source='file://jwks1.json', fileformat='jwks')
+    >>> kb.get_key_with_kid('rsa1')
+    <jwkest.jwk.RSAKey object at 0x1049662e8>
+    >>> k = kb.get_key_with_kid('rsa1')
+    >>> k.kid
+    'rsa1'
+    >>> k.kty
+    'RSA'
