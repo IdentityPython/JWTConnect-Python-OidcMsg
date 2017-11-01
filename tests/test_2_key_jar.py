@@ -243,13 +243,11 @@ class TestKeyJar(object):
 
     def test_keyjar_group_keys(self):
         ks = KeyJar()
-        ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"},
-                            {"kty": "oct", "key": "a1b2c3d4", "use": "ver"}])
+        ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"}])
         ks["http://www.example.org"] = KeyBundle([
-            {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
-            {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}])
+            {"kty": "oct", "key": "e5f6g7h8", "use": "sig"}])
         ks["http://www.example.org"].append(
-            keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"]))
+            keybundle_from_local_file(RSAKEY, "rsa", ["sig"]))
 
         verified_keys = ks.verify_keys("http://www.example.org")
         assert len(verified_keys) == 3
@@ -318,16 +316,13 @@ class TestKeyJar(object):
 
     def test_remove_key(self):
         ks = KeyJar()
-        ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"},
-                            {"kty": "oct", "key": "a1b2c3d4", "use": "ver"}])
+        ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"}])
         ks["http://www.example.org"] = [
-            KeyBundle([
-                {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
-                {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}]),
-            keybundle_from_local_file(RSAKEY, "rsa", ["enc", "dec"])
+            KeyBundle([{"kty": "oct", "key": "e5f6g7h8", "use": "sig"}]),
+            keybundle_from_local_file(RSAKEY, "rsa", ["enc"])
         ]
         ks["http://www.example.com"] = keybundle_from_local_file(RSA0, "rsa",
-                                                                 ["enc", "dec"])
+                                                                 ["enc"])
 
         coll = ks["http://www.example.org"]
         # coll is list of KeyBundles
@@ -336,10 +331,10 @@ class TestKeyJar(object):
                                   owner="http://www.example.org")
         assert len(keys) == 1
         _key = keys[0]
-        ks.remove_key("http://www.example.org", "RSA", _key)
+        ks.remove_key("http://www.example.org", _key)
 
         coll = ks["http://www.example.org"]
-        assert len(coll) == 1  # Only one remaining key
+        assert len(coll) == 1  # Only one remaining key bundle
         keys = ks.get_encrypt_key(key_type="rsa",
                                   owner="http://www.example.org")
         assert len(keys) == 0
@@ -407,7 +402,7 @@ class TestKeyJar(object):
 def test_import_jwks():
     kj = KeyJar()
     kj.import_jwks(JWK1, '')
-    assert len(kj.get_issuer_keys('')) == 2
+    assert len(kj.get_issuer_keys('')) == 4
 
 
 def test_get_signing_key_use_undefined():
@@ -481,7 +476,7 @@ JWK_UK = {"keys": [
 def test_load_unknown_keytype():
     kj = KeyJar()
     kj.import_jwks(JWK_UK, '')
-    assert len(kj.get_issuer_keys('')) == 1
+    assert len(kj.get_issuer_keys('')) == 2
 
 
 JWK_FP = {"keys": [

@@ -5,6 +5,7 @@ import sys
 import time
 
 import requests
+import six
 from Cryptodome.PublicKey import RSA
 from jwkest import as_unicode
 from jwkest.jwk import ECKey
@@ -35,6 +36,21 @@ K2C = {
     "EC": ECKey,
     "oct": SYMKey,
 }
+
+MAP = {'dec': 'enc', 'enc': 'enc', 'ver':'sig', 'sig':'sig'}
+
+
+def harmonize_usage(use):
+    """
+
+    :param use:
+    :return: list of usage
+    """
+    if type(use) in six.string_types:
+        return [MAP[use]]
+    elif isinstance(use, list):
+        ul = list(MAP.keys())
+        return list(set([MAP[u] for u in use if u in ul]))
 
 
 def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048, use=''):
@@ -96,7 +112,7 @@ def rsa_init(spec):
             pass
 
     kb = KeyBundle(keytype="RSA")
-    for use in spec["use"]:
+    for use in harmonize_usage(spec["use"]):
         _key = create_and_store_rsa_key_pair(use=use, **arg)
         kb.append(RSAKey(use=use, key=_key))
     return kb
@@ -120,6 +136,8 @@ class KeyBundle(object):
         :param fileformat: For a local file either "jwk" or "der"
         :param keytype: Iff local file and 'der' format what kind of key it is.
             presently only 'rsa' is supported.
+        :param keyusage: What the key loaded from file should be used for.
+            Only applicable for DER files
         """
 
         self._keys = []
@@ -167,18 +185,26 @@ class KeyBundle(object):
         """
         for inst in keys:
             typ = inst["kty"]
+            try:
+                _usage = harmonize_usage(inst['use'])
+            except KeyError:
+                _usage = ['sig', 'enc']
+            else:
+                del inst['use']
+
             flag = 0
-            for _typ in [typ, typ.lower(), typ.upper()]:
-                try:
-                    _key = K2C[_typ](**inst)
-                except KeyError:
-                    continue
-                except JWKException as err:
-                    logger.warning('While loading keys: {}'.format(err))
-                else:
-                    self._keys.append(_key)
-                    flag = 1
-                    break
+            for _use in _usage:
+                for _typ in [typ, typ.lower(), typ.upper()]:
+                    try:
+                        _key = K2C[_typ](use=_use, **inst)
+                    except KeyError:
+                        continue
+                    except JWKException as err:
+                        logger.warning('While loading keys: {}'.format(err))
+                    else:
+                        self._keys.append(_key)
+                        flag = 1
+                        break
             if not flag:
                 logger.warning(
                     'While loading keys, UnknownKeyType: {}'.format(typ))
@@ -198,7 +224,7 @@ class KeyBundle(object):
         else:
             self.last_updated = time.time()
 
-    def do_local_der(self, filename, keytype, keyusage):
+    def do_local_der(self, filename, keytype, keyusage=None):
         """
         Load a DER encoded file amd create a key from it.
          
@@ -210,6 +236,8 @@ class KeyBundle(object):
 
         if not keyusage:
             keyusage = ["enc", "sig"]
+        else:
+            keyusage = harmonize_usage(keyusage)
 
         for use in keyusage:
             _key = RSAKey().load_key(_bkey)
@@ -395,7 +423,10 @@ class KeyBundle(object):
         
         :param key: The key that should be removed 
         """
-        self._keys.remove(key)
+        try:
+            self._keys.remove(key)
+        except ValueError:
+            pass
 
     def __len__(self):
         """
@@ -478,6 +509,8 @@ def keybundle_from_local_file(filename, typ, usage):
     :param usage: What the key should be used for
     :return: The created KeyBundle
     """
+    usage = harmonize_usage(usage)
+
     if typ.upper() == "RSA":
         kb = KeyBundle()
         k = RSAKey()

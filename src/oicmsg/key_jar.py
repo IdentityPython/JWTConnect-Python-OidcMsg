@@ -279,14 +279,25 @@ class KeyJar(object):
                     issuer, list(self.issuer_keys.keys())))
             raise
 
-    def remove_key(self, issuer, key_type, key):
+    def remove_key(self, issuer, key):
         try:
             kcs = self.issuer_keys[issuer]
         except KeyError:
             return
 
         for kc in kcs:
-            kc.remove_key(key_type, key)
+            kc.remove(key)
+            if len(kc) == 0:
+                self.issuer_keys[issuer].remove(kc)
+
+    def remove_keys_by_type(self, issuer, key_type):
+        try:
+            kcs = self.issuer_keys[issuer]
+        except KeyError:
+            return
+
+        for kc in kcs:
+            kc.remove_keys_by_type(key_type)
             if len(kc) == 0:
                 self.issuer_keys[issuer].remove(kc)
 
