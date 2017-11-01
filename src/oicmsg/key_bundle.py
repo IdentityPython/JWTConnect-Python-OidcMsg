@@ -234,6 +234,9 @@ class KeyBundle(object):
         """
         _bkey = rsa_load(filename)
 
+        if keytype.lower() != 'rsa':
+            raise NotImplemented('No support for DER decoding of that key type')
+
         if not keyusage:
             keyusage = ["enc", "sig"]
         else:
@@ -340,16 +343,22 @@ class KeyBundle(object):
         """
         res = True  # An update was successful
         if self.source:
+            _keys = self._keys  # just in case
+
             # reread everything
             self._keys = []
 
-            if self.remote is False:
-                if self.fileformat == "jwk":
-                    self.do_local_jwk(self.source)
-                elif self.fileformat == "der":
-                    self.do_local_der(self.source, self.keytype, self.keyusage)
-            else:
-                res = self.do_remote()
+            try:
+                if self.remote is False:
+                    if self.fileformat == "jwks":
+                        self.do_local_jwk(self.source)
+                    elif self.fileformat == "der":
+                        self.do_local_der(self.source, self.keytype, self.keyusage)
+                else:
+                    res = self.do_remote()
+            except Exception as err:
+                logger.error('Key bundle update failed: {}'.format(err))
+                self._keys = _keys  # restore
         return res
 
     def get(self, typ=""):

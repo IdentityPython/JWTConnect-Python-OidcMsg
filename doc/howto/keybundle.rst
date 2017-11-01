@@ -27,6 +27,7 @@ Loading a symmetric key::
 
 Loading from a file::
 
+    >>> from oicmsg.key_bundle import KeyBundle
     >>> print(open('jwks.json').read())
     {
       "keys": [
@@ -44,5 +45,31 @@ Loading from a file::
         }
       ]
     }
-    >>> kb = KeyBundle(source='file://jwks.json', fileformat='jwk')
-    >>>
+    >>> kb = KeyBundle(source='file://jwks.json', fileformat='jwks')
+    >>> len(kb)
+    2
+    >>> kb.keys()
+    [<jwkest.jwk.RSAKey object at 0x1048a62b0>, <jwkest.jwk.RSAKey object at 0x1048d3c50>]
+
+
+and if DER encoded RSA key file instead::
+
+    >>> from oicmsg.key_bundle import KeyBundle
+    >>> print(open('keys/rsa_enc.pub').read())
+    -----BEGIN RSA PUBLIC KEY-----
+    MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC8J/Zxwi86zUGgv1KwSz17SHIA
+    0jrVUbZY+heNJJXX+vo60me1j4TsAjhjqqwsVsbXsGPn8Ag/vjDIDFdEL2e9clPJ
+    IZsF+/l+F1yIq3Ne5p9r3FJtN5R0lbCegjG1WyJbr/4Xsr8pxojDEXdGDVzFlC2M
+    chR2Erhf/gRicOFe9wIDAQAB
+    -----END RSA PUBLIC KEY-----
+    >>> kb = KeyBundle(source='file://keys/rsa_enc.pub', fileformat='der', keyusage=['sig'])
+    >>> len(kb)
+    1
+    >>> kb.keys()
+    [<jwkest.jwk.RSAKey object at 0x1048a65c0>]
+
+**Note** that is no keyusage had been defined then two copies of the
+RSA key would have been been stored in the key bundle. One for
+signing/verifying and the other for encryption/decryption.
+
+
