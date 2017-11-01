@@ -14,8 +14,8 @@ form of a JWKS.
 When supplying a file name or a URL the class instance can be updated by
 rereading the file or the web page.
 
-Using a keys description
-------------------------
+Initiating a key bundle
+-----------------------
 
 Loading a symmetric key::
 
@@ -68,7 +68,7 @@ and if DER encoded RSA key file instead::
     >>> kb.keys()
     [<jwkest.jwk.RSAKey object at 0x1048a65c0>]
 
-**Note** that is no keyusage had been defined then two copies of the
+**Note** that if no *keyusage* had been defined then two copies of the
 RSA key would have been been stored in the key bundle. One for
 signing/verifying and the other for encryption/decryption.
 
