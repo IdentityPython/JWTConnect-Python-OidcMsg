@@ -15,8 +15,10 @@ Contents:
    :maxdepth: 2
 
    oicmsg/index
-   howto/use
-   howto/extend
+   howto/keybundle
+   howto/keyjar
+   howto/message
+   howto/msg_extend
 
 
 Indices and tables
