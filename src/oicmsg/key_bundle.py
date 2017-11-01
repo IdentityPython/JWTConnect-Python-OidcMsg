@@ -171,7 +171,7 @@ class KeyBundle(object):
                 raise KeyIOError("Unsupported source type: %s" % source)
 
             if not self.remote:  # local file
-                if self.fileformat == "jwk":
+                if self.fileformat in ['jwks', "jwk"]:
                     self.do_local_jwk(self.source)
                 elif self.fileformat == "der":  # Only valid for RSA keys
                     self.do_local_der(self.source, self.keytype, self.keyusage)
@@ -522,8 +522,8 @@ def keybundle_from_local_file(filename, typ, usage):
             _k.use = use
             _k.load_key(k.key)
             kb.append(_k)
-    elif typ.lower() == "jwk":
-        kb = KeyBundle(source=filename, fileformat="jwk", keyusage=usage)
+    elif typ.lower() == "jwks":
+        kb = KeyBundle(source=filename, fileformat="jwks", keyusage=usage)
     elif typ.lower() == 'der':
         kb = KeyBundle(source=filename, fileformat="der", keyusage=usage)
     else:

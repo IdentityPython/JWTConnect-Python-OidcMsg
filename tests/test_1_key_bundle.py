@@ -350,9 +350,7 @@ def test_creat_jwks_sym():
 
 def test_keybundle_from_local_jwk_file():
     kb = keybundle_from_local_file(
-        "file://{}".format(os.path.join(BASE_PATH, "jwk.json")),
-        "jwk",
-        ["ver", "sig"])
+        "file://{}".format(os.path.join(BASE_PATH, "jwk.json")), "jwks", ["sig"])
     assert len(kb) == 1
 
 
@@ -371,10 +369,10 @@ def test_update():
 
 
 def test_update_RSA():
-    kc = keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"])
+    kc = keybundle_from_local_file(RSAKEY, "rsa", ["sig"])
     assert kc.remote is False
     assert len(kc.get("oct")) == 0
-    assert len(kc.get("RSA")) == 2
+    assert len(kc.get("RSA")) == 1
 
     key = kc.get("RSA")[0]
     assert isinstance(key, RSAKey)
@@ -382,7 +380,7 @@ def test_update_RSA():
     kc.update()
     assert kc.remote is False
     assert len(kc.get("oct")) == 0
-    assert len(kc.get("RSA")) == 2
+    assert len(kc.get("RSA")) == 1
 
     key = kc.get("RSA")[0]
     assert isinstance(key, RSAKey)
@@ -409,7 +407,7 @@ def test_dump_jwks():
 
     # Now read it
 
-    nkb = KeyBundle(source='file://jwks_combo', fileformat='jwk')
+    nkb = KeyBundle(source='file://jwks_combo', fileformat='jwks')
 
     assert len(nkb) == 2
     # both RSA keys

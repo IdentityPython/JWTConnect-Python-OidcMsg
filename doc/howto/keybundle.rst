@@ -19,11 +19,30 @@ Using a keys description
 
 Loading a symmetric key::
 
-    >>> desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
     >>> from oicmsg.key_bundle import KeyBundle
+    >>> desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
     >>> kb = KeyBundle([desc])
     >>> kb.keys()
     [<jwkest.jwk.SYMKey object at 0x1037f7080>]
 
 Loading from a file::
 
+    >>> print(open('jwks.json').read())
+    {
+      "keys": [
+        {
+          "kty": "RSA",
+          "e": "AQAB",
+          "use": "enc",
+          "n": "inLw-BGYXhic6qS__NBRDfCqFF07lyyBO_tyoBk_EqVoyog03NzcBsKbOHFS3mtu81uBzyDA_lzVZGOacovYo3zteo2o1JrJ97LpgOa1CDgxR8KpzDXiWRRbkkIG7JvO_h9ghCfZghot-kn5JLgCRAbuMhiRT2ojdhU_nhjywI0"
+        },
+        {
+          "kty": "RSA",
+          "e": "AQAB",
+          "use": "sig",
+          "n": "0eAoiw_xP35yXeJJSNrjhplu32XhEaRpYIshCP-8FvktNnbULFKF_2hHQ7c7iPpmZS7-U8zEQn3O-ZrVDw9u4Ito0FvQ2fw7eZNNxsb8WlZHW07e_y2xByYfwfQhk3Nn9yqb5xSfdaVAUaRFPFSxE_gOu6iaWGp8lz-fyznxaDk"
+        }
+      ]
+    }
+    >>> kb = KeyBundle(source='file://jwks.json', fileformat='jwk')
+    >>>
