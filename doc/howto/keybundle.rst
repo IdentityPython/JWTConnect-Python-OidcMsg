@@ -72,6 +72,56 @@ and if DER encoded RSA key file instead::
 RSA key would have been been stored in the key bundle. One for
 signing/verifying and the other for encryption/decryption.
 
+Updateing a key bundle
+----------------------
+
+Over time the information in a key bundle may grove stale. Therefor
+the class instance has cache time set and knows when it last was updated.
+Whenever a key bundle is asked for information about the keys it keeps it
+will check if it is time to update the key cache.
+
+To updated means rereading information from the source file or getting
+the last information from the web page.
+
+If you initiated with key descriptions then no update can be made unless you
+manually delete, or mark as inactive, the old keys and load new key
+descriptions.::
+
+    >>> from oicmsg.key_bundle import KeyBundle
+    >>> desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
+    >>> kb = KeyBundle([desc])
+    >>> kb.keys()
+    [<jwkest.jwk.SYMKey object at 0x1037f7080>]
+    >>> for k in kb.keys():
+    ...     kb.remove(k)
+    ...
+    >>> kb.keys()
+    []
+    >>> desc = {"kty": "oct", "key": "secret", "use": "enc"}
+    >>> kb.do_keys([desc])
+    >>> kb.keys()
+    [<jwkest.jwk.SYMKey object at 0x106298cf8>]
+
+or::
+
+    >>> from oicmsg.key_bundle import KeyBundle
+    >>> desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
+    >>> kb = KeyBundle([desc])
+    >>> for k in kb.keys():
+    ...     kb.mark_as_inactive(k.kid)
+    ...
+    >>> len(kb.keys())
+    1
+    >>> desc = {"kty": "oct", "key": "secret", "use": "enc"}
+    >>> kb.do_keys([desc])
+    >>> len(kb.keys())
+    2
+    >>> len(kb.active_keys())
+    1
+
+Other things you can do
+-----------------------
+
 You can construct a JWKS from the keys in a KeyBundle instance like this::
 
     >>> from oicmsg.key_bundle import KeyBundle

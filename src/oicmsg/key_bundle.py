@@ -168,7 +168,13 @@ class KeyBundle(object):
             elif source == "":
                 return
             else:
-                raise KeyIOError("Unsupported source type: %s" % source)
+                if fileformat.lower() in ['rsa', 'der']:
+                    if os.path.isfile(source):
+                        self.source = source
+                    else:
+                        raise ImportError('No such file')
+                else:
+                    raise ImportError('Unknown source')
 
             if not self.remote:  # local file
                 if self.fileformat in ['jwks', "jwk"]:
@@ -338,8 +344,9 @@ class KeyBundle(object):
 
     def update(self):
         """
-        Reload the key if necessary
+        Reload the keys if necessary
         This is a forced update, will happen even if cache time has not elapsed
+        Replaced keys will be marked as inactive and not removed.        
         """
         res = True  # An update was successful
         if self.source:
@@ -359,6 +366,17 @@ class KeyBundle(object):
             except Exception as err:
                 logger.error('Key bundle update failed: {}'.format(err))
                 self._keys = _keys  # restore
+                return False
+
+            now = time.time()
+            for _key in _keys:
+                if _key not in self._keys:
+                    try:
+                        _key.inactive_since  # If already marked don't mess
+                    except ValueError:
+                        _key.inactive_since = now
+                    self._keys.append(_key)
+
         return res
 
     def get(self, typ=""):
@@ -386,6 +404,18 @@ class KeyBundle(object):
         self._uptodate()
 
         return self._keys
+
+    def active_keys(self):
+        _res = []
+        for k in self._keys:
+            try:
+                ias = k.inactive_since
+            except ValueError:
+                _res.append(k)
+            else:
+                if ias == 0:
+                    _res.append(k)
+        return _res
 
     def remove_keys_by_type(self, typ):
         """
@@ -475,6 +505,15 @@ class KeyBundle(object):
         self._uptodate()
         return [key.kid for key in self._keys if key.kid != ""]
 
+    def mark_as_inactive(self, kid):
+        """
+        Mark a specific key as inactive based on the keys KeyID
+        
+        :param kid: The Key Identifier 
+        """
+        k = self.get_key_with_kid(kid)
+        k.inactive_since = time.time()
+
     def remove_outdated(self, after, when=0):
         """
         Remove keys that should not be available any more.
@@ -520,18 +559,7 @@ def keybundle_from_local_file(filename, typ, usage):
     """
     usage = harmonize_usage(usage)
 
-    if typ.upper() == "RSA":
-        kb = KeyBundle()
-        k = RSAKey()
-        k.load(filename)
-        k.use = usage[0]
-        kb.append(k)
-        for use in usage[1:]:
-            _k = RSAKey()
-            _k.use = use
-            _k.load_key(k.key)
-            kb.append(_k)
-    elif typ.lower() == "jwks":
+    if typ.lower() == "jwks":
         kb = KeyBundle(source=filename, fileformat="jwks", keyusage=usage)
     elif typ.lower() == 'der':
         kb = KeyBundle(source=filename, fileformat="der", keyusage=usage)
