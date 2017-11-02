@@ -81,8 +81,8 @@ and if DER encoded RSA key file instead::
 RSA key would have been been stored in the key bundle. One for
 signing/verifying and the other for encryption/decryption.
 
-Updateing a key bundle
-----------------------
+Updating a key bundle
+---------------------
 
 Over time the information in a key bundle may grove stale. Therefor
 the class instance has cache time set and knows when it last was updated.
