@@ -7,10 +7,11 @@ import shutil
 import pytest
 import time
 from Cryptodome.PublicKey.RSA import RsaKey
-from jwkest.jwk import RSAKey, SYMKey
-from oicmsg.exception import KeyIOError
+from jwkest.jwk import RSAKey
+from jwkest.jwk import SYMKey
 
-from oicmsg.key_bundle import create_and_store_rsa_key_pair, dump_jwks
+from oicmsg.key_bundle import create_and_store_rsa_key_pair
+from oicmsg.key_bundle import dump_jwks
 from oicmsg.key_bundle import rsa_init
 from oicmsg.key_bundle import keybundle_from_local_file
 from oicmsg.key_bundle import KeyBundle
@@ -258,7 +259,7 @@ def test_rsa_init_under_spec():
 
 
 def test_unknown_source():
-    with pytest.raises(KeyIOError):
+    with pytest.raises(ImportError):
         kb = KeyBundle(source='foobar')
 
 
@@ -315,7 +316,7 @@ def test_get_all():
 
 def test_keybundle_from_local_der():
     kb = keybundle_from_local_file(
-        "file://{}".format(os.path.join('keys', 'rsa_enc')), "der", ['enc'])
+        "{}".format(os.path.join('keys', 'rsa_enc')), "der", ['enc'])
     assert len(kb) == 1
     keys = kb.get('rsa')
     assert len(keys) == 1
@@ -350,9 +351,7 @@ def test_creat_jwks_sym():
 
 def test_keybundle_from_local_jwk_file():
     kb = keybundle_from_local_file(
-        "file://{}".format(os.path.join(BASE_PATH, "jwk.json")),
-        "jwk",
-        ["ver", "sig"])
+        "file://{}".format(os.path.join(BASE_PATH, "jwk.json")), "jwks", ["sig"])
     assert len(kb) == 1
 
 
@@ -371,10 +370,10 @@ def test_update():
 
 
 def test_update_RSA():
-    kc = keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"])
+    kc = keybundle_from_local_file(RSAKEY, "der", ["sig"])
     assert kc.remote is False
     assert len(kc.get("oct")) == 0
-    assert len(kc.get("RSA")) == 2
+    assert len(kc.get("RSA")) == 1
 
     key = kc.get("RSA")[0]
     assert isinstance(key, RSAKey)
@@ -382,7 +381,7 @@ def test_update_RSA():
     kc.update()
     assert kc.remote is False
     assert len(kc.get("oct")) == 0
-    assert len(kc.get("RSA")) == 2
+    assert len(kc.get("RSA")) == 1
 
     key = kc.get("RSA")[0]
     assert isinstance(key, RSAKey)
@@ -409,8 +408,19 @@ def test_dump_jwks():
 
     # Now read it
 
-    nkb = KeyBundle(source='file://jwks_combo', fileformat='jwk')
+    nkb = KeyBundle(source='file://jwks_combo', fileformat='jwks')
 
     assert len(nkb) == 2
     # both RSA keys
     assert len(nkb.get('rsa')) == 2
+
+def test_mark_as_inactive():
+    desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
+    kb = KeyBundle([desc])
+    assert len(kb.keys()) == 1
+    for k in kb.keys():
+        kb.mark_as_inactive(k.kid)
+    desc = {"kty": "oct", "key": "secret", "use": "enc"}
+    kb.do_keys([desc])
+    assert len(kb.keys()) == 2
+    assert len(kb.active_keys()) == 1
