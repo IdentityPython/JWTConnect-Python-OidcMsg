@@ -180,41 +180,48 @@ class KeyJar(object):
         else:
             use = "sig"
 
+        _kj = None
         if owner != "":
             try:
-                _keys = self.issuer_keys[owner]
+                _kj = self.issuer_keys[owner]
             except KeyError:
                 if owner.endswith("/"):
                     try:
-                        _keys = self.issuer_keys[owner[:-1]]
+                        _kj = self.issuer_keys[owner[:-1]]
                     except KeyError:
-                        _keys = []
+                        pass
                 else:
                     try:
-                        _keys = self.issuer_keys[owner + "/"]
+                        _kj = self.issuer_keys[owner + "/"]
                     except KeyError:
-                        _keys = []
+                        pass
         else:
             try:
-                _keys = self.issuer_keys[owner]
+                _kj = self.issuer_keys[owner]
             except KeyError:
-                _keys = []
+                pass
+
+        if _kj is None:
+            return []
 
         lst = []
-        if _keys:
-            for bundle in _keys:
-                if key_type:
-                    _bkeys = bundle.get(key_type)
-                else:
-                    _bkeys = bundle.keys()
-                for key in _bkeys:
-                    if key.inactive_since and key_use != "ver":
-                        # Skip inactive keys unless for signature verification
-                        continue
-                    if kid and key.kid == kid:
-                        lst = [key]
-                        break
-                    if not key.use or use == key.use:
+        for bundle in _kj:
+            if key_type:
+                _bkeys = bundle.get(key_type)
+            else:
+                _bkeys = bundle.keys()
+            for key in _bkeys:
+                if key.inactive_since and key_use != "sig":
+                    # Skip inactive keys unless for signature verification
+                    continue
+                if not key.use or use == key.use:
+                    if kid:
+                        if key.kid == kid:
+                            lst.append(key)
+                            break
+                        else:
+                            continue
+                    else:
                         lst.append(key)
 
         # if elliptic curve have to check I have a key of the right curve
@@ -252,20 +259,6 @@ class KeyJar(object):
 
     def get_decrypt_key(self, key_type="", owner="", kid=None, **kwargs):
         return self.get("dec", key_type, owner, kid, **kwargs)
-
-    def get_key_by_kid(self, kid, owner=""):
-        """
-        Return the key from a specific owner that has a specific kid
-
-        :param kid: The key identifier
-        :param owner: The owner of the key
-        :return: a specific key instance or None
-        """
-        for kb in self.issuer_keys[owner]:
-            _key = kb.get_key_with_kid(kid)
-            if _key:
-                return _key
-        return None
 
     def keys_by_alg_and_usage(self, issuer, alg, usage):
         if usage in ["sig", "ver"]:
@@ -445,10 +438,11 @@ class KeyJar(object):
             owner, key_summary(self, owner)))
 
         if kid:
-            _key = self.get_key_by_kid(kid, owner)
-            if _key and _key not in keys:
-                keys.append(_key)
-                return keys
+            for _key in self.get(key_use=use, owner=owner, kid=kid,
+                                 key_type=key_type):
+                if _key and _key not in keys:
+                    keys.append(_key)
+            return keys
         else:
             try:
                 kl = self.get(key_use=use, owner=owner, key_type=key_type)

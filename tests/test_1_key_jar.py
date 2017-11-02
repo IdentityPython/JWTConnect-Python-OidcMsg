@@ -304,15 +304,15 @@ class TestKeyJar(object):
 
         assert ks.get('enc', 'oct', 'http://www.example.org/')
 
-    def test_get_by_kid(self):
-        kb = keybundle_from_local_file("file://%s/jwk.json" % BASE_PATH, "jwks",
-                                       ["sig"])
-        kj = KeyJar()
-        kj.issuer_keys["https://example.com"] = [kb]
-
-        _key = kj.get_key_by_kid("abc", "https://example.com")
-        assert _key
-        assert _key.kid == "abc"
+    # def test_get_by_kid(self):
+    #     kb = keybundle_from_local_file("file://%s/jwk.json" % BASE_PATH, "jwks",
+    #                                    ["sig"])
+    #     kj = KeyJar()
+    #     kj.issuer_keys["https://example.com"] = [kb]
+    #
+    #     _key = kj.get_key_by_kid("abc", "https://example.com")
+    #     assert _key
+    #     assert _key.kid == "abc"
 
     def test_dump_issuer_keys(self):
         kb = keybundle_from_local_file("file://%s/jwk.json" % BASE_PATH, "jwks",

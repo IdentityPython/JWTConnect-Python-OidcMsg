@@ -107,4 +107,3 @@ There are a number of short cut methods you can use:
 - get_verify_key(self, key_type="", owner="", kid=None, **kwargs):
 - get_encrypt_key(self, key_type="", owner="", kid=None, **kwargs):
 - get_decrypt_key(self, key_type="", owner="", kid=None, **kwargs):
-- get_key_by_kid(self, kid, owner="")
