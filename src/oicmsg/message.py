@@ -489,13 +489,6 @@ class Message(MutableMapping):
         :param kwargs: Extra key word arguments
         :return: A class instance
         """
-        # if key is None and keyjar is not None:
-        #     key = keyjar.get_verify_key(owner="")
-        # elif key is None:
-        #     key = []
-        #
-        # if keyjar is not None and "sender" in kwargs:
-        #     key.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
 
         _jw = jwe.factory(txt)
         if _jw:

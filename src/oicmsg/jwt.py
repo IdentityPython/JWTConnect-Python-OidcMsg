@@ -88,28 +88,18 @@ class JWT(object):
             return _jws
 
     def _verify(self, rj, token):
-        _msg = json.loads(rj.jwt.part[1].decode('utf8'))
-        if _msg['iss'] == self.iss:
-            owner = ''
-        else:
-            owner = _msg['iss']
-
-        keys = self.keyjar.get_signing_key(jws.alg2keytype(rj.jwt.headers['alg']),
-                                           owner=owner)
+        keys = self.keyjar.get_jwt_verify_keys(rj.jwt)
         return rj.verify_compact(token, keys)
 
     def _decrypt(self, rj, token):
-        vargs = {}
-        try:
-            vargs['kid'] = rj.jwt.headers['kid']
-        except KeyError:
-            pass
-        try:
-            vargs['key_type'] = jws.alg2keytype(rj.jwt.headers['alg'])
-        except KeyError:
-            pass
-
-        keys = self.keyjar.get_verify_key(owner='', **vargs)
+        """
+        Decrypt an encrypted JasonWebToken
+        
+        :param rj: :py:class:`jwkest.jwe.JWE` instance 
+        :param token: The encrypted JasonWebToken
+        :return: 
+        """
+        keys = self.keyjar.get_jwt_decrypt_keys(rj.jwt)
         return rj.decrypt(token, keys=keys)
 
     def unpack(self, token):

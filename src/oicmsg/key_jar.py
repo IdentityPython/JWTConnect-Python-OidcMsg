@@ -17,8 +17,6 @@ from jwkest.jwk import DeSerializationNotPossible
 from jwkest.jwk import ECKey
 from jwkest.jwk import RSAKey
 from jwkest.jwk import rsa_load
-from jwkest.jws import alg2keytype
-from six import string_types
 
 from oicmsg.exception import MessageException
 from oicmsg.exception import OicMsgError
@@ -27,7 +25,6 @@ from oicmsg.key_bundle import KeyBundle
 from oicmsg.key_bundle import rsa_init
 
 __author__ = 'Roland Hedberg'
-
 
 KEYLOADERR = "Failed to load %s key from '%s' (%s)"
 REMOTE_FAILED = "Remote key update from '{}' failed, HTTP status {}"
@@ -76,13 +73,13 @@ class KeyJar(object):
         issuers = list(self.issuer_keys.keys())
         return '<KeyJar(issuers={})>'.format(issuers)
 
-    def add(self, issuer, url, **kwargs):
+    def add_url(self, owner, url, **kwargs):
         """
         Add a set of keys by url. This method will create a 
         :py:class:`oicmsg.oauth2.keybundle.KeyBundle` instance with the
         url as source specification.
         
-        :param issuer: Who issued the keys
+        :param owner: Who issued the keys
         :param url: Where can the key/-s be found
         :param kwargs: extra parameters for instantiating KeyBundle
         :return: A :py:class:`oicmsg.oauth2.keybundle.KeyBundle` instance
@@ -98,50 +95,82 @@ class KeyJar(object):
                                     **kwargs)
 
         try:
-            self.issuer_keys[issuer].append(kc)
+            self.issuer_keys[owner].append(kc)
         except KeyError:
-            self.issuer_keys[issuer] = [kc]
+            self.issuer_keys[owner] = [kc]
 
         return kc
 
-    def add_symmetric(self, issuer, key, usage=None):
-        if issuer not in self.issuer_keys:
-            self.issuer_keys[issuer] = []
+    def add_symmetric(self, owner, key, usage=None):
+        """
+        Add a symmetric key. This is done by wrapping it in a key bundle 
+        cloak since KeyJar does not handle keys directly but only through
+        key bundles.
+        
+        :param issuer: Owner of the key 
+        :param key: The key 
+        :param usage: What the key can be used for signing/signature 
+            verification (sig) and/or encryption/decryption (enc)
+        """
+        if owner not in self.issuer_keys:
+            self.issuer_keys[owner] = []
 
         _key = b64e(as_bytes(key))
         if usage is None:
-            self.issuer_keys[issuer].append(
+            self.issuer_keys[owner].append(
                 self.keybundle_cls([{"kty": "oct", "k": _key}]))
         else:
             for use in usage:
-                self.issuer_keys[issuer].append(
+                self.issuer_keys[owner].append(
                     self.keybundle_cls([{"kty": "oct",
                                          "k": _key,
                                          "use": use}]))
 
-    def add_kb(self, issuer, kb):
+    def add_kb(self, owner, kb):
+        """
+        Add a key bundle and bind it to an identifier
+        
+        :param issuer: Owner of the keys in the keybundle 
+        :param kb: A :py:class:`oicmsg.key_bundle.KeyBundle`instance
+        """
         try:
-            self.issuer_keys[issuer].append(kb)
+            self.issuer_keys[owner].append(kb)
         except KeyError:
-            self.issuer_keys[issuer] = [kb]
+            self.issuer_keys[owner] = [kb]
 
-    def __setitem__(self, issuer, val):
-        if isinstance(val, string_types):
-            val = [val]
-        elif not isinstance(val, list):
+    def __setitem__(self, owner, val):
+        """
+        Bind one or a list of key bundles to a special identifier.
+        Will overwrite whatever was there before !!
+        
+        :param issuer: The owner of the keys in the keybundle/-s 
+        :param val: A single or a list of KeyBundle instance
+        :return: 
+        """
+        if not isinstance(val, list):
             val = [val]
 
-        self.issuer_keys[issuer] = val
+        for kb in val:
+            if not isinstance(kb, KeyBundle):
+                raise ValueError('{} not an KeyBundle instance'.format(kb))
+
+        self.issuer_keys[owner] = val
 
     def items(self):
+        """
+        Get all owner ID's and there key bundles
+        
+        :return: list of 2-tuples (Owner ID., list of KeyBundles)
+        """
         return self.issuer_keys.items()
 
-    def get(self, key_use, key_type="", issuer="", kid=None, **kwargs):
+    def get(self, key_use, key_type="", owner="", kid=None, **kwargs):
         """
+        Get all keys that matches a set of search criteria
 
         :param key_use: A key useful for this usage (enc, dec, sig, ver)
-        :param key_type: Type of key (rsa, ec, symmetric, ..)
-        :param issuer: Who is responsible for the keys, "" == me
+        :param key_type: Type of key (rsa, ec, oct, ..)
+        :param owner: Who is the owner of the keys, "" == me
         :param kid: A Key Identifier
         :return: A possibly empty list of keys
         """
@@ -151,23 +180,23 @@ class KeyJar(object):
         else:
             use = "sig"
 
-        if issuer != "":
+        if owner != "":
             try:
-                _keys = self.issuer_keys[issuer]
+                _keys = self.issuer_keys[owner]
             except KeyError:
-                if issuer.endswith("/"):
+                if owner.endswith("/"):
                     try:
-                        _keys = self.issuer_keys[issuer[:-1]]
+                        _keys = self.issuer_keys[owner[:-1]]
                     except KeyError:
                         _keys = []
                 else:
                     try:
-                        _keys = self.issuer_keys[issuer + "/"]
+                        _keys = self.issuer_keys[owner + "/"]
                     except KeyError:
                         _keys = []
         else:
             try:
-                _keys = self.issuer_keys[issuer]
+                _keys = self.issuer_keys[owner]
             except KeyError:
                 _keys = []
 
@@ -201,7 +230,7 @@ class KeyJar(object):
                     _lst.append(key)
             lst = _lst
 
-        if use == 'enc' and key_type == 'oct' and issuer != '':
+        if use == 'enc' and key_type == 'oct' and owner != '':
             # Add my symmetric keys
             for kb in self.issuer_keys['']:
                 for key in kb.get(key_type):
@@ -238,80 +267,37 @@ class KeyJar(object):
                 return _key
         return None
 
+    def keys_by_alg_and_usage(self, issuer, alg, usage):
+        if usage in ["sig", "ver"]:
+            ktype = jws.alg2keytype(alg)
+        else:
+            ktype = jwe.alg2keytype(alg)
+
+        return self.get(usage, ktype, issuer)
+
+    def get_issuer_keys(self, issuer):
+        res = []
+        for kbl in self.issuer_keys[issuer]:
+            res.extend(kbl.keys())
+        return res
+
     def __contains__(self, item):
         if item in self.issuer_keys:
             return True
         else:
             return False
 
-    def x_keys(self, var, part):
-        _func = getattr(self, "get_%s_key" % var)
-
-        keys = _func(key_type="", owner=part)
-        keys.extend(_func(key_type="", owner=""))
-        return keys
-
-    def verify_keys(self, part):
-        """
-        Keys for me and someone else.
-
-        :param part: The other part
-        :return: dictionary of keys
-        """
-        return self.x_keys("verify", part)
-
-    def decrypt_keys(self, part):
-        """
-        Keys for me and someone else.
-
-        :param part: The other part
-        :return: dictionary of keys
-        """
-
-        return self.x_keys("decrypt", part)
-
-    def __getitem__(self, issuer):
+    def __getitem__(self, owner):
         try:
-            return self.issuer_keys[issuer]
+            return self.issuer_keys[owner]
         except KeyError:
             logger.debug(
-                "Issuer '{}' not found, available key issuers: {}".format(
-                    issuer, list(self.issuer_keys.keys())))
+                "Owner '{}' not found, available key owners: {}".format(
+                    owner, list(self.issuer_keys.keys())))
             raise
 
-    def remove_key(self, issuer, key):
-        try:
-            kcs = self.issuer_keys[issuer]
-        except KeyError:
-            return
-
-        for kc in kcs:
-            kc.remove(key)
-            if len(kc) == 0:
-                self.issuer_keys[issuer].remove(kc)
-
-    def remove_keys_by_type(self, issuer, key_type):
-        try:
-            kcs = self.issuer_keys[issuer]
-        except KeyError:
-            return
-
-        for kc in kcs:
-            kc.remove_keys_by_type(key_type)
-            if len(kc) == 0:
-                self.issuer_keys[issuer].remove(kc)
-
-    def update(self, kj):
-        for key, val in kj.issuer_keys.items():
-            if isinstance(val, string_types):
-                val = [val]
-            elif not isinstance(val, list):
-                val = [val]
-
-            try:
-                self.issuer_keys[key].extend(val)
-            except KeyError:
-                self.issuer_keys[key] = val
+    def owners(self):
+        return self.issuer_keys.keys()
 
     def match_owner(self, url):
         for owner in self.issuer_keys.keys():
@@ -328,9 +314,6 @@ class KeyJar(object):
                 _l.extend(json.loads(kb.jwks())["keys"])
             _res[_id] = {"keys": _l}
         return "%s" % (_res,)
-
-    def keys(self):
-        return self.issuer_keys.keys()
 
     def load_keys(self, pcr, issuer, replace=False):
         """
@@ -353,7 +336,7 @@ class KeyJar(object):
             self.issuer_keys[issuer] = []
 
         try:
-            self.add(issuer, pcr["jwks_uri"])
+            self.add_url(issuer, pcr["jwks_uri"])
         except KeyError:
             # jwks should only be considered if no jwks_uri is present
             try:
@@ -365,7 +348,8 @@ class KeyJar(object):
 
     def find(self, source, issuer):
         """
-        Find a key bundle
+        Find a key bundle based on the source of the keys
+
         :param source: A source url
         :param issuer: The issuer of keys
         """
@@ -376,17 +360,15 @@ class KeyJar(object):
         except KeyError:
             return None
 
-    def dump_issuer_keys(self, issuer):
-        res = []
-        try:
-            for kb in self.issuer_keys[issuer]:
-                res.extend([k.to_dict() for k in kb.keys()])
-        except KeyError:
-            pass
-
-        return res
-
     def export_jwks(self, private=False, issuer=""):
+        """
+        Produces a dictionary that later can be easily mapped into a 
+        JSON string representing a JWKS.
+        
+        :param private: 
+        :param issuer: 
+        :return: 
+        """
         keys = []
         for kb in self.issuer_keys[issuer]:
             keys.extend([k.serialize(private) for k in kb.keys() if
@@ -411,59 +393,16 @@ class KeyJar(object):
                 self.issuer_keys[issuer] = [self.keybundle_cls(
                     _keys, verify_ssl=self.verify_ssl)]
 
-    def add_keyjar(self, keyjar):
-        for iss, kblist in keyjar.items():
-            try:
-                self.issuer_keys[iss].extend(kblist)
-            except KeyError:
-                self.issuer_keys[iss] = kblist
-
-    def dump(self):
-        res = {}
-        for issuer in self.issuer_keys.keys():
-            res[issuer] = self.dump_issuer_keys(issuer)
-        return res
-
-    def restore(self, info):
-        for issuer, keys in info.items():
-            self.issuer_keys[issuer] = [self.keybundle_cls(
-                keys, verify_ssl=self.verify_ssl)]
-
-    def copy(self):
-        copy_keyjar = KeyJar(verify_ssl=self.verify_ssl)
-        for issuer, keybundles in self.issuer_keys.items():
-            _kb = self.keybundle_cls(verify_ssl=self.verify_ssl)
-            for kb in keybundles:
-                for k in kb.keys():
-                    _kb.append(copy.copy(k))
-            copy_keyjar.issuer_keys[issuer] = [_kb]
-
-        return copy_keyjar
-
-    def keys_by_alg_and_usage(self, issuer, alg, usage):
-        if usage in ["sig", "ver"]:
-            ktype = jws.alg2keytype(alg)
-        else:
-            ktype = jwe.alg2keytype(alg)
-
-        return self.get(usage, ktype, issuer)
-
-    def get_issuer_keys(self, issuer):
-        res = []
-        for kbl in self.issuer_keys[issuer]:
-            res.extend(kbl.keys())
-        return res
-
     def __eq__(self, other):
         if not isinstance(other, KeyJar):
             return False
 
         # The set of issuers MUST be the same
-        if set(self.keys()) != set(other.keys()):
+        if set(self.owners()) != set(other.owners()):
             return False
 
         # Keys per issuer must be the same
-        for iss in self.keys():
+        for iss in self.owners():
             sk = self.get_issuer_keys(iss)
             ok = other.get_issuer_keys(iss)
             if len(sk) != len(ok):
@@ -484,7 +423,7 @@ class KeyJar(object):
 
         :param when: To facilitate testing
         """
-        for iss in list(self.keys()):
+        for iss in list(self.owners()):
             _kbl = []
             for kb in self.issuer_keys[iss]:
                 kb.remove_outdated(self.remove_after, when=when)
@@ -495,116 +434,137 @@ class KeyJar(object):
             else:
                 del self.issuer_keys[iss]
 
-    def _add_key(self, issuer, key, key_type='', kid='',
+    def _add_key(self, keys, owner, use, key_type='', kid='',
                  no_kid_issuer=None):
 
-        if issuer not in self:
-            logger.error('Issuer "{}" not in keyjar'.format(issuer))
-            return
+        if owner not in self:
+            logger.error('Issuer "{}" not in keyjar'.format(owner))
+            return keys
 
         logger.debug('Key set summary for {}: {}'.format(
-            issuer, key_summary(self, issuer)))
+            owner, key_summary(self, owner)))
 
         if kid:
-            _key = self.get_key_by_kid(kid, issuer)
-            if _key and _key not in key:
-                key.append(_key)
-                return
+            _key = self.get_key_by_kid(kid, owner)
+            if _key and _key not in keys:
+                keys.append(_key)
+                return keys
         else:
             try:
-                kl = self.get_verify_key(owner=issuer, key_type=key_type)
+                kl = self.get(key_use=use, owner=owner, key_type=key_type)
             except KeyError:
                 pass
             else:
-                if len(kl) == 1:
-                    if kl[0] not in key:
-                        key.append(kl[0])
+                if len(kl) == 0:
+                    return keys
+                elif len(kl) == 1:
+                    if kl[0] not in keys:
+                        keys.append(kl[0])
                 elif no_kid_issuer:
                     try:
-                        allowed_kids = no_kid_issuer[issuer]
+                        allowed_kids = no_kid_issuer[owner]
                     except KeyError:
-                        return
+                        return keys
                     else:
                         if allowed_kids:
-                            key.extend([k for k in kl if k.kid in allowed_kids])
+                            keys.extend(
+                                [k for k in kl if k.kid in allowed_kids])
                         else:
-                            key.extend(kl)
+                            keys.extend(kl)
+        return keys
 
-    def get_jwt_verify_keys(self, key, jso, header, jwt, **kwargs):
+    def get_jwt_decrypt_keys(self, jwt, **kwargs):
         """
-        Get keys from a keyjar. These keys should be usable to verify a 
-        signed JWT.
+        Get decryption keys from a keyjar. 
+        These keys should be usable to decrypt an encrypted JWT.
 
-        :param keyjar: A KeyJar instance
-        :param key: List of keys to start with
-        :param jso: The payload of the JWT, expected to be a dictionary.
-        :param header: The header of the JWT
         :param jwt: A jwkest.jwt.JWT instance
         :param kwargs: Other key word arguments
         :return: list of usable keys
         """
+
+        keys = []
+
         try:
-            _kid = header['kid']
+            _key_type = jwe.alg2keytype(jwt.headers['alg'])
+        except KeyError:
+            _key_type = ''
+
+        try:
+            _kid = jwt.headers['kid']
         except KeyError:
             _kid = ''
 
-        try:
-            _iss = jso["iss"]
-        except KeyError:
-            pass
-        else:
-            # First extend the keyjar if allowed
-            if "jku" in header:
-                if not self.find(header["jku"], _iss):
-                    # This is really questionable
-                    try:
-                        if kwargs["trusting"]:
-                            self.add(jso["iss"],
-                                       header["jku"])
-                    except KeyError:
-                        pass
+        keys = self._add_key(keys, '', 'enc', _key_type, _kid, {'': None})
 
-            # If there is a kid and a key is found with that kid at
-            # the issuer then I'm done
-            if _kid:
-                jwt["kid"] = _kid
-                try:
-                    _key = self.get_key_by_kid(_kid, _iss)
-                    if _key:
-                        key.append(_key)
-                        return key
-                except KeyError:
-                    pass
+        return keys
+
+    def get_jwt_verify_keys(self, jwt, **kwargs):
+        """
+        Get keys from a keyjar. These keys should be usable to verify a 
+        signed JWT.
+
+        :param jwt: A jwkest.jwt.JWT instance
+        :param kwargs: Other key word arguments
+        :return: list of usable keys
+        """
+        keys = []
+
+        try:
+            _key_type = jws.alg2keytype(jwt.headers['alg'])
+        except KeyError:
+            _key_type = ''
+
+        try:
+            _kid = jwt.headers['kid']
+        except KeyError:
+            _kid = ''
 
         try:
             nki = kwargs['no_kid_issuer']
         except KeyError:
             nki = {}
 
-        try:
-            _key_type = alg2keytype(header['alg'])
-        except KeyError:
-            _key_type = ''
+        _payload = jwt.payload()
 
         try:
-            self._add_key(kwargs["opponent_id"], key, _key_type, _kid, nki)
+            _iss = _payload['iss']
+        except KeyError:
+            _iss = ''
+
+        # First extend the keyjar if allowed
+        if "jku" in jwt.headers and _iss:
+            if not self.find(jwt.headers["jku"], _iss):
+                # This is really questionable
+                try:
+                    if kwargs["trusting"]:
+                        self.add_url(_iss, jwt.headers["jku"])
+                except KeyError:
+                    pass
+
+        try:
+            keys = self._add_key(keys, kwargs["opponent_id"], 'sig', _key_type,
+                                 _kid, nki)
         except KeyError:
             pass
 
         for ent in ["iss", "aud", "client_id"]:
-            if ent not in jso:
+            if ent not in _payload:
                 continue
             if ent == "aud":
                 # list or basestring
-                if isinstance(jso["aud"], six.string_types):
-                    _aud = [jso["aud"]]
+                if isinstance(_payload["aud"], six.string_types):
+                    _aud = [_payload["aud"]]
                 else:
-                    _aud = jso["aud"]
+                    _aud = _payload["aud"]
                 for _e in _aud:
-                    self._add_key(_e, key, _key_type, _kid, nki)
+                    keys = self._add_key(keys, _e, 'sig', _key_type, _kid,
+                                         nki)
             else:
-                self._add_key(jso[ent], key, _key_type, _kid, nki)
-        return key
+                keys = self._add_key(keys, _payload[ent], 'sig', _key_type,
+                                     _kid, nki)
+
+        return keys
 
 # =============================================================================
 

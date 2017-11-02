@@ -3,7 +3,7 @@
 How to use the oicmsg KeyBundle class
 *************************************
 
-The :py:class:`oicmsg.keybundle.KeyBundle` class represents a set of keys
+The :py:class:`oicmsg.key_bundle.KeyBundle` class represents a set of keys
 with a common origin.
 
 The idea behind the class is that it should be the link between a set of
@@ -71,7 +71,7 @@ and if DER encoded RSA key file instead::
     IZsF+/l+F1yIq3Ne5p9r3FJtN5R0lbCegjG1WyJbr/4Xsr8pxojDEXdGDVzFlC2M
     chR2Erhf/gRicOFe9wIDAQAB
     -----END RSA PUBLIC KEY-----
-    >>> kb = KeyBundle(source='file://keys/rsa_enc.pub', fileformat='der', keyusage=['sig'])
+    >>> kb = KeyBundle(source='keys/rsa_enc.pub', fileformat='der', keyusage=['sig'])
     >>> len(kb)
     1
     >>> kb.keys()
@@ -158,6 +158,7 @@ To pick out one key based on the Key Identifier (kid) you can do this::
 Get all keys of specific type (note that here the JWKS describes private keys)::
 
     >>> from oicmsg.key_bundle import KeyBundle
+    >>> print(open('jwks2.json').read())
     {
       "keys": [
         {

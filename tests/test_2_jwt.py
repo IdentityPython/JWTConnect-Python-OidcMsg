@@ -17,7 +17,9 @@ keys = [
 ]
 jwks, keyjar, kidd = build_keyjar(keys)
 issuer = 'https://fedop.example.org'
-
+receiver = 'https://example.com'
+keyjar[issuer] = keyjar['']  # just testing right !?
+keyjar[receiver] = keyjar['']
 
 def _eq(l1, l2):
     return set(l1) == set(l2)
@@ -41,9 +43,9 @@ def test_jwt_pack_and_unpack():
 
 def test_jwt_pack_encrypt():
     srv = JWT(keyjar, iss=issuer)
-    _jwt = srv.pack(sub='sub', encrypt=True)
+    _jwt = srv.pack(sub='sub', encrypt=True, aud=receiver)
 
     info = srv.unpack(_jwt)
 
     assert isinstance(info, JasonWebToken)
-    assert _eq(info.keys(), ['jti', 'iat', 'exp', 'iss', 'sub', 'kid'])
+    assert _eq(info.keys(), ['jti', 'iat', 'exp', 'iss', 'sub', 'kid', 'aud'])

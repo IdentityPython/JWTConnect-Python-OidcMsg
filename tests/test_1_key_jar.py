@@ -1,8 +1,11 @@
 # pylint: disable=missing-docstring,no-self-use
+import json
 import os
 import time
 
 import pytest
+from jwkest.jws import JWS, factory
+from jwkest.jwt import JWT
 
 from oicmsg.key_bundle import keybundle_from_local_file
 from oicmsg.key_bundle import KeyBundle
@@ -205,7 +208,7 @@ def test_build_keyjar_missing(tmpdir):
 def test_key_export():
     kj = KeyJar()
     url = key_export("http://example.com/keys/", "outbound", "secret",
-                     keyjar=kj, sig={"alg": "rsa", "format": ["x509", "jwk"]})
+                     keyjar=kj, sig={"alg": "rsa", "format": ["x509", "jwks"]})
 
     assert url == "http://example.com/keys/outbound/jwks"
 
@@ -225,34 +228,21 @@ def test_key_export():
 class TestKeyJar(object):
     def test_keyjar_add(self):
         kj = KeyJar()
-        kb = keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"])
+        kb = keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"])
         kj.add_kb('https://issuer.example.com', kb)
-        assert list(kj.keys()) == ['https://issuer.example.com']
+        assert list(kj.owners()) == ['https://issuer.example.com']
 
     def test_setitem(self):
         kj = KeyJar()
-        kb = keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"])
+        kb = keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"])
         kj['https://issuer.example.com'] = kb
-        assert list(kj.keys()) == ['https://issuer.example.com']
+        assert list(kj.owners()) == ['https://issuer.example.com']
 
     def test_add_symmetric(self):
         kj = KeyJar()
         kj.add_symmetric('', 'client_secret', ['sig'])
-        assert list(kj.keys()) == ['']
+        assert list(kj.owners()) == ['']
         assert len(kj.get_signing_key('oct', '')) == 1
-
-    def test_keyjar_group_keys(self):
-        ks = KeyJar()
-        ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"}])
-        ks["http://www.example.org"] = KeyBundle([
-            {"kty": "oct", "key": "e5f6g7h8", "use": "sig"}])
-        ks["http://www.example.org"].append(
-            keybundle_from_local_file(RSAKEY, "rsa", ["sig"]))
-
-        verified_keys = ks.verify_keys("http://www.example.org")
-        assert len(verified_keys) == 3
-        assert len([k for k in verified_keys if k.kty == "oct"]) == 2
-        assert len([k for k in verified_keys if k.kty == "RSA"]) == 1
 
     def test_items(self):
         ks = KeyJar()
@@ -262,7 +252,7 @@ class TestKeyJar(object):
             {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
             {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}])
         ks["http://www.example.org"].append(
-            keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"]))
+            keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"]))
 
         assert len(ks.items()) == 2
 
@@ -274,7 +264,7 @@ class TestKeyJar(object):
             {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
             {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}])
         ks["http://www.example.org"].append(
-            keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"]))
+            keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"]))
 
         assert ks.get('sig', 'RSA', 'http://www.example.org/')
 
@@ -286,7 +276,7 @@ class TestKeyJar(object):
             {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
             {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}])
         ks["http://www.example.org/"].append(
-            keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"]))
+            keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"]))
 
         assert ks.get('sig', 'RSA', 'http://www.example.org')
 
@@ -298,7 +288,7 @@ class TestKeyJar(object):
             {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
             {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}])
         ks["http://www.example.org/"].append(
-            keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"]))
+            keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"]))
 
         assert ks.get('enc', 'oct')
 
@@ -310,45 +300,13 @@ class TestKeyJar(object):
             {"kty": "oct", "key": "e5f6g7h8", "use": "sig"},
             {"kty": "oct", "key": "e5f6g7h8", "use": "ver"}])
         ks["http://www.example.org/"].append(
-            keybundle_from_local_file(RSAKEY, "rsa", ["ver", "sig"]))
+            keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"]))
 
         assert ks.get('enc', 'oct', 'http://www.example.org/')
 
-    def test_remove_key(self):
-        ks = KeyJar()
-        ks[""] = KeyBundle([{"kty": "oct", "key": "a1b2c3d4", "use": "sig"}])
-        ks["http://www.example.org"] = [
-            KeyBundle([{"kty": "oct", "key": "e5f6g7h8", "use": "sig"}]),
-            keybundle_from_local_file(RSAKEY, "rsa", ["enc"])
-        ]
-        ks["http://www.example.com"] = keybundle_from_local_file(RSA0, "rsa",
-                                                                 ["enc"])
-
-        coll = ks["http://www.example.org"]
-        # coll is list of KeyBundles
-        assert len(coll) == 2
-        keys = ks.get_encrypt_key(key_type="RSA",
-                                  owner="http://www.example.org")
-        assert len(keys) == 1
-        _key = keys[0]
-        ks.remove_key("http://www.example.org", _key)
-
-        coll = ks["http://www.example.org"]
-        assert len(coll) == 1  # Only one remaining key bundle
-        keys = ks.get_encrypt_key(key_type="rsa",
-                                  owner="http://www.example.org")
-        assert len(keys) == 0
-
-        keys = ks.verify_keys("http://www.example.com")
-        assert len(keys) == 1
-        assert len([k for k in keys if k.kty == "oct"]) == 1
-
-        keys = ks.decrypt_keys("http://www.example.org")
-        assert keys == []
-
     def test_get_by_kid(self):
-        kb = keybundle_from_local_file("file://%s/jwk.json" % BASE_PATH, "jwk",
-                                       ["ver", "sig"])
+        kb = keybundle_from_local_file("file://%s/jwk.json" % BASE_PATH, "jwks",
+                                       ["sig"])
         kj = KeyJar()
         kj.issuer_keys["https://example.com"] = [kb]
 
@@ -357,15 +315,15 @@ class TestKeyJar(object):
         assert _key.kid == "abc"
 
     def test_dump_issuer_keys(self):
-        kb = keybundle_from_local_file("file://%s/jwk.json" % BASE_PATH, "jwk",
-                                       ["ver", "sig"])
+        kb = keybundle_from_local_file("file://%s/jwk.json" % BASE_PATH, "jwks",
+                                       ["sig"])
         assert len(kb) == 1
         kj = KeyJar()
         kj.issuer_keys[""] = [kb]
-        res = kj.dump_issuer_keys("")
+        _jwks_dict = kj.export_jwks()
 
-        assert len(res) == 1
-        assert res[0] == {
+        _info = _jwks_dict['keys'][0]
+        assert _info == {
             'use': 'sig',
             'e': 'AQAB',
             'kty': 'RSA',
@@ -591,13 +549,6 @@ def test_keys_by_alg_and_usage():
     assert len(k) == 2
 
 
-def test_copy():
-    kj = KeyJar()
-    kj.import_jwks(JWKS_SPO, '')
-    ckj = kj.copy()
-    assert ckj == kj
-
-
 class TestVerifyJWTKeys(object):
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -617,70 +568,72 @@ class TestVerifyJWTKeys(object):
         self.keyjar['A'] = kj1['']
         self.keyjar['B'] = kj2['']
 
+        _jws = JWS('{"aud": "A"}', alg='RS256')
+        sig_key = self.keyjar.get_signing_key('rsa',owner='A')[0]
+        self.sjwt_a = _jws.sign_compact([sig_key])
+
+        _jws = JWS('{"aud": "B"}', alg='RS256')
+        sig_key = self.keyjar.get_signing_key('rsa',owner='B')[0]
+        self.sjwt_b = _jws.sign_compact([sig_key])
+
     def test_no_kid_multiple_keys(self):
-        header = {'alg': 'RS256'}
-        keys = []
-        self.keyjar.get_jwt_verify_keys(keys, {'iss': 'A'}, header, {})
-        assert keys == []
+        """ This is extremely strict """
+        _jwt = factory(self.sjwt_a)
+        # remove kid reference
+        _jwt.jwt.headers['kid'] = ''
+        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt)
+        assert len(keys) == 0
 
     def test_no_kid_single_key(self):
-        header = {'alg': 'RS256'}
-        keys = []
-        self.keyjar.get_jwt_verify_keys(keys, {'iss': 'B'}, header, {})
+        _jwt = factory(self.sjwt_b)
+        _jwt.jwt.headers['kid'] = ''
+        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt)
         assert len(keys) == 1
 
     def test_no_kid_multiple_keys_no_kid_issuer(self):
-        header = {'alg': 'RS256'}
-        keys = []
-
         a_kids = [k.kid for k in
                   self.keyjar.get_verify_key(owner='A', key_type='RSA')]
         no_kid_issuer = {'A': a_kids}
-
-        self.keyjar.get_jwt_verify_keys(keys, {'iss': 'A'}, header, {},
-                                        no_kid_issuer=no_kid_issuer)
+        _jwt = factory(self.sjwt_a)
+        _jwt.jwt.headers['kid'] = ''
+        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt,
+                                               no_kid_issuer=no_kid_issuer)
         assert len(keys) == 3
         assert set([k.kid for k in keys]) == set(a_kids)
 
     def test_no_kid_multiple_keys_no_kid_issuer_lim(self):
-        header = {'alg': 'RS256'}
-        keys = []
-
         a_kids = [k.kid for k in
                   self.keyjar.get_verify_key(owner='A', key_type='RSA')]
-        # get rid of one kid
-        a_kids = a_kids[:-1]
-        no_kid_issuer = {'A': a_kids}
-
-        self.keyjar.get_jwt_verify_keys(keys, {'iss': 'A'}, header, {},
-                                        no_kid_issuer=no_kid_issuer)
-        assert len(keys) == 2
+        no_kid_issuer = {'A': []}
+        _jwt = factory(self.sjwt_a)
+        _jwt.jwt.headers['kid'] = ''
+        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt,
+                                               no_kid_issuer=no_kid_issuer)
+        assert len(keys) == 3
         assert set([k.kid for k in keys]) == set(a_kids)
 
     def test_matching_kid(self):
-        a_kids = [k.kid for k in
-                  self.keyjar.get_verify_key(owner='A', key_type='RSA')]
-        header = {'alg': 'RS256', 'kid': a_kids[0]}
-        keys = []
-        self.keyjar.get_jwt_verify_keys(keys, {'iss': 'A'}, header, {})
+        _jwt = factory(self.sjwt_b)
+        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt)
         assert len(keys) == 1
-        assert keys[0].kid == a_kids[0]
 
     def test_no_matching_kid(self):
-        header = {'alg': 'RS256', 'kid': 'aaaaaaa'}
-        keys = []
-        self.keyjar.get_jwt_verify_keys(keys, {'iss': 'A'}, header, {})
+        _jwt = factory(self.sjwt_b)
+        _jwt.jwt.headers['kid'] = 'abcdef'
+        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt)
         assert keys == []
 
     def test_aud(self):
-        header = {'alg': 'RS256'}
+        self.keyjar.import_jwks(JWK1, issuer='D')
 
-        a_kids = [k.kid for k in
-                  self.keyjar.get_verify_key(owner='A', key_type='RSA')]
-        no_kid_issuer = {'A': a_kids}
+        _jws = JWS('{"iss": "D", "aud": "A"}', alg='HS256')
+        sig_key = self.keyjar.get_signing_key('oct', owner='D')[0]
+        _sjwt = _jws.sign_compact([sig_key])
 
-        keys = []
-        self.keyjar.get_jwt_verify_keys(keys, {'aud': 'A'}, header, {},
-                                        no_kid_issuer=no_kid_issuer)
-        assert len(keys) == 3
-        assert keys[0].kid in a_kids
+        no_kid_issuer = {'D': []}
+
+        _jwt = factory(_sjwt)
+
+        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt,
+                                               no_kid_issuer=no_kid_issuer)
+        assert len(keys) == 1
