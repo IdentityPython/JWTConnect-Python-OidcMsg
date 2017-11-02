@@ -349,9 +349,15 @@ def test_creat_jwks_sym():
     assert set(_loc['keys'][0].keys()) == {'kty', 'use', 'k'}
 
 
-def test_keybundle_from_local_jwk_file():
+def test_keybundle_from_local_jwks_file():
     kb = keybundle_from_local_file(
         "file://{}".format(os.path.join(BASE_PATH, "jwk.json")), "jwks", ["sig"])
+    assert len(kb) == 1
+
+
+def test_keybundle_from_local_jwks():
+    kb = keybundle_from_local_file(
+        "{}".format(os.path.join(BASE_PATH, "jwk.json")), "jwks", ["sig"])
     assert len(kb) == 1
 
 
@@ -413,6 +419,7 @@ def test_dump_jwks():
     assert len(nkb) == 2
     # both RSA keys
     assert len(nkb.get('rsa')) == 2
+
 
 def test_mark_as_inactive():
     desc = {"kty": "oct", "key": "supersecret", "use": "sig"}

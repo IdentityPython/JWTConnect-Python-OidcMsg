@@ -37,7 +37,7 @@ K2C = {
     "oct": SYMKey,
 }
 
-MAP = {'dec': 'enc', 'enc': 'enc', 'ver':'sig', 'sig':'sig'}
+MAP = {'dec': 'enc', 'enc': 'enc', 'ver': 'sig', 'sig': 'sig'}
 
 
 def harmonize_usage(use):
@@ -168,7 +168,7 @@ class KeyBundle(object):
             elif source == "":
                 return
             else:
-                if fileformat.lower() in ['rsa', 'der']:
+                if fileformat.lower() in ['rsa', 'der', 'jwks']:
                     if os.path.isfile(source):
                         self.source = source
                     else:
@@ -360,7 +360,8 @@ class KeyBundle(object):
                     if self.fileformat == "jwks":
                         self.do_local_jwk(self.source)
                     elif self.fileformat == "der":
-                        self.do_local_der(self.source, self.keytype, self.keyusage)
+                        self.do_local_der(self.source, self.keytype,
+                                          self.keyusage)
                 else:
                     res = self.do_remote()
             except Exception as err:
