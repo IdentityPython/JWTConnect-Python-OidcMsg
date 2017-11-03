@@ -70,7 +70,7 @@ you need.
 
 For this you have a search interface, where you can specify these things ;
 
-- key_use, MUST have a value
+- key_use, default is "sig"
 - key_type
 - owner, if no owner is given, "" is used as default
 - kid
@@ -101,9 +101,27 @@ An example::
     []
 
 
-There are a number of short cut methods you can use:
+There are a number of shortcut methods you can use:
 
 - get_signing_key(self, key_type="", owner="", kid=None, **kwargs)
 - get_verify_key(self, key_type="", owner="", kid=None, **kwargs):
 - get_encrypt_key(self, key_type="", owner="", kid=None, **kwargs):
 - get_decrypt_key(self, key_type="", owner="", kid=None, **kwargs):
+
+A very common use case when dealing with OIDC OPs and RPs is that you
+have a signed or signed and encrypted JasonWebToken and you need to
+decrypt the token and verify the signature. For this there are 2
+special methods:
+
+- get_jwt_verify_keys and
+- get_jwt_decrypt_keys
+
+You call them like this (assuming *jwt* contains the JasonWebToken and that
+*keyjar* is a  KeyJar instance with the necessary keys)::
+
+    from jwkest import jws
+    _rj = jws.factory(token)
+    keys = keyjar.get_jwt_decrypt_keys(_rj.jwt)
+    info = rj.verify_compact(token, keys)
+
+
