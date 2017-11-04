@@ -288,27 +288,19 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
             hfunc = "HS" + _alg[-3:]
 
             if "access_token" in self:
-                try:
-                    assert "at_hash" in idt
-                except AssertionError:
+                if "at_hash" not in idt:
                     raise MissingRequiredAttribute("Missing at_hash property",
                                                    idt)
-                try:
-                    assert idt["at_hash"] == jws.left_hash(
-                        self["access_token"], hfunc)
-                except AssertionError:
+                if idt["at_hash"] != jws.left_hash(self["access_token"],
+                                                   hfunc):
                     raise AtHashError(
                         "Failed to verify access_token hash", idt)
 
             if "code" in self:
-                try:
-                    assert "c_hash" in idt
-                except AssertionError:
+                if "c_hash" not in idt:
                     raise MissingRequiredAttribute("Missing c_hash property",
                                                    idt)
-                try:
-                    assert idt["c_hash"] == jws.left_hash(self["code"], hfunc)
-                except AssertionError:
+                if idt["c_hash"] != jws.left_hash(self["code"], hfunc):
                     raise CHashError("Failed to verify code hash", idt)
 
             self["id_token"] = idt
@@ -532,7 +524,8 @@ class RegistrationRequest(Message):
         super(RegistrationRequest, self).verify(**kwargs)
 
         if "initiate_login_uri" in self:
-            assert self["initiate_login_uri"].startswith("https:")
+            if not self["initiate_login_uri"].startswith("https:"):
+                raise ValueError('Wrong scheme')
 
         for param in ["request_object_encryption",
                       "id_token_encrypted_response",
@@ -545,10 +538,12 @@ class RegistrationRequest(Message):
 
             # both or none
             if enc_param in self:
-                assert alg_param in self
+                if alg_param not in self:
+                    raise MissingRequiredAttribute('alg_param')
 
         if "token_endpoint_auth_signing_alg" in self:
-            assert self["token_endpoint_auth_signing_alg"] != "none"
+            if self["token_endpoint_auth_signing_alg"] == "none":
+                raise ValueError('"none" not allowed')
 
         return True
 
@@ -667,16 +662,12 @@ class IdToken(OpenIDSchema):
 
             # Then azp has to be present and be one of the aud values
             if len(self["aud"]) > 1:
-                try:
-                    assert "azp" in self
-                except AssertionError:
-                    raise VerificationError("azp missing", self)
-                else:
-                    try:
-                        assert self["azp"] in self["aud"]
-                    except AssertionError:
+                if "azp" in self:
+                    if self["azp"] not in self["aud"]:
                         raise VerificationError(
                             "Mismatch between azp and aud claims", self)
+                else:
+                    raise VerificationError("azp missing", self)
 
         if "azp" in self:
             if "client_id" in kwargs:
@@ -864,17 +855,19 @@ class ProviderConfigurationResponse(Message):
         super(ProviderConfigurationResponse, self).verify(**kwargs)
 
         if "scopes_supported" in self:
-            assert "openid" in self["scopes_supported"]
+            if "openid" not in self["scopes_supported"]:
+                raise MissingRequiredValue
             for scope in self["scopes_supported"]:
                 check_char_set(scope, SCOPE_CHARSET)
 
         parts = urlparse(self["issuer"])
-        try:
-            assert parts.scheme == "https"
-        except AssertionError:
+        if parts.scheme != "https":
             raise SchemeError("Not HTTPS")
 
-        assert not parts.query and not parts.fragment
+        if not parts.query and not parts.fragment:
+            pass
+        else:
+            raise ValueError('Issuer ID invalid')
 
         if any("code" in rt for rt in self[
             "response_types_supported"]) and "token_endpoint" not in self:
@@ -1001,3 +994,85 @@ def factory(msgtype, **kwargs):
 
     # Fall back to basic OAuth2 messages
     return oauth2.factory(msgtype, **kwargs)
+
+
+def make_openid_request(arq, keys=None, userinfo_claims=None,
+                        idtoken_claims=None, request_object_signing_alg=None,
+                        **kwargs):
+    """
+    Construct the JWT to be passed by value (the request parameter) or by
+    reference (request_uri).
+    The request will be signed
+
+    :param arq: The Authorization request
+    :param keys: Keys to use for signing/encrypting
+    :param userinfo_claims: UserInfo claims
+    :param idtoken_claims: IdToken claims
+    :param request_object_signing_alg: Which signing algorithm to use
+    :return: JWT encoded OpenID request
+    """
+
+    oir_args = {}
+    for prop in OpenIDRequest.c_param.keys():
+        try:
+            oir_args[prop] = arq[prop]
+        except KeyError:
+            pass
+
+    for attr in ["scope", "response_type"]:
+        if attr in oir_args:
+            oir_args[attr] = " ".join(oir_args[attr])
+
+    c_args = {}
+    if userinfo_claims is not None:
+        # UserInfoClaims
+        c_args["userinfo"] = Claims(**userinfo_claims)
+
+    if idtoken_claims is not None:
+        # IdTokenClaims
+        c_args["id_token"] = Claims(**idtoken_claims)
+
+    if c_args:
+        oir_args["claims"] = ClaimsRequest(**c_args)
+
+    oir = OpenIDRequest(**oir_args)
+
+    return oir.to_jwt(key=keys, algorithm=request_object_signing_alg)
+
+
+def claims_match(value, claimspec):
+    """
+    Implements matching according to section 5.5.1 of
+    http://openid.net/specs/openid-connect-core-1_0.html
+    The lack of value is not checked here.
+    Also the text doesn't prohibit claims specification having both 'value' 
+    and 'values'.
+
+    :param value: single value or list of values
+    :param claimspec: None or a dictionary with 'essential', 'value' or 'values'
+    as keys
+    :return: Boolean
+    """
+    if claimspec is None:  # match anything
+        return True
+
+    matched = False
+    for key, val in claimspec.items():
+        if key == "value":
+            if value == val:
+                matched = True
+        elif key == "values":
+            if value in val:
+                matched = True
+        elif key == 'essential':
+            # Whether it's essential or not doesn't change anything here
+            continue
+
+        if matched:
+            break
+
+    if matched is False:
+        if list(claimspec.keys()) == ['essential']:
+            return True
+
+    return matched
