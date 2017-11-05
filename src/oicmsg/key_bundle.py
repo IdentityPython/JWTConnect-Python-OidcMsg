@@ -14,7 +14,6 @@ from jwkest.jwk import RSAKey
 from jwkest.jwk import SYMKey
 from jwkest.jwk import rsa_load
 
-from oicmsg.exception import KeyIOError
 from oicmsg.exception import UnknownKeyType
 from oicmsg.exception import UpdateFailed
 
@@ -547,6 +546,21 @@ class KeyBundle(object):
 
     def __contains__(self, key):
         return key in self._keys
+
+    def copy(self):
+        kb = KeyBundle()
+        kb._keys = self._keys[:]
+
+        kb.cache_time = self.cache_time
+        kb.verify_ssl = self.verify_ssl
+        if self.source:
+            kb.source = self.source
+            kb.fileformat = self.fileformat
+            kb.keytype = self.keytype
+            kb.keyusage = self.keyusage
+            kb.remote = self.remote
+
+        return kb
 
 
 def keybundle_from_local_file(filename, typ, usage):

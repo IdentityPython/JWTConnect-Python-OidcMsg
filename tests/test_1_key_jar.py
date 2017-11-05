@@ -637,3 +637,23 @@ class TestVerifyJWTKeys(object):
         keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt,
                                                no_kid_issuer=no_kid_issuer)
         assert len(keys) == 1
+
+
+def test_copy():
+    kj = KeyJar()
+    kj['A'] = [KeyBundle(JWK0['keys'])]
+    kj['B'] = [KeyBundle(JWK1['keys'])]
+    kj['C'] = [KeyBundle(JWK2['keys'])]
+
+    kjc = kj.copy()
+
+    assert set(kjc.owners()) == {'A', 'B', 'C'}
+
+    assert len(kjc.get('sig', 'oct', 'A')) == 0
+    assert len(kjc.get('sig', 'rsa', 'A')) == 1
+
+    assert len(kjc.get('sig', 'oct', 'B')) == 1
+    assert len(kjc.get('sig', 'rsa', 'B')) == 1
+
+    assert len(kjc.get('sig', 'oct', 'C')) == 0
+    assert len(kjc.get('sig', 'rsa', 'C')) == 4

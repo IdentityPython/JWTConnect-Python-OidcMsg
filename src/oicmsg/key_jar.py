@@ -560,6 +560,13 @@ class KeyJar(object):
 
         return keys
 
+    def copy(self):
+        kj = KeyJar()
+        for owner in self.owners():
+            kj[owner] = [kb.copy() for kb in self[owner]]
+        return kj
+
+
 # =============================================================================
 
 

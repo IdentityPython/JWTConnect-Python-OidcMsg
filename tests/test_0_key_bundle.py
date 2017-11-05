@@ -431,3 +431,17 @@ def test_mark_as_inactive():
     kb.do_keys([desc])
     assert len(kb.keys()) == 2
     assert len(kb.active_keys()) == 1
+
+
+def test_copy():
+    desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
+    kb = KeyBundle([desc])
+    assert len(kb.keys()) == 1
+    for k in kb.keys():
+        kb.mark_as_inactive(k.kid)
+    desc = {"kty": "oct", "key": "secret", "use": "enc"}
+    kb.do_keys([desc])
+
+    kbc = kb.copy()
+    assert len(kbc.keys()) == 2
+    assert len(kbc.active_keys()) == 1

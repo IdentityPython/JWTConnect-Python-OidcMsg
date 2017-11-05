@@ -469,7 +469,7 @@ class TestRegistrationRequest(object):
             "redirect_uris": ["https://example.com/authz_cb"],
             enc_param: "RS25asdasd6"}
         registration_req = RegistrationRequest(**registration_params)
-        with pytest.raises(AssertionError):
+        with pytest.raises(MissingRequiredAttribute):
             registration_req.verify()
 
 
