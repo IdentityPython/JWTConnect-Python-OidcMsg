@@ -982,6 +982,7 @@ VNULLALLOWED = 4
 SINGLE_REQUIRED_STRING = (str, True, None, None, False)
 SINGLE_OPTIONAL_STRING = (str, False, None, None, False)
 SINGLE_OPTIONAL_INT = (int, False, None, None, False)
+SINGLE_REQUIRED_INT = (int, True, None, None, False)
 OPTIONAL_LIST_OF_STRINGS = ([str], False, list_serializer,
                             list_deserializer, False)
 REQUIRED_LIST_OF_STRINGS = ([str], True, list_serializer,
