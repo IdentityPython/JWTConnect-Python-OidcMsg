@@ -6,7 +6,7 @@ from jwkest import jws
 from jwkest.jwe import JWE
 from jwkest.jws import NoSuitableSigningKeys
 
-from oicmsg.oic import JasonWebToken
+from oicmsg.oic import JsonWebToken
 from oicmsg.time_util import utc_time_sans_frac
 
 __author__ = 'Roland Hedberg'
@@ -14,7 +14,7 @@ __author__ = 'Roland Hedberg'
 
 class JWT(object):
     def __init__(self, keyjar, iss='', lifetime=0, sign_alg='RS256',
-                 msgtype=JasonWebToken, encrypt=False, enc_enc="A128CBC-HS256",
+                 msgtype=JsonWebToken, encrypt=False, enc_enc="A128CBC-HS256",
                  enc_alg="RSA1_5"):
         self.iss = iss
         self.lifetime = lifetime
@@ -37,11 +37,24 @@ class JWT(object):
         return _jwe.encrypt(keys, context="public")
 
     def pack_init(self):
+        """
+        Gather initial information for the payload.
+
+        :return: A dictionary with claims and values
+        """
         argv = {'iss': self.iss, 'iat': utc_time_sans_frac()}
-        argv['exp'] = argv['iat'] + self.lifetime
+        if self.lifetime:
+            argv['exp'] = argv['iat'] + self.lifetime
         return argv
 
     def pack_key(self, owner='', kid=''):
+        """
+        Find a key to be used for signing the Json Web Token
+
+        :param owner: Owner of the keys to chose from
+        :param kid: Key ID
+        :return: One key
+        """
         keys = self.keyjar.get_signing_key(jws.alg2keytype(self.sign_alg),
                                            owner=owner, kid=kid)
 
@@ -50,8 +63,19 @@ class JWT(object):
 
         return keys[0]  # Might be more then one if kid == ''
 
-    def pack(self, kid='', owner='', cls_instance=None, **kwargs):
+    def pack(self, payload=None, kid='', owner='', cls_instance=None, **kwargs):
+        """
+
+        :param payload: Information to be carried as payload in the JWT
+        :param kid: Key ID
+        :param owner: The owner of the the keys that are to be used for signing
+        :param cls_instance: This might be a instance of a class already
+            prepared with information
+        :param kwargs: Extra keyword arguments
+        :return: A signed or signed and encrypted JsonWebtoken
+        """
         _args = self.pack_init()
+
         if self.sign_alg != 'none':
             _key = self.pack_key(owner, kid)
             _args['kid'] = _key.kid
@@ -65,21 +89,22 @@ class JWT(object):
         else:
             del kwargs['encrypt']
 
-        _args.update(kwargs)
-
-        if cls_instance:
-            cls_instance.update(_args)
-            _jwt = cls_instance
-        else:
-            _jwt = self.message_type(**_args)
-
         if 'jti' in self.message_type.c_param:
             try:
                 _jti = kwargs['jti']
             except KeyError:
                 _jti = uuid.uuid4().hex
 
-            _jwt['jti'] = _jti
+            _args['jti'] = _jti
+
+        if payload is not None:
+            _args.update(payload)
+
+        if cls_instance:
+            cls_instance.update(_args)
+            _jwt = cls_instance
+        else:
+            _jwt = self.message_type(**_args)
 
         _jws = _jwt.to_jwt([_key], self.sign_alg)
         if _encrypt:
@@ -103,6 +128,13 @@ class JWT(object):
         return rj.decrypt(token, keys=keys)
 
     def unpack(self, token):
+        """
+        Unpack a received signed or signed and encrypted Json Web Token
+
+        :param token: The Json Web Token
+        :return: If decryption and signature verification work the payload
+            will be returned as a Message instance.
+        """
         if not token:
             raise KeyError
 

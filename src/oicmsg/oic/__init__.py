@@ -877,7 +877,7 @@ class ProviderConfigurationResponse(Message):
 
 
 # According to RFC 7519 all claims are optional
-class JasonWebToken(Message):
+class JsonWebToken(Message):
     c_param = {
         "iss": SINGLE_OPTIONAL_STRING,
         "sub": SINGLE_OPTIONAL_STRING,
@@ -889,7 +889,7 @@ class JasonWebToken(Message):
     }
 
     def verify(self, **kwargs):
-        super(JasonWebToken, self).verify(**kwargs)
+        super(JsonWebToken, self).verify(**kwargs)
 
         _now = utc_time_sans_frac()
 
@@ -917,7 +917,7 @@ class JasonWebToken(Message):
         return True
     
 
-class AuthnToken(JasonWebToken):
+class AuthnToken(JsonWebToken):
     c_param = {
         "iss": SINGLE_REQUIRED_STRING,
         "sub": SINGLE_REQUIRED_STRING,
@@ -935,7 +935,7 @@ def jwt_deser(val, sformat="json"):
         if not isinstance(val, six.string_types):
             val = json.dumps(val)
             sformat = "json"
-    return JasonWebToken().deserialize(val, sformat)
+    return JsonWebToken().deserialize(val, sformat)
 
 
 SINGLE_OPTIONAL_JWT = (Message, False, msg_ser, jwt_deser, False)
