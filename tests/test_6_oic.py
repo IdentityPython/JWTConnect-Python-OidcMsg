@@ -797,7 +797,7 @@ def test_factory_chain():
 # class DiscoveryResponse(Message):
 # class IdTMessage(AuthorizationResponse):
 # class IdToken(OpenIDSchema):
-# class JasonWebToken(Message):
+# class JsonWebToken(Message):
 # class OpenIDRequest(AuthorizationRequest):
 # class OpenIDSchema(Message):
 # class ProviderConfigurationResponse(Message):

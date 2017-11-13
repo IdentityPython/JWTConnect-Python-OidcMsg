@@ -914,6 +914,17 @@ class JsonWebToken(Message):
             if _nbf > (_now - _skew):
                 raise EXPError('Not valid yet')
 
+        try:
+            _aud = self['aud']
+        except KeyError:
+            pass
+        else:
+            try:
+                if kwargs['aud'] not in _aud:
+                    raise NotForMe('Not among intended audience')
+            except KeyError:
+                pass
+
         return True
     
 
