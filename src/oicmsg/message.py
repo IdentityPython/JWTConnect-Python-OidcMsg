@@ -553,8 +553,7 @@ class Message(MutableMapping):
                     pass
                 elif verify:
                     if keyjar:
-                        key = keyjar.get_jwt_verify_keys(key, jso, _header,
-                                                         _jw, **kwargs)
+                        key.extend(keyjar.get_jwt_verify_keys(_jwt, **kwargs))
 
                     if "alg" in _header and _header["alg"] != "none":
                         if not key:
@@ -567,8 +566,7 @@ class Message(MutableMapping):
                     except NoSuitableSigningKeys:
                         if keyjar:
                             update_keyjar(keyjar)
-                            key = keyjar.get_jwt_verify_keys(key, jso, _header,
-                                                             _jw, **kwargs)
+                            key = keyjar.get_jwt_verify_keys(_jwt, **kwargs)
                             _jw.verify_compact(txt, key)
             except Exception:
                 raise
