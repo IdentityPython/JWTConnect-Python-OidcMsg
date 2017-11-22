@@ -27,7 +27,7 @@ def _eq(l1, l2):
 
 
 def test_jwt_pack():
-    _jwt = JWT(keyjar, lifetime=3600, iss=issuer).pack()
+    _jwt = JWT(keyjar, lifetime=3600, iss=issuer).pack_jwt()
 
     assert _jwt
     assert len(_jwt.split('.')) == 3
@@ -36,18 +36,18 @@ def test_jwt_pack():
 def test_jwt_pack_and_unpack():
     srv = JWT(keyjar, iss=issuer)
     payload = {'sub': 'sub'}
-    _jwt = srv.pack(payload=payload)
+    _jwt = srv.pack_jwt(payload=payload)
 
-    info = srv.unpack(_jwt)
+    info = srv.unpack_jwt(_jwt)
 
     assert set(info.keys()) == {'jti', 'iat', 'iss', 'sub', 'kid'}
 
 def test_jwt_pack_and_unpack_with_lifetime():
     srv = JWT(keyjar, iss=issuer, lifetime=600)
     payload = {'sub': 'sub'}
-    _jwt = srv.pack(payload=payload)
+    _jwt = srv.pack_jwt(payload=payload)
 
-    info = srv.unpack(_jwt)
+    info = srv.unpack_jwt(_jwt)
 
     assert set(info.keys()) == {'jti', 'iat', 'iss', 'sub', 'kid', 'exp'}
 
@@ -55,9 +55,9 @@ def test_jwt_pack_and_unpack_with_lifetime():
 def test_jwt_pack_encrypt():
     srv = JWT(keyjar, iss=issuer)
     payload = {'sub': 'sub', 'aud': receiver}
-    _jwt = srv.pack(payload=payload, encrypt=True)
+    _jwt = srv.pack_jwt(payload=payload, encrypt=True)
 
-    info = srv.unpack(_jwt)
+    info = srv.unpack_jwt(_jwt)
 
     assert isinstance(info, JsonWebToken)
     assert set(info.keys()) == {'jti', 'iat', 'iss', 'sub', 'kid', 'aud'}
@@ -69,6 +69,6 @@ def test_jwt_pack_unpack_sym():
     kj['https://fedop.example.org'] = kj['']
     srv = JWT(kj, iss=issuer, sign_alg="HS256")
     payload = {'sub': 'sub2'}
-    _jwt = srv.pack(payload=payload)
-    info = srv.unpack(_jwt)
+    _jwt = srv.pack_jwt(payload=payload)
+    info = srv.unpack_jwt(_jwt)
     assert info

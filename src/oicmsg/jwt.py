@@ -36,7 +36,7 @@ class JWT(object):
         _jwe = JWE(payload, **kwargs)
         return _jwe.encrypt(keys, context="public")
 
-    def pack_init(self):
+    def pack_init_args(self):
         """
         Gather initial information for the payload.
 
@@ -63,7 +63,7 @@ class JWT(object):
 
         return keys[0]  # Might be more then one if kid == ''
 
-    def pack(self, payload=None, kid='', owner='', cls_instance=None, **kwargs):
+    def pack_jwt(self, payload=None, kid='', owner='', cls_instance=None, **kwargs):
         """
 
         :param payload: Information to be carried as payload in the JWT
@@ -74,7 +74,7 @@ class JWT(object):
         :param kwargs: Extra keyword arguments
         :return: A signed or signed and encrypted JsonWebtoken
         """
-        _args = self.pack_init()
+        _args = self.pack_init_args()
 
         if self.sign_alg != 'none':
             _key = self.pack_key(owner, kid)
@@ -127,7 +127,7 @@ class JWT(object):
         keys = self.keyjar.get_jwt_decrypt_keys(rj.jwt)
         return rj.decrypt(token, keys=keys)
 
-    def unpack(self, token):
+    def unpack_jwt(self, token):
         """
         Unpack a received signed or signed and encrypted Json Web Token
 

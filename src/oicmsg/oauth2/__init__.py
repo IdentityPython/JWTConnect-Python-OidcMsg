@@ -19,7 +19,7 @@ class ErrorResponse(Message):
     """
     The basic error response
     """
-    c_param = {"error": SINGLE_REQUIRED_STRING,
+    c_message_parameters = {"error": SINGLE_REQUIRED_STRING,
                "error_description": SINGLE_OPTIONAL_STRING,
                "error_uri": SINGLE_OPTIONAL_STRING}
 
@@ -28,7 +28,7 @@ class AuthorizationErrorResponse(ErrorResponse):
     """
     Authorization error response.
     """
-    c_param = ErrorResponse.c_param.copy()
+    c_message_parameters = ErrorResponse.c_param.copy()
     c_param.update({"state": SINGLE_OPTIONAL_STRING})
     c_allowed_values = ErrorResponse.c_allowed_values.copy()
     c_allowed_values.update({"error": ["invalid_request",
@@ -53,7 +53,7 @@ class AccessTokenRequest(Message):
     """
     An access token request
     """
-    c_param = {
+    c_message_parameters = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "code": SINGLE_REQUIRED_STRING,
         "redirect_uri": SINGLE_REQUIRED_STRING,
@@ -61,14 +61,14 @@ class AccessTokenRequest(Message):
         "client_secret": SINGLE_OPTIONAL_STRING,
         'state': SINGLE_OPTIONAL_STRING
     }
-    c_default = {"grant_type": "authorization_code"}
+    c_default_dict_values = {"grant_type": "authorization_code"}
 
 
 class AuthorizationRequest(Message):
     """
     An authorization request
     """
-    c_param = {
+    c_message_parameters = {
         "response_type": REQUIRED_LIST_OF_SP_SEP_STRINGS,
         "client_id": SINGLE_REQUIRED_STRING,
         "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
@@ -84,7 +84,7 @@ class AuthorizationResponse(Message):
     a client_id value provided when calling the verify method.
     The same with *iss* (issuer).
     """
-    c_param = {
+    c_message_parameters = {
         "code": SINGLE_REQUIRED_STRING,
         "state": SINGLE_OPTIONAL_STRING,
         'iss': SINGLE_OPTIONAL_STRING,
@@ -117,7 +117,7 @@ class AccessTokenResponse(Message):
     """
     Access token response
     """
-    c_param = {
+    c_message_parameters = {
         "access_token": SINGLE_REQUIRED_STRING,
         "token_type": SINGLE_REQUIRED_STRING,
         "expires_in": SINGLE_OPTIONAL_INT,
@@ -128,7 +128,7 @@ class AccessTokenResponse(Message):
 
 
 class NoneResponse(Message):
-    c_param = {
+    c_message_parameters = {
         "state": SINGLE_OPTIONAL_STRING
     }
 
@@ -137,7 +137,7 @@ class ROPCAccessTokenRequest(Message):
     """
     Resource Owner Password Credentials Grant flow access token request
     """
-    c_param = {
+    c_message_parameters = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "username": SINGLE_OPTIONAL_STRING,
         "password": SINGLE_OPTIONAL_STRING,
@@ -149,11 +149,11 @@ class CCAccessTokenRequest(Message):
     """
     Client Credential grant flow access token request
     """
-    c_param = {
+    c_message_parameters = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS
     }
-    c_default = {"grant_type": "client_credentials"}
+    c_default_dict_values = {"grant_type": "client_credentials"}
     c_allowed_values = {"grant_type": ["client_credentials"]}
 
 
@@ -161,26 +161,26 @@ class RefreshAccessTokenRequest(Message):
     """
     Access token refresh request
     """
-    c_param = {
+    c_message_parameters = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "refresh_token": SINGLE_REQUIRED_STRING,
         "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
         "client_id": SINGLE_OPTIONAL_STRING,
         "client_secret": SINGLE_OPTIONAL_STRING
     }
-    c_default = {"grant_type": "refresh_token"}
+    c_default_dict_values = {"grant_type": "refresh_token"}
     c_allowed_values = {"grant_type": ["refresh_token"]}
 
 
 class ResourceRequest(Message):
-    c_param = {"access_token": SINGLE_OPTIONAL_STRING}
+    c_message_parameters = {"access_token": SINGLE_OPTIONAL_STRING}
 
 
 class ASConfigurationResponse(Message):
     """
     Authorization Server configuration response
     """
-    c_param = {
+    c_message_parameters = {
         "issuer": SINGLE_REQUIRED_STRING,
         "authorization_endpoint": SINGLE_OPTIONAL_STRING,
         "token_endpoint": SINGLE_OPTIONAL_STRING,
@@ -200,7 +200,7 @@ class ASConfigurationResponse(Message):
         'revocation_endpoint': SINGLE_OPTIONAL_STRING,
         'introspection_endpoint': SINGLE_OPTIONAL_STRING,
     }
-    c_default = {"version": "3.0"}
+    c_default_dict_values = {"version": "3.0"}
 
 
 def factory(msgtype, **kwargs):

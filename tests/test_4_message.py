@@ -101,7 +101,7 @@ def test_json_deserializer():
 
 
 class DummyMessage(Message):
-    c_param = {
+    c_message_parameters = {
         "req_str": SINGLE_REQUIRED_STRING,
         "opt_str": SINGLE_OPTIONAL_STRING,
         "opt_int": SINGLE_OPTIONAL_INT,
@@ -299,7 +299,7 @@ def test_to_dict_with_raw_types():
 
 def test_msg_deserializer():
     class MsgMessage(Message):
-        c_param = {
+        c_message_parameters = {
             "msg": OPTIONAL_MESSAGE,
             "opt_str": SINGLE_OPTIONAL_STRING,
         }
@@ -322,7 +322,7 @@ def test_msg_deserializer():
 
 def test_msg_list_deserializer():
     class MsgMessage(Message):
-        c_param = {
+        c_message_parameters = {
             "msgs": OPTIONAL_LIST_OF_MESSAGES,
             "opt_str": SINGLE_OPTIONAL_STRING,
         }
@@ -346,7 +346,7 @@ def test_msg_list_deserializer():
 
 def test_msg_list_deserializer_dict():
     class MsgMessage(Message):
-        c_param = {
+        c_message_parameters = {
             "msgs": OPTIONAL_LIST_OF_MESSAGES,
             "opt_str": SINGLE_OPTIONAL_STRING,
         }

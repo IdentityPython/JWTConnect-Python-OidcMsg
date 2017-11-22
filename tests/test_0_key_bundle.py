@@ -200,8 +200,8 @@ def test_create_and_store_rsa_key_pair():
 
 def test_with_sym_key():
     kc = KeyBundle({"kty": "oct", "key": "supersecret", "use": "sig"})
-    assert len(kc.get("oct")) == 1
-    assert len(kc.get("rsa")) == 0
+    assert len(kc.get_keys("oct")) == 1
+    assert len(kc.get_keys("rsa")) == 0
     assert kc.remote is False
     assert kc.source is None
 
@@ -210,7 +210,7 @@ def test_with_2_sym_key():
     a = {"kty": "oct", "key": "supersecret", "use": "sig"}
     b = {"kty": "oct", "key": "secret", "use": "enc"}
     kb = KeyBundle([a, b])
-    assert len(kb.get("oct")) == 2
+    assert len(kb.get_keys("oct")) == 2
     assert len(kb) == 2
 
     assert kb.get_key_with_kid('kid') is None
@@ -222,7 +222,7 @@ def test_remove_sym():
     b = {"kty": "oct", "key": "secret", "use": "enc"}
     kb = KeyBundle([a, b])
     assert len(kb) == 2
-    keys = kb.get('oct')
+    keys = kb.get_keys('oct')
     kb.remove(keys[0])
     assert len(kb) == 1
 
@@ -232,7 +232,7 @@ def test_remove_key_sym():
     b = {"kty": "oct", "key": "secret", "use": "enc"}
     kb = KeyBundle([a, b])
     assert len(kb) == 2
-    keys = kb.get('oct')
+    keys = kb.get_keys('oct')
     kb.remove(keys[0])
     assert len(kb) == 1
 
@@ -247,7 +247,7 @@ def test_rsa_init():
         {'use': ['enc', 'sig'], 'size': 1024, 'name': 'rsa', 'path': 'keys'})
     assert kb
     assert len(kb) == 2
-    assert len(kb.get('rsa')) == 2
+    assert len(kb.get_keys('rsa')) == 2
 
 
 def test_rsa_init_under_spec():
@@ -255,7 +255,7 @@ def test_rsa_init_under_spec():
         {'use': ['enc', 'sig'], 'size': 1024})
     assert kb
     assert len(kb) == 2
-    assert len(kb.get('rsa')) == 2
+    assert len(kb.get_keys('rsa')) == 2
 
 
 def test_unknown_source():
@@ -281,7 +281,7 @@ def test_remove_rsa():
     kb = rsa_init(
         {'use': ['enc', 'sig'], 'size': 1024, 'name': 'rsa', 'path': 'keys'})
     assert len(kb) == 2
-    keys = kb.get('rsa')
+    keys = kb.get_keys('rsa')
     assert len(keys) == 2
     kb.remove(keys[0])
     assert len(kb) == 1
@@ -293,14 +293,14 @@ def test_key_mix():
     _sym = SYMKey(**{"kty": "oct", "key": "secret", "use": "enc"})
     kb.append(_sym)
     assert len(kb) == 3
-    assert len(kb.get('rsa')) == 2
-    assert len(kb.get('oct')) == 1
+    assert len(kb.get_keys('rsa')) == 2
+    assert len(kb.get_keys('oct')) == 1
 
     kb.remove(_sym)
 
     assert len(kb) == 2
-    assert len(kb.get('rsa')) == 2
-    assert len(kb.get('oct')) == 0
+    assert len(kb.get_keys('rsa')) == 2
+    assert len(kb.get_keys('oct')) == 0
 
 
 def test_get_all():
@@ -308,7 +308,7 @@ def test_get_all():
         {'use': ['enc', 'sig'], 'size': 1024, 'name': 'rsa', 'path': 'keys'})
     _sym = SYMKey(**{"kty": "oct", "key": "secret", "use": "enc"})
     kb.append(_sym)
-    assert len(kb.get()) == 3
+    assert len(kb.get_keys()) == 3
 
     _k = kb.keys()
     assert len(_k) == 3
@@ -318,7 +318,7 @@ def test_keybundle_from_local_der():
     kb = keybundle_from_local_file(
         "{}".format(os.path.join('keys', 'rsa_enc')), "der", ['enc'])
     assert len(kb) == 1
-    keys = kb.get('rsa')
+    keys = kb.get_keys('rsa')
     assert len(keys) == 1
     assert isinstance(keys[0], RSAKey)
 
@@ -327,7 +327,7 @@ def test_keybundle_from_local_der_update():
     kb = keybundle_from_local_file(
         "file://{}".format(os.path.join('keys', 'rsa_enc')), "der", ['enc'])
     assert len(kb) == 1
-    keys = kb.get('rsa')
+    keys = kb.get_keys('rsa')
     assert len(keys) == 1
     assert isinstance(keys[0], RSAKey)
 
@@ -335,7 +335,7 @@ def test_keybundle_from_local_der_update():
 
     # Nothing should change
     assert len(kb) == 1
-    keys = kb.get('rsa')
+    keys = kb.get_keys('rsa')
     assert len(keys) == 1
     assert isinstance(keys[0], RSAKey)
 
@@ -343,7 +343,7 @@ def test_keybundle_from_local_der_update():
 def test_creat_jwks_sym():
     a = {"kty": "oct", "key": "supersecret", "use": "sig"}
     kb = KeyBundle([a])
-    _jwks = kb.jwks()
+    _jwks = kb.create_jawks()
     _loc = json.loads(_jwks)
     assert list(_loc.keys()) == ["keys"]
     assert set(_loc['keys'][0].keys()) == {'kty', 'use', 'k'}
@@ -363,14 +363,14 @@ def test_keybundle_from_local_jwks():
 
 def test_update():
     kc = KeyBundle([{"kty": "oct", "key": "supersecret", "use": "sig"}])
-    assert len(kc.get("oct")) == 1
-    assert len(kc.get("rsa")) == 0
+    assert len(kc.get_keys("oct")) == 1
+    assert len(kc.get_keys("rsa")) == 0
     assert kc.remote is False
     assert kc.source is None
 
     kc.update()  # Nothing should happen
-    assert len(kc.get("oct")) == 1
-    assert len(kc.get("rsa")) == 0
+    assert len(kc.get_keys("oct")) == 1
+    assert len(kc.get_keys("rsa")) == 0
     assert kc.remote is False
     assert kc.source is None
 
@@ -378,18 +378,18 @@ def test_update():
 def test_update_RSA():
     kc = keybundle_from_local_file(RSAKEY, "der", ["sig"])
     assert kc.remote is False
-    assert len(kc.get("oct")) == 0
-    assert len(kc.get("RSA")) == 1
+    assert len(kc.get_keys("oct")) == 0
+    assert len(kc.get_keys("RSA")) == 1
 
-    key = kc.get("RSA")[0]
+    key = kc.get_keys("RSA")[0]
     assert isinstance(key, RSAKey)
 
     kc.update()
     assert kc.remote is False
-    assert len(kc.get("oct")) == 0
-    assert len(kc.get("RSA")) == 1
+    assert len(kc.get_keys("oct")) == 0
+    assert len(kc.get_keys("RSA")) == 1
 
-    key = kc.get("RSA")[0]
+    key = kc.get_keys("RSA")[0]
     assert isinstance(key, RSAKey)
 
 
@@ -418,7 +418,7 @@ def test_dump_jwks():
 
     assert len(nkb) == 2
     # both RSA keys
-    assert len(nkb.get('rsa')) == 2
+    assert len(nkb.get_keys('rsa')) == 2
 
 
 def test_mark_as_inactive():
@@ -428,7 +428,7 @@ def test_mark_as_inactive():
     for k in kb.keys():
         kb.mark_as_inactive(k.kid)
     desc = {"kty": "oct", "key": "secret", "use": "enc"}
-    kb.do_keys([desc])
+    kb.load_keys([desc])
     assert len(kb.keys()) == 2
     assert len(kb.active_keys()) == 1
 
@@ -440,7 +440,7 @@ def test_copy():
     for k in kb.keys():
         kb.mark_as_inactive(k.kid)
     desc = {"kty": "oct", "key": "secret", "use": "enc"}
-    kb.do_keys([desc])
+    kb.load_keys([desc])
 
     kbc = kb.copy()
     assert len(kbc.keys()) == 2

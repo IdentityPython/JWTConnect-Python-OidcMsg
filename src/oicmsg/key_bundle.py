@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 #     raise excep(_err, 'application/json')
 
 
-K2C = {
+KEY_TO_CLASS_MAP = {
     "RSA": RSAKey,
     "EC": ECKey,
     "oct": SYMKey,
@@ -155,9 +155,9 @@ class KeyBundle(object):
         if keys:
             self.source = None
             if isinstance(keys, dict):
-                self.do_keys([keys])
+                self.load_keys([keys])
             else:
-                self.do_keys(keys)
+                self.load_keys(keys)
         else:
             if source.startswith("file://"):
                 self.source = source[7:]
@@ -177,11 +177,11 @@ class KeyBundle(object):
 
             if not self.remote:  # local file
                 if self.fileformat in ['jwks', "jwk"]:
-                    self.do_local_jwk(self.source)
+                    self.load_jwk_file_key(self.source)
                 elif self.fileformat == "der":  # Only valid for RSA keys
-                    self.do_local_der(self.source, self.keytype, self.keyusage)
+                    self.load_der_file_key(self.source, self.keytype, self.keyusage)
 
-    def do_keys(self, keys):
+    def load_keys(self, keys):
         """
         Go from JWK description to binary keys
 
@@ -201,7 +201,7 @@ class KeyBundle(object):
             for _use in _usage:
                 for _typ in [typ, typ.lower(), typ.upper()]:
                     try:
-                        _key = K2C[_typ](use=_use, **inst)
+                        _key =  KEY_TO_CLASS_MAP[_typ](use=_use, **inst)
                     except KeyError:
                         continue
                     except JWKException as err:
@@ -214,14 +214,14 @@ class KeyBundle(object):
                 logger.warning(
                     'While loading keys, UnknownKeyType: {}'.format(typ))
 
-    def do_local_jwk(self, filename):
+    def load_jwk_file_key(self, filename):
         """
         Load a JWKS from a local file
          
         :param filename: 
         """
         try:
-            self.do_keys(json.loads(open(filename).read())["keys"])
+            self.load_keys(json.loads(open(filename).read())["keys"])
         except KeyError:
             logger.error("Now 'keys' keyword in JWKS")
             raise UpdateFailed(
@@ -229,7 +229,7 @@ class KeyBundle(object):
         else:
             self.last_updated = time.time()
 
-    def do_local_der(self, filename, keytype, keyusage=None):
+    def load_der_file_key(self, filename, keytype, keyusage=None):
         """
         Load a DER encoded file amd create a key from it.
          
@@ -254,7 +254,7 @@ class KeyBundle(object):
 
         self.last_updated = time.time()
 
-    def do_remote(self):
+    def load_remote_jwks_key(self):
         """
         Load a JWKS from a webpage
 
@@ -266,7 +266,7 @@ class KeyBundle(object):
 
         try:
             logging.debug('KeyBundle fetch keys from: {}'.format(self.source))
-            r = requests.get(self.source, **args)
+            r = requests.get_keys(self.source, **args)
         except Exception as err:
             logger.error(err)
             raise UpdateFailed(
@@ -276,7 +276,7 @@ class KeyBundle(object):
             self.time_out = time.time() + self.cache_time
             self.last_updated = time.time()
             try:
-                self.do_keys(self.imp_jwks["keys"])
+                self.load_keys(self.imp_jwks["keys"])
             except KeyError:
                 logger.error("No 'keys' keyword in JWKS")
                 raise UpdateFailed("No 'keys' keyword in JWKS")
@@ -292,7 +292,7 @@ class KeyBundle(object):
 
             logger.debug("Loaded JWKS: %s from %s" % (r.text, self.source))
             try:
-                self.do_keys(self.imp_jwks["keys"])
+                self.load_keys(self.imp_jwks["keys"])
             except KeyError:
                 logger.error("No 'keys' keyword in JWKS")
                 raise UpdateFailed(MALFORMED.format(self.source))
@@ -357,12 +357,12 @@ class KeyBundle(object):
             try:
                 if self.remote is False:
                     if self.fileformat == "jwks":
-                        self.do_local_jwk(self.source)
+                        self.load_jwk_file_key(self.source)
                     elif self.fileformat == "der":
-                        self.do_local_der(self.source, self.keytype,
-                                          self.keyusage)
+                        self.load_der_file_key(self.source, self.keytype,
+                                               self.keyusage)
                 else:
-                    res = self.do_remote()
+                    res = self.load_remote_jwks_key()
             except Exception as err:
                 logger.error('Key bundle update failed: {}'.format(err))
                 self._keys = _keys  # restore
@@ -379,7 +379,7 @@ class KeyBundle(object):
 
         return res
 
-    def get(self, typ=""):
+    def get_keys(self, typ=""):
         """
         Return a list of keys. Either all keys or only keys of a specific type
         
@@ -427,9 +427,9 @@ class KeyBundle(object):
         self._keys = [k for k in self._keys if not k.kty in _typs]
 
     def __str__(self):
-        return str(self.jwks())
+        return str(self.create_jawks())
 
-    def jwks(self, private=False):
+    def create_jawks(self, private=False):
         """
         Create a JWKS
         
