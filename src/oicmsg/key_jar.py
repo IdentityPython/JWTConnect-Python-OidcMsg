@@ -368,6 +368,9 @@ class KeyJar(object):
                          k.inactive_since == 0])
         return {"keys": keys}
 
+    def export_jwks_as_json(self, private=False, issuer=""):
+        return json.dumps(self.export_jwks(private, issuer))
+
     def import_jwks(self, jwks, issuer):
         """
 
@@ -385,6 +388,9 @@ class KeyJar(object):
             except KeyError:
                 self.issuer_keys[issuer] = [self.keybundle_cls(
                     _keys, verify_ssl=self.verify_ssl)]
+
+    def import_jwks_as_json(self, js, issuer):
+        return self.import_jwks(json.loads(js), issuer)
 
     def __eq__(self, other):
         if not isinstance(other, KeyJar):
