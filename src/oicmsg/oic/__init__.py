@@ -175,6 +175,19 @@ def claims_request_deser(val, sformat="json"):
     return ClaimsRequest().deserialize(val, sformat)
 
 
+def dict_deser(val, sformat="json"):
+    # never 'urlencoded'
+    if sformat == "urlencoded":
+        sformat = "json"
+    if sformat in ["dict", "json"]:
+        if not isinstance(val, six.string_types):
+            val = json.dumps(val)
+        elif isinstance(val, dict):
+            return val
+    else:
+        raise ValueError('sformat can not be "{}"'.format(sformat))
+
+
 OPTIONAL_ADDRESS = (Message, False, msg_ser, address_deser, False)
 OPTIONAL_LOGICAL = (bool, False, None, None, False)
 OPTIONAL_MULTIPLE_Claims = (Message, False, claims_ser, claims_deser, False)
@@ -188,6 +201,8 @@ SINGLE_OPTIONAL_REGISTRATION_REQUEST = (Message, False, msg_ser,
                                         registration_request_deser, False)
 SINGLE_OPTIONAL_CLAIMSREQ = (Message, False, msg_ser_json, claims_request_deser,
                              False)
+
+SINGLE_OPTIONAL_DICT = (dict, False, msg_ser_json, dict_deser, False)
 
 # ----------------------------------------------------------------------------
 
