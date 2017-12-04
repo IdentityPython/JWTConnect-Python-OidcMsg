@@ -319,7 +319,8 @@ class KeyBundle(object):
         # Check if the content type is the right one.
         try:
             if response.headers["Content-Type"] != 'application/json':
-                logger.warning('Wrong Content_type')
+                logger.warning('Wrong Content_type ({})'.format(
+                    response.headers["Content-Type"]))
         except KeyError:
             pass
 
