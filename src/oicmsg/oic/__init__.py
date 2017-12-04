@@ -237,8 +237,8 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
             if not idt.verify(**kwargs):
                 return False
 
-            # replace the JWT with the IdToken instance
-            self["id_token"] = idt
+            #
+            self["verified_id_token"] = idt
 
         return True
 
@@ -303,7 +303,7 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
                 if idt["c_hash"] != jws.left_hash(self["code"], hfunc):
                     raise CHashError("Failed to verify code hash", idt)
 
-            self["id_token"] = idt
+            self["verified_id_token"] = idt
         return True
 
 

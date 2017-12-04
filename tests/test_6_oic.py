@@ -620,7 +620,7 @@ def test_at_hash():
 
     at = AuthorizationResponse(**_info)
     assert at.verify(key=[key], algs={"sign": "HS256"})
-    assert 'at_hash' in at['id_token']
+    assert 'at_hash' in at['verified_id_token']
 
 
 def test_c_hash():
@@ -641,7 +641,7 @@ def test_c_hash():
 
     at = AuthorizationResponse(**_info)
     r = at.verify(key=[key], algs={"sign": "HS256"})
-    assert 'c_hash' in at['id_token']
+    assert 'c_hash' in at['verified_id_token']
 
 
 def test_missing_c_hash():
