@@ -989,7 +989,7 @@ OPTIONAL_LIST_OF_SP_SEP_STRINGS = ([str], False, sp_sep_list_serializer,
                                    sp_sep_list_deserializer, False)
 REQUIRED_LIST_OF_SP_SEP_STRINGS = ([str], True, sp_sep_list_serializer,
                                    sp_sep_list_deserializer, False)
-SINGLE_OPTIONAL_JSON = (str, False, json_serializer, json_deserializer,
+SINGLE_OPTIONAL_JSON = (dict, False, json_serializer, json_deserializer,
                         False)
 
 REQUIRED = [SINGLE_REQUIRED_STRING, REQUIRED_LIST_OF_STRINGS,
