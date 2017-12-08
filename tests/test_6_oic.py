@@ -724,7 +724,7 @@ class TestEndSessionResponse(object):
 
 class TestEndSessionRequest(object):
     def test_example(self):
-        _symkey = KC_SYM_S.get(alg2keytype("HS256"))
+        _symkey = KC_SYM_S.get_keys(alg2keytype("HS256"))
         esreq = EndSessionRequest(
             id_token_hint=IDTOKEN.to_jwt(key=_symkey, algorithm="HS256",
                                          lifetime=300),
@@ -741,7 +741,7 @@ class TestEndSessionRequest(object):
 
 class TestCheckSessionRequest(object):
     def test_example(self):
-        _symkey = KC_SYM_S.get(alg2keytype("HS256"))
+        _symkey = KC_SYM_S.get_keys(alg2keytype("HS256"))
         csr = CheckSessionRequest(
             id_token=IDTOKEN.to_jwt(key=_symkey, algorithm="HS256",
                                     lifetime=300))

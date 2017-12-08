@@ -164,7 +164,7 @@ class KeyJar(object):
         """
         return self.issuer_keys.items()
 
-    def get(self, key_use, key_type="", owner="", kid=None, **kwargs):
+    def get_keys(self, key_use, key_type="", owner="", kid=None, **kwargs):
         """
         Get all keys that matches a set of search criteria
 
@@ -207,7 +207,7 @@ class KeyJar(object):
         lst = []
         for bundle in _kj:
             if key_type:
-                _bkeys = bundle.get(key_type)
+                _bkeys = bundle.get_keys(key_type)
             else:
                 _bkeys = bundle.keys()
             for key in _bkeys:
@@ -240,7 +240,7 @@ class KeyJar(object):
         if use == 'enc' and key_type == 'oct' and owner != '':
             # Add my symmetric keys
             for kb in self.issuer_keys['']:
-                for key in kb.get(key_type):
+                for key in kb.get_keys(key_type):
                     if key.inactive_since:
                         continue
                     if not key.use or key.use == use:
@@ -249,16 +249,16 @@ class KeyJar(object):
         return lst
 
     def get_signing_key(self, key_type="", owner="", kid=None, **kwargs):
-        return self.get("sig", key_type, owner, kid, **kwargs)
+        return self.get_keys("sig", key_type, owner, kid, **kwargs)
 
     def get_verify_key(self, key_type="", owner="", kid=None, **kwargs):
-        return self.get("ver", key_type, owner, kid, **kwargs)
+        return self.get_keys("ver", key_type, owner, kid, **kwargs)
 
     def get_encrypt_key(self, key_type="", owner="", kid=None, **kwargs):
-        return self.get("enc", key_type, owner, kid, **kwargs)
+        return self.get_keys("enc", key_type, owner, kid, **kwargs)
 
     def get_decrypt_key(self, key_type="", owner="", kid=None, **kwargs):
-        return self.get("dec", key_type, owner, kid, **kwargs)
+        return self.get_keys("dec", key_type, owner, kid, **kwargs)
 
     def keys_by_alg_and_usage(self, issuer, alg, usage):
         if usage in ["sig", "ver"]:
@@ -266,7 +266,7 @@ class KeyJar(object):
         else:
             ktype = jwe.alg2keytype(alg)
 
-        return self.get(usage, ktype, issuer)
+        return self.get_keys(usage, ktype, issuer)
 
     def get_issuer_keys(self, issuer):
         res = []
@@ -304,7 +304,7 @@ class KeyJar(object):
         for _id, kbs in self.issuer_keys.items():
             _l = []
             for kb in kbs:
-                _l.extend(json.loads(kb.jwks())["keys"])
+                _l.extend(json.loads(kb.create_jawks())["keys"])
             _res[_id] = {"keys": _l}
         return "%s" % (_res,)
 
@@ -339,7 +339,7 @@ class KeyJar(object):
             except KeyError:
                 pass
 
-    def find(self, source, issuer):
+    def find_key_bundle(self, source, issuer):
         """
         Find a key bundle based on the source of the keys
 
@@ -444,14 +444,14 @@ class KeyJar(object):
             owner, key_summary(self, owner)))
 
         if kid:
-            for _key in self.get(key_use=use, owner=owner, kid=kid,
-                                 key_type=key_type):
+            for _key in self.get_keys(key_use=use, owner=owner, kid=kid,
+                                      key_type=key_type):
                 if _key and _key not in keys:
                     keys.append(_key)
             return keys
         else:
             try:
-                kl = self.get(key_use=use, owner=owner, key_type=key_type)
+                kl = self.get_keys(key_use=use, owner=owner, key_type=key_type)
             except KeyError:
                 pass
             else:
@@ -534,7 +534,7 @@ class KeyJar(object):
 
         # First extend the keyjar if allowed
         if "jku" in jwt.headers and _iss:
-            if not self.find(jwt.headers["jku"], _iss):
+            if not self.find_key_bundle(jwt.headers["jku"], _iss):
                 # This is really questionable
                 try:
                     if kwargs["trusting"]:

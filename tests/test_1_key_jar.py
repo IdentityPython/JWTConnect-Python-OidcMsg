@@ -219,8 +219,8 @@ def test_key_export():
     # One key
     assert len(kb) == 1
     # more specifically one RSA key
-    assert len(kb.get('RSA')) == 1
-    k = kb.get('RSA')[0]
+    assert len(kb.get_keys('RSA')) == 1
+    k = kb.get_keys('RSA')[0]
     # For signing
     assert k.use == 'sig'
 
@@ -266,7 +266,7 @@ class TestKeyJar(object):
         ks["http://www.example.org"].append(
             keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"]))
 
-        assert ks.get('sig', 'RSA', 'http://www.example.org/')
+        assert ks.get_keys('sig', 'RSA', 'http://www.example.org/')
 
     def test_issuer_missing_slash(self):
         ks = KeyJar()
@@ -278,7 +278,7 @@ class TestKeyJar(object):
         ks["http://www.example.org/"].append(
             keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"]))
 
-        assert ks.get('sig', 'RSA', 'http://www.example.org')
+        assert ks.get_keys('sig', 'RSA', 'http://www.example.org')
 
     def test_get_enc(self):
         ks = KeyJar()
@@ -290,7 +290,7 @@ class TestKeyJar(object):
         ks["http://www.example.org/"].append(
             keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"]))
 
-        assert ks.get('enc', 'oct')
+        assert ks.get_keys('enc', 'oct')
 
     def test_get_enc_not_mine(self):
         ks = KeyJar()
@@ -302,7 +302,7 @@ class TestKeyJar(object):
         ks["http://www.example.org/"].append(
             keybundle_from_local_file(RSAKEY, "der", ["ver", "sig"]))
 
-        assert ks.get('enc', 'oct', 'http://www.example.org/')
+        assert ks.get_keys('enc', 'oct', 'http://www.example.org/')
 
     # def test_get_by_kid(self):
     #     kb = keybundle_from_local_file("file://%s/jwk.json" % BASE_PATH, "jwks",
@@ -521,14 +521,14 @@ def test_load_spomky_keys():
 def test_get_ec():
     kj = KeyJar()
     kj.import_jwks(JWKS_SPO, '')
-    k = kj.get('sig', 'EC', alg='ES256')
+    k = kj.get_keys('sig', 'EC', alg='ES256')
     assert k
 
 
 def test_get_ec_wrong_alg():
     kj = KeyJar()
     kj.import_jwks(JWKS_SPO, '')
-    k = kj.get('sig', 'EC', alg='ES512')
+    k = kj.get_keys('sig', 'EC', alg='ES512')
     assert k == []
 
 
@@ -649,11 +649,11 @@ def test_copy():
 
     assert set(kjc.owners()) == {'A', 'B', 'C'}
 
-    assert len(kjc.get('sig', 'oct', 'A')) == 0
-    assert len(kjc.get('sig', 'rsa', 'A')) == 1
+    assert len(kjc.get_keys('sig', 'oct', 'A')) == 0
+    assert len(kjc.get_keys('sig', 'rsa', 'A')) == 1
 
-    assert len(kjc.get('sig', 'oct', 'B')) == 1
-    assert len(kjc.get('sig', 'rsa', 'B')) == 1
+    assert len(kjc.get_keys('sig', 'oct', 'B')) == 1
+    assert len(kjc.get_keys('sig', 'rsa', 'B')) == 1
 
-    assert len(kjc.get('sig', 'oct', 'C')) == 0
-    assert len(kjc.get('sig', 'rsa', 'C')) == 4
+    assert len(kjc.get_keys('sig', 'oct', 'C')) == 0
+    assert len(kjc.get_keys('sig', 'rsa', 'C')) == 4

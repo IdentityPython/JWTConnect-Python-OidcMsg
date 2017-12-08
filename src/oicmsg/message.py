@@ -36,14 +36,14 @@ ERRTXT = "On '%s': %s"
 
 class Message(MutableMapping):
     """
-    Represents a basic protocol nessage/item in OAuth2/OIDC 
+    Represents a basic protocol message/item in OAuth2/OIDC
     """
-    c_param = {}
-    c_default = {}
+    c_message_parameters = {}
+    c_default_dict_values = {}
     c_allowed_values = {}
 
     def __init__(self, **kwargs):
-        self._dict = self.c_default.copy()
+        self._dict = self.c_default_dict_values.copy()
         self.lax = False
         self.jwt = None
         self.jws_header = None
@@ -73,13 +73,13 @@ class Message(MutableMapping):
         
         :return: list of parameter names 
         """
-        return list(self.c_param.keys())
+        return list(self.c_message_parameters.keys())
 
     def set_defaults(self):
         """
         Based on specification set a parameters value to the default value.
         """
-        for key, val in self.c_default.items():
+        for key, val in self.c_default_dict_values.items():
             self._dict[key] = val
 
     def to_urlencoded(self, lev=0):
@@ -89,7 +89,7 @@ class Message(MutableMapping):
         :return: A string of the application/x-www-form-urlencoded format
         """
 
-        _spec = self.c_param
+        _spec = self.c_message_parameters
         if not self.lax:
             for attribute, (_, req, _ser, _, na) in _spec.items():
                 if req and attribute not in self._dict:
@@ -196,7 +196,7 @@ class Message(MutableMapping):
         elif isinstance(urlencoded, list):
             urlencoded = urlencoded[0]
 
-        _spec = self.c_param
+        _spec = self.c_message_parameters
 
         for key, val in parse_qs(urlencoded).items():
             try:
@@ -243,7 +243,7 @@ class Message(MutableMapping):
         :return: A dict
         """
 
-        _spec = self.c_param
+        _spec = self.c_message_parameters
 
         _res = {}
         lev += 1
@@ -282,7 +282,7 @@ class Message(MutableMapping):
         :return: A class instance or raise an exception on error
         """
 
-        _spec = self.c_param
+        _spec = self.c_message_parameters
 
         for key, val in dictionary.items():
             # Earlier versions of python don't like unicode strings as
@@ -535,7 +535,7 @@ class Message(MutableMapping):
                     raise WrongSigningAlgorithm("%s != %s" % (
                         _alg, kwargs["algs"]["sign"]))
             try:
-                _jwt = JWT().unpack(txt)
+                _jwt = JWT().unpack_jwt(txt)
                 jso = _jwt.payload()
                 _header = _jwt.headers
 
@@ -607,7 +607,7 @@ class Message(MutableMapping):
         Make sure all the required values are there and that the values are
         of the correct type
         """
-        _spec = self.c_param
+        _spec = self.c_message_parameters
         try:
             _allowed = self.c_allowed_values
         except KeyError:
@@ -728,7 +728,7 @@ class Message(MutableMapping):
 
     def __setitem__(self, key, value):
         try:
-            (vtyp, req, _, _deser, na) = self.c_param[key]
+            (vtyp, req, _, _deser, na) = self.c_message_parameters[key]
             self._add_value(str(key), vtyp, key, value, _deser, na)
         except KeyError:
             self._dict[key] = value
@@ -773,7 +773,7 @@ class Message(MutableMapping):
             specification,
         """
         return dict([(key, val) for key, val in
-                     self._dict.items() if key not in self.c_param])
+                     self._dict.items() if key not in self.c_message_parameters])
 
     def only_extras(self):
         """
@@ -782,7 +782,7 @@ class Message(MutableMapping):
         
         :return: True/False 
         """
-        known = [key for key in self._dict.keys() if key in self.c_param]
+        known = [key for key in self._dict.keys() if key in self.c_message_parameters]
         if not known:
             return True
         else:
@@ -843,11 +843,11 @@ class Message(MutableMapping):
     def copy(self):
         return copy.deepcopy(self)
 
-    def weed(self):
+    def remove_non_standard_keys(self):
         """
         Get rid of key value pairs that are not standard
         """
-        _ext = [k for k in self._dict.keys() if k not in self.c_param]
+        _ext = [k for k in self._dict.keys() if k not in self.c_message_parameters]
         for k in _ext:
             del self._dict[k]
 

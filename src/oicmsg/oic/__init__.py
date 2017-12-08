@@ -235,7 +235,7 @@ class TokenErrorResponse(oauth2.TokenErrorResponse):
 
 
 class AccessTokenResponse(oauth2.AccessTokenResponse):
-    c_param = oauth2.AccessTokenResponse.c_param.copy()
+    c_message_parameters = oauth2.AccessTokenResponse.c_param.copy()
     c_param.update({"id_token": SINGLE_OPTIONAL_STRING})
 
     def verify(self, **kwargs):
@@ -259,14 +259,14 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
 
 
 class UserInfoRequest(Message):
-    c_param = {
+    c_message_parameters = {
         "access_token": SINGLE_OPTIONAL_STRING,
     }
 
 
 class AuthorizationResponse(oauth2.AuthorizationResponse,
                             oauth2.AccessTokenResponse):
-    c_param = oauth2.AuthorizationResponse.c_param.copy()
+    c_message_parameters = oauth2.AuthorizationResponse.c_param.copy()
     c_param.update(oauth2.AccessTokenResponse.c_param)
     c_param.update({
         "code": SINGLE_OPTIONAL_STRING,
@@ -337,7 +337,7 @@ class AuthorizationErrorResponse(oauth2.AuthorizationErrorResponse):
 
 
 class AuthorizationRequest(oauth2.AuthorizationRequest):
-    c_param = oauth2.AuthorizationRequest.c_param.copy()
+    c_message_parameters = oauth2.AuthorizationRequest.c_param.copy()
     c_param.update(
         {
             "scope": REQUIRED_LIST_OF_SP_SEP_STRINGS,
@@ -429,10 +429,10 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
 
 
 class AccessTokenRequest(oauth2.AccessTokenRequest):
-    c_param = oauth2.AccessTokenRequest.c_param.copy()
+    c_message_parameters = oauth2.AccessTokenRequest.c_param.copy()
     c_param.update({"client_assertion_type": SINGLE_OPTIONAL_STRING,
                     "client_assertion": SINGLE_OPTIONAL_STRING})
-    c_default = {"grant_type": "authorization_code"}
+    c_default_dict_values = {"grant_type": "authorization_code"}
     c_allowed_values = {
         "client_assertion_type": [
             "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"],
@@ -440,7 +440,7 @@ class AccessTokenRequest(oauth2.AccessTokenRequest):
 
 
 class AddressClaim(Message):
-    c_param = {"formatted": SINGLE_OPTIONAL_STRING,
+    c_message_parameters = {"formatted": SINGLE_OPTIONAL_STRING,
                "street_address": SINGLE_OPTIONAL_STRING,
                "locality": SINGLE_OPTIONAL_STRING,
                "region": SINGLE_OPTIONAL_STRING,
@@ -449,7 +449,7 @@ class AddressClaim(Message):
 
 
 class OpenIDSchema(Message):
-    c_param = {"sub": SINGLE_REQUIRED_STRING,
+    c_message_parameters = {"sub": SINGLE_REQUIRED_STRING,
                "name": SINGLE_OPTIONAL_STRING,
                "given_name": SINGLE_OPTIONAL_STRING,
                "family_name": SINGLE_OPTIONAL_STRING,
@@ -459,18 +459,18 @@ class OpenIDSchema(Message):
                "profile": SINGLE_OPTIONAL_STRING,
                "picture": SINGLE_OPTIONAL_STRING,
                "website": SINGLE_OPTIONAL_STRING,
-               "email": SINGLE_OPTIONAL_STRING,
-               "email_verified": SINGLE_OPTIONAL_BOOLEAN,
-               "gender": SINGLE_OPTIONAL_STRING,
-               "birthdate": SINGLE_OPTIONAL_STRING,
-               "zoneinfo": SINGLE_OPTIONAL_STRING,
-               "locale": SINGLE_OPTIONAL_STRING,
-               "phone_number": SINGLE_OPTIONAL_STRING,
-               "phone_number_verified": SINGLE_OPTIONAL_BOOLEAN,
-               "address": OPTIONAL_ADDRESS,
-               "updated_at": SINGLE_OPTIONAL_INT,
-               "_claim_names": OPTIONAL_MESSAGE,
-               "_claim_sources": OPTIONAL_MESSAGE}
+                            "email": SINGLE_OPTIONAL_STRING,
+                            "email_verified": SINGLE_OPTIONAL_BOOLEAN,
+                            "gender": SINGLE_OPTIONAL_STRING,
+                            "birthdate": SINGLE_OPTIONAL_STRING,
+                            "zoneinfo": SINGLE_OPTIONAL_STRING,
+                            "locale": SINGLE_OPTIONAL_STRING,
+                            "phone_number": SINGLE_OPTIONAL_STRING,
+                            "phone_number_verified": SINGLE_OPTIONAL_BOOLEAN,
+                            "address": OPTIONAL_ADDRESS,
+                            "updated_at": SINGLE_OPTIONAL_INT,
+                            "_claim_names": OPTIONAL_MESSAGE,
+                            "_claim_sources": OPTIONAL_MESSAGE}
 
     def verify(self, **kwargs):
         super(OpenIDSchema, self).verify(**kwargs)
@@ -495,7 +495,7 @@ class OpenIDSchema(Message):
 
 
 class RegistrationRequest(Message):
-    c_param = {
+    c_message_parameters = {
         "redirect_uris": REQUIRED_LIST_OF_STRINGS,
         "response_types": OPTIONAL_LIST_OF_STRINGS,
         "grant_types": OPTIONAL_LIST_OF_STRINGS,
@@ -531,7 +531,7 @@ class RegistrationRequest(Message):
         # "access_token": SINGLE_OPTIONAL_STRING,
         "post_logout_redirect_uris": OPTIONAL_LIST_OF_STRINGS,
     }
-    c_default = {"application_type": "web", "response_types": ["code"]}
+    c_default_dict_values = {"application_type": "web", "response_types": ["code"]}
     c_allowed_values = {"application_type": ["native", "web"],
                         "subject_type": ["public", "pairwise"]}
 
@@ -567,7 +567,7 @@ class RegistrationResponse(Message):
     """
     Response to client_register registration requests
     """
-    c_param = {
+    c_message_parameters = {
         "client_id": SINGLE_REQUIRED_STRING,
         "client_secret": SINGLE_OPTIONAL_STRING,
         "registration_access_token": SINGLE_OPTIONAL_STRING,
@@ -603,7 +603,7 @@ class ClientRegistrationErrorResponse(oauth2.ErrorResponse):
 
 
 class IdToken(OpenIDSchema):
-    c_param = OpenIDSchema.c_param.copy()
+    c_message_parameters = OpenIDSchema.c_param.copy()
     c_param.update({
         "iss": SINGLE_REQUIRED_STRING,
         "sub": SINGLE_REQUIRED_STRING,
@@ -723,7 +723,7 @@ class IdToken(OpenIDSchema):
 
 
 class MessageWithIdToken(Message):
-    c_param = {"id_token": SINGLE_REQUIRED_IDTOKEN}
+    c_message_parameters = {"id_token": SINGLE_REQUIRED_IDTOKEN}
 
     def verify(self, **kwargs):
         super(MessageWithIdToken, self).verify(**kwargs)
@@ -746,13 +746,13 @@ class MessageWithIdToken(Message):
 
 
 class RefreshSessionRequest(MessageWithIdToken):
-    c_param = MessageWithIdToken.c_param.copy()
+    c_message_parameters = MessageWithIdToken.c_param.copy()
     c_param.update({"redirect_url": SINGLE_REQUIRED_STRING,
                     "state": SINGLE_REQUIRED_STRING})
 
 
 class RefreshSessionResponse(MessageWithIdToken):
-    c_param = MessageWithIdToken.c_param.copy()
+    c_message_parameters = MessageWithIdToken.c_param.copy()
     c_param.update({"state": SINGLE_REQUIRED_STRING})
 
 
@@ -761,11 +761,11 @@ class CheckSessionRequest(MessageWithIdToken):
 
 
 class CheckIDRequest(Message):
-    c_param = {"access_token": SINGLE_REQUIRED_STRING}
+    c_message_parameters = {"access_token": SINGLE_REQUIRED_STRING}
 
 
 class EndSessionRequest(Message):
-    c_param = {
+    c_message_parameters = {
         "id_token_hint": SINGLE_OPTIONAL_IDTOKEN,
         "post_logout_redirect_uri": SINGLE_OPTIONAL_STRING,
         "state": SINGLE_OPTIONAL_STRING
@@ -792,7 +792,7 @@ class EndSessionRequest(Message):
 
 
 class EndSessionResponse(Message):
-    c_param = {"state": SINGLE_OPTIONAL_STRING}
+    c_message_parameters = {"state": SINGLE_OPTIONAL_STRING}
 
 
 class Claims(Message):
@@ -801,7 +801,7 @@ class Claims(Message):
 
 
 class ClaimsRequest(Message):
-    c_param = {
+    c_message_parameters = {
         "userinfo": OPTIONAL_MULTIPLE_Claims,
         "id_token": OPTIONAL_MULTIPLE_Claims
     }
@@ -812,7 +812,7 @@ class OpenIDRequest(AuthorizationRequest):
 
 
 class ProviderConfigurationResponse(Message):
-    c_param = {
+    c_message_parameters = {
         "issuer": SINGLE_REQUIRED_STRING,
         "authorization_endpoint": SINGLE_REQUIRED_STRING,
         "token_endpoint": SINGLE_OPTIONAL_STRING,
@@ -857,7 +857,7 @@ class ProviderConfigurationResponse(Message):
         # "x509_url": SINGLE_REQUIRED_STRING,
         # "x509_encryption_url": SINGLE_OPTIONAL_STRING,
     }
-    c_default = {"version": "3.0",
+    c_default_dict_values = {"version": "3.0",
                  "token_endpoint_auth_methods_supported": [
                      "client_secret_basic"],
                  "claims_parameter_supported": False,
@@ -893,7 +893,7 @@ class ProviderConfigurationResponse(Message):
 
 # According to RFC 7519 all claims are optional
 class JsonWebToken(Message):
-    c_param = {
+    c_message_parameters = {
         "iss": SINGLE_OPTIONAL_STRING,
         "sub": SINGLE_OPTIONAL_STRING,
         "aud": OPTIONAL_LIST_OF_STRINGS,  # Array of strings or string
@@ -944,7 +944,7 @@ class JsonWebToken(Message):
     
 
 class AuthnToken(JsonWebToken):
-    c_param = {
+    c_message_parameters = {
         "iss": SINGLE_REQUIRED_STRING,
         "sub": SINGLE_REQUIRED_STRING,
         "aud": REQUIRED_LIST_OF_STRINGS,  # Array of strings or string
@@ -973,16 +973,16 @@ class UserInfoErrorResponse(oauth2.ErrorResponse):
 
 
 class DiscoveryRequest(Message):
-    c_param = {"principal": SINGLE_REQUIRED_STRING,
+    c_message_parameters = {"principal": SINGLE_REQUIRED_STRING,
                "service": SINGLE_REQUIRED_STRING}
 
 
 class DiscoveryResponse(Message):
-    c_param = {"locations": REQUIRED_LIST_OF_STRINGS}
+    c_message_parameters = {"locations": REQUIRED_LIST_OF_STRINGS}
 
 
 class ResourceRequest(Message):
-    c_param = {"access_token": SINGLE_OPTIONAL_STRING}
+    c_message_parameters = {"access_token": SINGLE_OPTIONAL_STRING}
 
 
 SCOPE2CLAIMS = {
