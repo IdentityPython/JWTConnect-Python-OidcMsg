@@ -32,7 +32,7 @@ Loading a symmetric key::
     >>> desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
     >>> kb = KeyBundle([desc])
     >>> kb.keys()
-    [<jwkest.jwk.SYMKey object at 0x1037f7080>]
+    [<cryptojwt.jwk.SYMKey object at 0x1037f7080>]
 
 Loading from a file::
 
@@ -58,7 +58,7 @@ Loading from a file::
     >>> len(kb)
     2
     >>> kb.keys()
-    [<jwkest.jwk.RSAKey object at 0x1048a62b0>, <jwkest.jwk.RSAKey object at 0x1048d3c50>]
+    [<cryptojwt.jwk.RSAKey object at 0x1048a62b0>, <cryptojwt.jwk.RSAKey object at 0x1048d3c50>]
 
 
 and if DER encoded RSA key file instead::
@@ -75,7 +75,7 @@ and if DER encoded RSA key file instead::
     >>> len(kb)
     1
     >>> kb.keys()
-    [<jwkest.jwk.RSAKey object at 0x1048a65c0>]
+    [<cryptojwt.jwk.RSAKey object at 0x1048a65c0>]
 
 **Note** that if no *keyusage* had been defined then two copies of the
 RSA key would have been been stored in the key bundle. One for
@@ -100,7 +100,7 @@ descriptions.::
     >>> desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
     >>> kb = KeyBundle([desc])
     >>> kb.keys()
-    [<jwkest.jwk.SYMKey object at 0x1037f7080>]
+    [<cryptojwt.jwk.SYMKey object at 0x1037f7080>]
     >>> for k in kb.keys():
     ...     kb.remove(k)
     ...
@@ -109,7 +109,7 @@ descriptions.::
     >>> desc = {"kty": "oct", "key": "secret", "use": "enc"}
     >>> kb.do_keys([desc])
     >>> kb.keys()
-    [<jwkest.jwk.SYMKey object at 0x106298cf8>]
+    [<cryptojwt.jwk.SYMKey object at 0x106298cf8>]
 
 or::
 
@@ -148,7 +148,7 @@ To pick out one key based on the Key Identifier (kid) you can do this::
     ]}
     >>> kb = KeyBundle(source='file://jwks1.json', fileformat='jwks')
     >>> kb.get_key_with_kid('rsa1')
-    <jwkest.jwk.RSAKey object at 0x1049662e8>
+    <cryptojwt.jwk.RSAKey object at 0x1049662e8>
     >>> k = kb.get_key_with_kid('rsa1')
     >>> k.kid
     'rsa1'
@@ -196,9 +196,9 @@ Get all keys of specific type (note that here the JWKS describes private keys)::
     >>> kb.get('oct')
     []
     >>> kb.get('rsa')
-    [<jwkest.jwk.RSAKey object at 0x104f39198>, <jwkest.jwk.RSAKey object at 0x104f39208>]
+    [<cryptojwt.jwk.RSAKey object at 0x104f39198>, <cryptojwt.jwk.RSAKey object at 0x104f39208>]
     >>> kb.get('ec')
-    [<jwkest.jwk.ECKey object at 0x10585d908>]
+    [<cryptojwt.jwk.ECKey object at 0x10585d908>]
 
 - 'oct' is the name  for symmetric keys,
 - 'rsa' for RSA keys and

@@ -105,7 +105,7 @@ Regarding signed Jason Web Tokens we need a key so I create a
 simple symmetric one:
 
     >>> from oicmsg.message import Message
-    >>> from jwkest.jwk import SYMKey
+    >>> from cryptojwt.jwk import SYMKey
     >>> msg = Message(key='value', another=2)
     >>> keys = [SYMKey(key="A1B2C3D4")]
 

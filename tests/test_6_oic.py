@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 import time
+
+from cryptojwt.exception import BadSignature
+from cryptojwt.jwk import SYMKey
+from cryptojwt.jws import alg2keytype
 from future.backports.urllib.parse import parse_qs
 from future.backports.urllib.parse import urlencode
 
@@ -8,9 +12,6 @@ import os
 import sys
 
 import pytest
-from jwkest import BadSignature
-from jwkest.jwk import SYMKey
-from jwkest.jws import alg2keytype
 from oicmsg.oauth2 import ErrorResponse
 
 from oicmsg.key_bundle import KeyBundle

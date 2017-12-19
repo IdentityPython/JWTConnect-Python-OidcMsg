@@ -11,7 +11,8 @@ import six
 import sys
 import time
 
-from jwkest import jws, as_unicode
+from cryptojwt import as_unicode
+from cryptojwt import jws
 
 from oicmsg import oauth2
 from oicmsg import time_util

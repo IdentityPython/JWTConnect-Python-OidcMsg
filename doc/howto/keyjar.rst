@@ -94,9 +94,9 @@ An example::
     >>> kj = KeyJar()
     >>> kj['https://foo.example.com'] = [kb]
     >>> kj.get(key_use='sig', key_type='rsa', owner='https://foo.example.com')
-    [<jwkest.jwk.RSAKey object at 0x1049662e8>]
+    [<cryptojwt.jwk.RSAKey object at 0x1049662e8>]
     >>> kj.get('sig', owner='https://foo.example.com')
-    [<jwkest.jwk.RSAKey object at 0x1049662e8>, <jwkest.jwk.SYMKey object at 0x106298cf8>]
+    [<cryptojwt.jwk.RSAKey object at 0x1049662e8>, <cryptojwt.jwk.SYMKey object at 0x106298cf8>]
     >>> kj.get('sig')
     []
 
@@ -119,7 +119,7 @@ special methods:
 You call them like this (assuming *jwt* contains the JasonWebToken and that
 *keyjar* is a  KeyJar instance with the necessary keys)::
 
-    from jwkest import jws
+    from cryptojwt import jws
     _rj = jws.factory(token)
     keys = keyjar.get_jwt_decrypt_keys(_rj.jwt)
     info = rj.verify_compact(token, keys)

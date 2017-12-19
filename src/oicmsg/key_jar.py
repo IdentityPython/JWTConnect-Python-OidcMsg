@@ -1,5 +1,4 @@
 import six
-from cryptography.hazmat.backends import default_backend
 from future.backports.urllib.parse import urlsplit
 
 import json
@@ -7,6 +6,7 @@ import logging
 import os
 import sys
 
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import ec
 
 from cryptojwt import as_bytes
@@ -14,7 +14,7 @@ from cryptojwt import as_unicode
 from cryptojwt import b64e
 from cryptojwt import jwe
 from cryptojwt import jws
-from cryptojwt.jwk import DeSerializationNotPossible, NIST2SEC
+from cryptojwt.jwk import DeSerializationNotPossible, NIST2SEC, SYMKey
 from cryptojwt.jwk import ECKey
 from cryptojwt.jwk import RSAKey
 from cryptojwt.jwk import rsa_load
@@ -862,3 +862,37 @@ def check_key_availability(inst, jwt):
         cinfo = inst.cdb[_cid]
         inst.keyjar.add_symmetric(_cid, cinfo['client_secret'], ['enc', 'sig'])
         inst.keyjar.add(_cid, cinfo['jwks_uri'])
+
+
+def public_keys_keyjar(from_kj, origin, to_kj=None, receiver=''):
+    """
+    Due to cryptography's differentiating between public and private keys
+    this function that constructs the public equivalent to the private key
+    keyjar that build_keyjar creates.
+
+    :param from_kj: The KeyJar instance that contains the private keys
+    :param origin: The owner ID
+    :param to_kj: The KeyJar that is the receiver of the public keys
+    :param receiver: The owner ID under which the publci keys should be stored
+    :return: The modified KeyJar instance
+
+    """
+    if to_kj is None:
+        to_kj = KeyJar()
+
+    for kb in from_kj[origin]:
+        nkb = KeyBundle()
+        for key in kb.keys():
+            _ser = key.serialize()
+            if isinstance(key, RSAKey):
+                _key = RSAKey(**_ser)
+                nkb.append(_key)
+            elif isinstance(key, ECKey):
+                _key = ECKey(**_ser)
+                nkb.append(_key)
+            elif isinstance(key, SYMKey):
+                _key = SYMKey(**_ser)
+                nkb.append(_key)
+        to_kj.add_kb(receiver, nkb)
+
+    return to_kj

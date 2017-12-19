@@ -5,21 +5,12 @@ from future.backports.urllib.parse import urlparse
 import json
 
 import pytest
-from jwkest.jwk import SYMKey
 
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.key_jar import build_keyjar
 from oicmsg.message import DecodeError
 from oicmsg.message import json_deserializer
 from oicmsg.message import json_serializer
-from oicmsg.message import OPTIONAL_LIST_OF_MESSAGES
-from oicmsg.message import OPTIONAL_LIST_OF_STRINGS
-from oicmsg.message import OPTIONAL_MESSAGE
-from oicmsg.message import REQUIRED_LIST_OF_STRINGS
-from oicmsg.message import SINGLE_OPTIONAL_INT
-from oicmsg.message import SINGLE_OPTIONAL_JSON
-from oicmsg.message import SINGLE_OPTIONAL_STRING
-from oicmsg.message import SINGLE_REQUIRED_STRING
 from oicmsg.message import sp_sep_list_deserializer
 
 from oicmsg.oauth2 import factory
@@ -30,7 +21,6 @@ from oicmsg.oauth2 import AuthorizationRequest
 from oicmsg.oauth2 import AuthorizationResponse
 from oicmsg.oauth2 import CCAccessTokenRequest
 from oicmsg.oauth2 import ErrorResponse
-from oicmsg.oauth2 import Message
 from oicmsg.oauth2 import RefreshAccessTokenRequest
 from oicmsg.oauth2 import ROPCAccessTokenRequest
 from oicmsg.oauth2 import TokenErrorResponse
