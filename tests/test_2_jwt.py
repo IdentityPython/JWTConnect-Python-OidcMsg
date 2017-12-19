@@ -100,7 +100,7 @@ def test_jwt_pack_encrypt():
     info = bob.unpack(_jwt)
 
     assert isinstance(info, JsonWebToken)
-    assert set(info.keys()) == {'jti', 'iat', 'iss', 'sub', 'kid', 'aud'}
+    assert set(info.keys()) == {'iat', 'iss', 'sub', 'kid', 'aud'}
 
 
 def test_jwt_pack_unpack_sym():
