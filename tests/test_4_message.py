@@ -3,11 +3,12 @@ from future.backports.urllib.parse import parse_qs
 from future.backports.urllib.parse import urlparse
 
 import json
-
 import pytest
-from jwkest.jwk import SYMKey
 
-from oicmsg.key_jar import build_keyjar
+from cryptojwt.jwk import SYMKey, RSAKey, ECKey
+
+from oicmsg.key_bundle import KeyBundle
+from oicmsg.key_jar import build_keyjar, KeyJar
 from oicmsg.message import json_deserializer
 from oicmsg.message import json_serializer
 from oicmsg.message import OPTIONAL_LIST_OF_MESSAGES
@@ -38,6 +39,22 @@ keym = [
 ]
 
 KEYJAR = build_keyjar(keys)[1]
+
+kb = KeyBundle()
+
+for key in KEYJAR.get_issuer_keys(''):
+    _ser = key.serialize()
+    if isinstance(key, RSAKey):
+        _key = RSAKey(**_ser)
+        kb.append(_key)
+    elif isinstance(key, ECKey):
+        _key = ECKey(**_ser)
+        kb.append(_key)
+
+
+PUB_KEYJAR = KeyJar()
+PUB_KEYJAR.add_kb('', kb)
+
 IKEYJAR = build_keyjar(keys)[1]
 IKEYJAR.issuer_keys['issuer'] = IKEYJAR.issuer_keys['']
 del IKEYJAR.issuer_keys['']
@@ -268,7 +285,7 @@ class TestMessage(object):
 def test_to_jwt(keytype, alg):
     msg = Message(a='foo', b='bar', c='tjoho')
     _jwt = msg.to_jwt(KEYJAR.get_signing_key(keytype, ''), alg)
-    msg1 = Message().from_jwt(_jwt, KEYJAR.get_signing_key(keytype, ''))
+    msg1 = Message().from_jwt(_jwt, PUB_KEYJAR.get_signing_key(keytype, ''))
     assert msg1 == msg
 
 
@@ -278,7 +295,7 @@ def test_to_jwt(keytype, alg):
 ])
 def test_to_jwe(keytype, alg, enc):
     msg = Message(a='foo', b='bar', c='tjoho')
-    _jwe = msg.to_jwe(KEYJAR.get_encrypt_key(keytype, ''), alg=alg, enc=enc)
+    _jwe = msg.to_jwe(PUB_KEYJAR.get_encrypt_key(keytype, ''), alg=alg, enc=enc)
     msg1 = Message().from_jwe(_jwe, KEYJAR.get_encrypt_key(keytype, ''))
     assert msg1 == msg
 
