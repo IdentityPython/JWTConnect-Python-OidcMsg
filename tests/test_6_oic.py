@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
 
-from cryptojwt.exception import BadSignature
-from cryptojwt.jwk import SYMKey
-from cryptojwt.jws import alg2keytype
 from future.backports.urllib.parse import parse_qs
 from future.backports.urllib.parse import urlencode
 
@@ -12,16 +9,17 @@ import os
 import sys
 
 import pytest
-from oicmsg.oauth2 import ErrorResponse
 
-from oicmsg.key_bundle import KeyBundle
-
-from oicmsg.time_util import utc_time_sans_frac
+from cryptojwt.exception import BadSignature
+from cryptojwt.jwk import SYMKey
+from cryptojwt.jws import alg2keytype
 
 from oicmsg import time_util
 from oicmsg.exception import MissingRequiredAttribute
 from oicmsg.exception import NotAllowedValue
 from oicmsg.exception import WrongSigningAlgorithm
+from oicmsg.key_bundle import KeyBundle
+from oicmsg.oauth2 import ErrorResponse
 from oicmsg.oic import AccessTokenRequest
 from oicmsg.oic import CheckSessionRequest
 from oicmsg.oic import ClaimsRequest
@@ -46,6 +44,7 @@ from oicmsg.oic import address_deser
 from oicmsg.oic import claims_deser
 from oicmsg.oic import claims_ser
 from oicmsg.oic import msg_ser
+from oicmsg.time_util import utc_time_sans_frac
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              '..', '..')))
