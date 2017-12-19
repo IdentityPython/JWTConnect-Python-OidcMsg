@@ -1,6 +1,9 @@
 import os
 
+from cryptojwt.jwk import RSAKey
+
 from oicmsg.jwt import JWT
+from oicmsg.key_bundle import KeyBundle
 from oicmsg.key_jar import build_keyjar, KeyJar
 from oicmsg.oic import JsonWebToken
 
@@ -10,54 +13,91 @@ BASE_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "data/keys"))
 
 keys = [
-    {"type": "RSA", "key": os.path.join(BASE_PATH, "cert.key"),
-     "use": ["enc", "sig"]},
+    {"type": "RSA", "key": os.path.join(BASE_PATH, "a_enc.key"),
+     "use": ["enc"]},
+    {"type": "RSA", "key": os.path.join(BASE_PATH, "a_sig.key"),
+     "use": ["sig"]},
     {"type": "EC", "crv": "P-256", "use": ["sig"]},
     {"type": "EC", "crv": "P-256", "use": ["enc"]}
 ]
-jwks, keyjar, kidd = build_keyjar(keys)
-issuer = 'https://fedop.example.org'
-receiver = 'https://example.com'
-keyjar[issuer] = keyjar['']  # just testing right !?
-keyjar[receiver] = keyjar['']
+alice_keyjar = build_keyjar(keys)[1]
+ALICE = 'https://alice.example.org'
 
+keys = [
+    {"type": "RSA", "key": os.path.join(BASE_PATH, "b_enc.key"),
+     "use": ["enc"]},
+    {"type": "RSA", "key": os.path.join(BASE_PATH, "b_sig.key"),
+     "use": ["sig"]},
+    {"type": "EC", "crv": "P-256", "use": ["sig"]},
+    {"type": "EC", "crv": "P-256", "use": ["enc"]}
+]
+bob_keyjar = build_keyjar(keys)[1]
+BOB = 'https://bob.example.com'
+
+# Need to add Alice's public keys to Bob's keyjar
+# and the other way around
+
+kb = KeyBundle()
+
+for key in alice_keyjar.get_issuer_keys(''):
+    _ser = key.serialize()
+    if isinstance(key, RSAKey):
+        _key = RSAKey(**_ser)
+        kb.append(_key)
+
+bob_keyjar.add_kb(ALICE, kb)
+
+
+kb = KeyBundle()
+
+for key in bob_keyjar.get_issuer_keys(''):
+    _ser = key.serialize()
+    if isinstance(key, RSAKey):
+        _key = RSAKey(**_ser)
+        kb.append(_key)
+
+alice_keyjar.add_kb(BOB, kb)
 
 def _eq(l1, l2):
     return set(l1) == set(l2)
 
 
 def test_jwt_pack():
-    _jwt = JWT(keyjar, lifetime=3600, iss=issuer).pack()
+    alice = JWT(alice_keyjar, lifetime=3600, iss=ALICE).pack()
 
-    assert _jwt
-    assert len(_jwt.split('.')) == 3
+    assert alice
+    assert len(alice.split('.')) == 3
 
 
 def test_jwt_pack_and_unpack():
-    srv = JWT(keyjar, iss=issuer)
+    alice = JWT(alice_keyjar, iss=ALICE)
     payload = {'sub': 'sub'}
-    _jwt = srv.pack(payload=payload)
+    _jwt = alice.pack(payload=payload)
 
-    info = srv.unpack(_jwt)
+    bob = JWT(bob_keyjar, iss=BOB)
+    info = bob.unpack(_jwt)
 
-    assert set(info.keys()) == {'jti', 'iat', 'iss', 'sub', 'kid'}
+    assert set(info.keys()) == {'iat', 'iss', 'sub', 'kid'}
+
 
 def test_jwt_pack_and_unpack_with_lifetime():
-    srv = JWT(keyjar, iss=issuer, lifetime=600)
+    alice = JWT(alice_keyjar, iss=ALICE, lifetime=600)
     payload = {'sub': 'sub'}
-    _jwt = srv.pack(payload=payload)
+    _jwt = alice.pack(payload=payload)
 
-    info = srv.unpack(_jwt)
+    bob = JWT(bob_keyjar, iss=BOB)
+    info = bob.unpack(_jwt)
 
-    assert set(info.keys()) == {'jti', 'iat', 'iss', 'sub', 'kid', 'exp'}
+    assert set(info.keys()) == {'iat', 'iss', 'sub', 'kid', 'exp'}
 
 
 def test_jwt_pack_encrypt():
-    srv = JWT(keyjar, iss=issuer)
-    payload = {'sub': 'sub', 'aud': receiver}
-    _jwt = srv.pack(payload=payload, encrypt=True)
+    alice = JWT(alice_keyjar, iss=ALICE)
+    payload = {'sub': 'sub', 'aud': BOB}
+    _jwt = alice.pack(payload=payload, encrypt=True, recv=BOB)
 
-    info = srv.unpack(_jwt)
+    bob = JWT(bob_keyjar, iss=BOB)
+    info = bob.unpack(_jwt)
 
     assert isinstance(info, JsonWebToken)
     assert set(info.keys()) == {'jti', 'iat', 'iss', 'sub', 'kid', 'aud'}
@@ -67,8 +107,12 @@ def test_jwt_pack_unpack_sym():
     kj = KeyJar()
     kj.add_symmetric(owner='', key='client_secret', usage=['sig'])
     kj['https://fedop.example.org'] = kj['']
-    srv = JWT(kj, iss=issuer, sign_alg="HS256")
+
+    alice = JWT(kj, iss=ALICE, sign_alg="HS256")
     payload = {'sub': 'sub2'}
-    _jwt = srv.pack(payload=payload)
-    info = srv.unpack(_jwt)
+    _jwt = alice.pack(payload=payload)
+
+    kj[ALICE] = kj['']
+    bob = JWT(kj, iss=BOB)
+    info = bob.unpack(_jwt)
     assert info

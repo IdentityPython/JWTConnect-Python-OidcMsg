@@ -6,13 +6,17 @@ import time
 
 import requests
 import six
-from Cryptodome.PublicKey import RSA
-from jwkest import as_unicode
-from jwkest.jwk import ECKey
-from jwkest.jwk import JWKException
-from jwkest.jwk import RSAKey
-from jwkest.jwk import SYMKey
-from jwkest.jwk import rsa_load
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.rsa import generate_private_key
+
+from cryptojwt import as_unicode
+from cryptojwt.jwk import ECKey
+from cryptojwt.jwk import JWKException
+from cryptojwt.jwk import RSAKey
+from cryptojwt.jwk import SYMKey
+from cryptojwt.jwk import rsa_load
 
 from oicmsg.exception import UnknownKeyType
 from oicmsg.exception import UpdateFailed
@@ -64,7 +68,8 @@ def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048, use=''):
     :return: RSA key
     """
 
-    key = RSA.generate(size)
+    key = generate_private_key(public_exponent=65537, key_size=size,
+                               backend=default_backend())
 
     if sys.version_info[0] > 2:
         os.makedirs(path, exist_ok=True)
@@ -78,12 +83,21 @@ def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048, use=''):
         if use:
             name = '{}_{}'.format(name, use)
 
-        with open(os.path.join(path, name), 'wb') as f:
-            f.write(key.exportKey('PEM'))
+        pem = key.private_bytes(
+            encoding = serialization.Encoding.PEM,
+            format = serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm = serialization.NoEncryption())
 
-        _pub_key = key.publickey()
+        with open(os.path.join(path, name), 'wb') as f:
+            f.write(pem)
+
+        public_key = key.public_key()
+        pub_pem = public_key.public_bytes(
+            encoding = serialization.Encoding.PEM,
+            format = serialization.PublicFormat.SubjectPublicKeyInfo)
+
         with open(os.path.join(path, '{}.pub'.format(name)), 'wb') as f:
-            f.write(_pub_key.exportKey('PEM'))
+            f.write(pub_pem)
 
     return key
 

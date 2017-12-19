@@ -1,22 +1,23 @@
 import six
+from cryptography.hazmat.backends import default_backend
 from future.backports.urllib.parse import urlsplit
 
-import copy
 import json
 import logging
 import os
 import sys
 
-from jwkest import as_bytes
-from jwkest import as_unicode
-from jwkest import b64e
-from jwkest import jwe
-from jwkest import jws
-from jwkest.ecc import NISTEllipticCurve
-from jwkest.jwk import DeSerializationNotPossible
-from jwkest.jwk import ECKey
-from jwkest.jwk import RSAKey
-from jwkest.jwk import rsa_load
+from cryptography.hazmat.primitives.asymmetric import ec
+
+from cryptojwt import as_bytes
+from cryptojwt import as_unicode
+from cryptojwt import b64e
+from cryptojwt import jwe
+from cryptojwt import jws
+from cryptojwt.jwk import DeSerializationNotPossible, NIST2SEC
+from cryptojwt.jwk import ECKey
+from cryptojwt.jwk import RSAKey
+from cryptojwt.jwk import rsa_load
 
 from oicmsg.exception import MessageException
 from oicmsg.exception import OicMsgError
@@ -107,7 +108,7 @@ class KeyJar(object):
         cloak since KeyJar does not handle keys directly but only through
         key bundles.
         
-        :param issuer: Owner of the key 
+        :param owner: Owner of the key
         :param key: The key 
         :param usage: What the key can be used for signing/signature 
             verification (sig) and/or encryption/decryption (enc)
@@ -130,7 +131,7 @@ class KeyJar(object):
         """
         Add a key bundle and bind it to an identifier
         
-        :param issuer: Owner of the keys in the keybundle 
+        :param owner: Owner of the keys in the keybundle
         :param kb: A :py:class:`oicmsg.key_bundle.KeyBundle`instance
         """
         try:
@@ -143,7 +144,7 @@ class KeyJar(object):
         Bind one or a list of key bundles to a special identifier.
         Will overwrite whatever was there before !!
         
-        :param issuer: The owner of the keys in the keybundle/-s 
+        :param owner: The owner of the keys in the keybundle/-s
         :param val: A single or a list of KeyBundle instance
         :return: 
         """
@@ -478,7 +479,7 @@ class KeyJar(object):
         Get decryption keys from a keyjar. 
         These keys should be usable to decrypt an encrypted JWT.
 
-        :param jwt: A jwkest.jwt.JWT instance
+        :param jwt: A cryptojwt.jwt.JWT instance
         :param kwargs: Other key word arguments
         :return: list of usable keys
         """
@@ -504,7 +505,7 @@ class KeyJar(object):
         Get keys from a keyjar. These keys should be usable to verify a 
         signed JWT.
 
-        :param jwt: A jwkest.jwt.JWT instance
+        :param jwt: A cryptojwt.jwt.JWT instance
         :param kwargs: Other key word arguments
         :return: list of usable keys
         """
@@ -704,14 +705,13 @@ def ec_init(spec):
     
     :return: A KeyBundle instance
     """
-    _key = NISTEllipticCurve.by_name(spec["crv"])
+
+    _key = ec.generate_private_key(NIST2SEC[spec['crv']], default_backend())
+
     kb = KeyBundle(keytype="EC", keyusage=spec["use"])
     for use in spec["use"]:
-        priv, pub = _key.key_pair()
-        ec = ECKey(x=pub[0], y=pub[1], d=priv, crv=spec["crv"])
-        ec.serialize()
-        ec.use = use
-        kb.append(ec)
+        eck = ECKey(use=use).load_key(_key)
+        kb.append(eck)
     return kb
 
 

@@ -6,9 +6,10 @@ import shutil
 
 import pytest
 import time
-from Cryptodome.PublicKey.RSA import RsaKey
-from jwkest.jwk import RSAKey
-from jwkest.jwk import SYMKey
+
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptojwt.jwk import RSAKey
+from cryptojwt.jwk import SYMKey
 
 from oicmsg.key_bundle import create_and_store_rsa_key_pair
 from oicmsg.key_bundle import dump_jwks
@@ -182,7 +183,7 @@ if os.path.isdir('keys'):
 
 def test_create_and_store_rsa_key_pair():
     key = create_and_store_rsa_key_pair()
-    assert isinstance(key, RsaKey)
+    assert isinstance(key, rsa.RSAPrivateKey)
 
     # default
     filename = os.path.join('.', 'oicmsg')
@@ -190,7 +191,7 @@ def test_create_and_store_rsa_key_pair():
     assert os.path.isfile('{}.pub'.format(filename))
 
     sec_key = create_and_store_rsa_key_pair('seckey', 'keys', size=1024)
-    assert isinstance(sec_key, RsaKey)
+    assert isinstance(sec_key, rsa.RSAPrivateKey)
 
     # default
     filename = os.path.join('keys', 'seckey')

@@ -1,11 +1,9 @@
-# pylint: disable=missing-docstring,no-self-use
-import json
 import os
 import time
 
 import pytest
-from jwkest.jws import JWS, factory
-from jwkest.jwt import JWT
+from cryptojwt.jws import factory
+from cryptojwt.jws import JWS
 
 from oicmsg.key_bundle import keybundle_from_local_file
 from oicmsg.key_bundle import KeyBundle

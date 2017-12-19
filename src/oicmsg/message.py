@@ -7,14 +7,14 @@ import logging
 from collections import MutableMapping
 
 import six
-from jwkest import as_unicode
-from jwkest import jwe
-from jwkest import jws
-from jwkest.jwk import keyitems2keyreps
-from jwkest.jws import NoSuitableSigningKeys
-from jwkest.jwe import JWE
-from jwkest.jws import JWS
-from jwkest.jwt import JWT
+from cryptojwt import as_unicode
+from cryptojwt import jwe
+from cryptojwt import jws
+from cryptojwt.jwk import keyitems2keyreps
+from cryptojwt.jws import NoSuitableSigningKeys
+from cryptojwt.jwe import JWE
+from cryptojwt.jws import JWS
+from cryptojwt import SimpleJWT
 
 from oicmsg.exception import DecodeError
 from oicmsg.exception import FormatError
@@ -535,7 +535,7 @@ class Message(MutableMapping):
                     raise WrongSigningAlgorithm("%s != %s" % (
                         _alg, kwargs["algs"]["sign"]))
             try:
-                _jwt = JWT().unpack(txt)
+                _jwt = SimpleJWT().unpack(txt)
                 jso = _jwt.payload()
                 _header = _jwt.headers
 
@@ -828,8 +828,7 @@ class Message(MutableMapping):
         of the JWT into this object.
 
         :param msg: An encrypted JWT
-        :param keys: Dictionary, keys are key type and key is the value or
-            simple list.
+        :param keys: Dictionary, keys are key type and key is the value orsimple list.
         :return: The decrypted message. If decryption failed an exception
             will be raised.
         """
