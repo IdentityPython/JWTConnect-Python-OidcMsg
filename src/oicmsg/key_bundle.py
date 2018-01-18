@@ -85,7 +85,7 @@ def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048, use=''):
 
         pem = key.private_bytes(
             encoding = serialization.Encoding.PEM,
-            format = serialization.PrivateFormat.TraditionalOpenSSL,
+            format = serialization.PrivateFormat.PKCS8,
             encryption_algorithm = serialization.NoEncryption())
 
         with open(os.path.join(path, name), 'wb') as f:
