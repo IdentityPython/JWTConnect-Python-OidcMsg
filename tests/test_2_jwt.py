@@ -96,7 +96,7 @@ def test_jwt_pack_encrypt():
     payload = {'sub': 'sub', 'aud': BOB}
     _jwt = alice.pack(payload=payload, encrypt=True, recv=BOB)
 
-    bob = JWT(bob_keyjar, iss=BOB)
+    bob = JWT(bob_keyjar, iss=BOB, msg_cls=JsonWebToken)
     info = bob.unpack(_jwt)
 
     assert isinstance(info, JsonWebToken)

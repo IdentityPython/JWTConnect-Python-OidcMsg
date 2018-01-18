@@ -2,6 +2,7 @@ import os
 import time
 
 import pytest
+from cryptojwt.exception import JWKESTException
 from cryptojwt.jws import factory
 from cryptojwt.jws import JWS
 
@@ -442,8 +443,8 @@ JWK_FP = {"keys": [
 
 def test_load_missing_key_parameter():
     kj = KeyJar()
-    kj.import_jwks(JWK_FP, '')
-    assert len(kj.get_issuer_keys('')) == 0
+    with pytest.raises(JWKESTException):
+        kj.import_jwks(JWK_FP, '')
 
 
 JWKS_SPO = {
