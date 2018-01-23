@@ -410,7 +410,7 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
             raise MissingRequiredAttribute("response_type missing", self)
 
         _rt = self["response_type"]
-        if "token" in _rt or "id_token" in _rt:
+        if "id_token" in _rt:
             if "nonce" not in self:
                 raise MissingRequiredAttribute("Nonce missing", self)
 
