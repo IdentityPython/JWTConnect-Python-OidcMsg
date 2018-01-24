@@ -87,7 +87,8 @@ def parse_duration(duration):
         index += 1
     else:
         sign = '+'
-    assert duration[index] == "P"
+    if duration[index] != "P":
+        raise ValueError('duration index {} != "P"'.format(duration[index]))
     index += 1
 
     dic = dict([(typ, 0) for (code, typ) in D_FORMAT])

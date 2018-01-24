@@ -230,12 +230,9 @@ class KeyJar(object):
             name = "P-{}".format(kwargs["alg"][2:])  # the type
             _lst = []
             for key in lst:
-                try:
-                    assert name == key.crv
-                except AssertionError:
-                    pass
-                else:
-                    _lst.append(key)
+                if name != key.crv:
+                    continue
+                _lst.append(key)
             lst = _lst
 
         if use == 'enc' and key_type == 'oct' and owner != '':
