@@ -413,6 +413,12 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
         if "id_token" in _rt:
             if "nonce" not in self:
                 raise MissingRequiredAttribute("Nonce missing", self)
+            else:
+                try:
+                    if self['nonce'] != kwargs['nonce']:
+                        raise ValueError('Nonce in id_token not matching nonce in authz request')
+                except KeyError:
+                    pass
 
         if "openid" not in self.get("scope", []):
             raise MissingRequiredValue("openid not in scope", self)
