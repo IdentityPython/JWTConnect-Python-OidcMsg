@@ -317,7 +317,7 @@ class KeyJar(object):
         :return: Dictionary with usage as key and keys as values
         """
 
-        logger.debug("loading keys for issuer: %s" % issuer)
+        logger.debug("Initiating key bundle for issuer: %s" % issuer)
         try:
             logger.debug("pcr: %s" % pcr)
         except MessageException:
@@ -432,7 +432,7 @@ class KeyJar(object):
                 del self.issuer_keys[iss]
 
     def _add_key(self, keys, owner, use, key_type='', kid='',
-                 no_kid_issuer=None):
+                 no_kid_issuer=None, allow_missing_kid=False):
 
         if owner not in self:
             logger.error('Issuer "{}" not in keyjar'.format(owner))
@@ -458,6 +458,8 @@ class KeyJar(object):
                 elif len(kl) == 1:
                     if kl[0] not in keys:
                         keys.append(kl[0])
+                elif allow_missing_kid:
+                    keys.extend(kl)
                 elif no_kid_issuer:
                     try:
                         allowed_kids = no_kid_issuer[owner]
@@ -481,7 +483,6 @@ class KeyJar(object):
         :return: list of usable keys
         """
 
-        keys = []
 
         try:
             _key_type = jwe.alg2keytype(jwt.headers['alg'])
@@ -491,8 +492,10 @@ class KeyJar(object):
         try:
             _kid = jwt.headers['kid']
         except KeyError:
+            logger.info('Missing kid')
             _kid = ''
 
+        keys = self.get(key_use='enc', owner='', key_type=_key_type)
         keys = self._add_key(keys, '', 'enc', _key_type, _kid, {'': None})
 
         return keys
@@ -506,7 +509,11 @@ class KeyJar(object):
         :param kwargs: Other key word arguments
         :return: list of usable keys
         """
-        keys = []
+
+        try:
+            allow_missing_kid = kwargs['allow_missing_kid']
+        except KeyError:
+            allow_missing_kid = False
 
         try:
             _key_type = jws.alg2keytype(jwt.headers['alg'])
@@ -516,12 +523,15 @@ class KeyJar(object):
         try:
             _kid = jwt.headers['kid']
         except KeyError:
+            logger.info('Missing kid')
             _kid = ''
 
         try:
             nki = kwargs['no_kid_issuer']
         except KeyError:
             nki = {}
+
+        keys = self.get(key_use='sig', owner='', key_type=_key_type)
 
         _payload = jwt.payload()
 
@@ -542,7 +552,7 @@ class KeyJar(object):
 
         try:
             keys = self._add_key(keys, kwargs["opponent_id"], 'sig', _key_type,
-                                 _kid, nki)
+                                 _kid, nki, allow_missing_kid)
         except KeyError:
             pass
 
@@ -557,10 +567,10 @@ class KeyJar(object):
                     _aud = _payload["aud"]
                 for _e in _aud:
                     keys = self._add_key(keys, _e, 'sig', _key_type, _kid,
-                                         nki)
+                                         nki, allow_missing_kid)
             else:
                 keys = self._add_key(keys, _payload[ent], 'sig', _key_type,
-                                     _kid, nki)
+                                     _kid, nki, allow_missing_kid)
 
         return keys
 

@@ -244,7 +244,7 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
         if "id_token" in self:
             # Try to decode the JWT, checks the signature
             args = {}
-            for arg in ["key", "keyjar", "algs", "sender"]:
+            for arg in ["key", "keyjar", "algs", "sender", "allow_missing_kid"]:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:
@@ -253,8 +253,8 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
             if not idt.verify(**kwargs):
                 return False
 
-            #
             self["verified_id_token"] = idt
+            logger.info('Verified ID Token: {}'.format(idt.to_dict()))
 
         return True
 

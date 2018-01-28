@@ -506,7 +506,7 @@ class Message(MutableMapping):
             if keyjar:
                 dkeys = keyjar.get_decrypt_key(owner="")
                 if "sender" in kwargs:
-                    dkeys.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
+                    dkeys.extend(keyjar.get_deccrypt_key(owner=kwargs["sender"]))
             elif key:
                 dkeys = key
             else:
@@ -535,10 +535,7 @@ class Message(MutableMapping):
                 jso = _jwt.payload()
                 _header = _jwt.headers
 
-                if key is None and keyjar is not None:
-                    key = keyjar.get_verify_key(owner="")
-                elif key is None:
-                    key = []
+                key = []
 
                 if keyjar is not None and "sender" in kwargs:
                     key.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
