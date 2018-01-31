@@ -6,15 +6,13 @@ __author__ = 'Roland Hedberg'
 
 
 class JWT(jwt.JWT):
-    msg_cls = JsonWebToken
-
     def __init__(self, keyjar, iss='', lifetime=0, sign=True, sign_alg='RS256',
                  encrypt=False, enc_enc="A128CBC-HS256", enc_alg="RSA1_5",
-                 msg_cls=None, iss2msg_cls=None):
+                 msg_cls=JsonWebToken, iss2msg_cls=None):
         jwt.JWT.__init__(self, own_keys=None, iss=iss, rec_keys=None,
-                         lifetime=lifetime, sign_alg=sign_alg, encrypt=encrypt,
-                         enc_enc=enc_enc, enc_alg=enc_alg, msg_cls=msg_cls,
-                         iss2msg_cls=iss2msg_cls, sign=sign)
+                         lifetime=lifetime, sign=sign, sign_alg=sign_alg,
+                         encrypt=encrypt, enc_enc=enc_enc, enc_alg=enc_alg,
+                         msg_cls=msg_cls, iss2msg_cls=iss2msg_cls)
         self.keyjar = keyjar
 
     def receiver_keys(self, receiver):
