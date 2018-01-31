@@ -44,6 +44,7 @@ from oicmsg.oic import address_deser
 from oicmsg.oic import claims_deser
 from oicmsg.oic import claims_ser
 from oicmsg.oic import msg_ser
+from oicmsg.oic import scope2claims
 from oicmsg.time_util import utc_time_sans_frac
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
@@ -789,6 +790,24 @@ def test_factory_chain():
     dr = factory('ErrorResponse', error='some_error')
     assert isinstance(dr, ErrorResponse)
     assert list(dr.keys()) == ['error']
+
+
+def test_scope2claims():
+    assert scope2claims(['openid']) == {'sub': None}
+    assert set(scope2claims(['profile']).keys()) == {
+        "name", "given_name", "family_name", "middle_name", "nickname",
+        "profile", "picture", "website", "gender", "birthdate", "zoneinfo",
+        "locale", "updated_at", "preferred_username"}
+    assert set(scope2claims(['email']).keys()) == {"email", "email_verified"}
+    assert set(scope2claims(['address']).keys()) == {'address'}
+    assert set(scope2claims(['phone']).keys()) == {"phone_number",
+                                                   "phone_number_verified"}
+    assert scope2claims(['offline_access']) == {}
+
+    assert scope2claims(['openid', 'email', 'phone']) == {
+        'sub': None, "email": None, "email_verified": None,
+        "phone_number": None, "phone_number_verified": None
+    }
 
 
 # class ClaimsRequest(Message):
