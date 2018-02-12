@@ -27,6 +27,6 @@ class JWT(jwt.JWT):
                 res[owner] = self.keyjar.get_issuer_keys(owner)
         return res
 
-    def my_keys(self):
-        return self.keyjar.get_issuer_keys('')
+    def my_keys(self, id=''):
+        return self.keyjar.get_issuer_keys(id)
 
