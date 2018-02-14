@@ -1083,7 +1083,7 @@ def claims_match(value, claimspec):
 
     :param value: single value or list of values
     :param claimspec: None or a dictionary with 'essential', 'value' or 'values'
-    as keys
+        as keys
     :return: Boolean
     """
     if claimspec is None:  # match anything

@@ -132,7 +132,7 @@ class KeyJar(object):
         Add a key bundle and bind it to an identifier
         
         :param owner: Owner of the keys in the keybundle
-        :param kb: A :py:class:`oicmsg.key_bundle.KeyBundle`instance
+        :param kb: A :py:class:`oicmsg.key_bundle.KeyBundle` instance
         """
         try:
             self.issuer_keys[owner].append(kb)
