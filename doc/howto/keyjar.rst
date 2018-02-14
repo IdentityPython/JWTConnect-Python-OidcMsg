@@ -103,10 +103,10 @@ An example::
 
 There are a number of shortcut methods you can use:
 
-- get_signing_key(self, key_type="", owner="", kid=None, **kwargs)
-- get_verify_key(self, key_type="", owner="", kid=None, **kwargs):
-- get_encrypt_key(self, key_type="", owner="", kid=None, **kwargs):
-- get_decrypt_key(self, key_type="", owner="", kid=None, **kwargs):
+    - get_signing_key(self, key_type="", owner="", kid=None, \*\*kwargs)
+    - get_verify_key(self, key_type="", owner="", kid=None, \*\*kwargs)
+    - get_encrypt_key(self, key_type="", owner="", kid=None, \*\*kwargs)
+    - get_decrypt_key(self, key_type="", owner="", kid=None, \*\*kwargs)
 
 A very common use case when dealing with OIDC OPs and RPs is that you
 have a signed or signed and encrypted JasonWebToken and you need to
