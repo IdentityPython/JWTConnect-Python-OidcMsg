@@ -20,7 +20,7 @@ from oicmsg.exception import NotAllowedValue
 from oicmsg.exception import WrongSigningAlgorithm
 from oicmsg.key_bundle import KeyBundle
 from oicmsg.oauth2 import ErrorResponse
-from oicmsg.oic import AccessTokenRequest
+from oicmsg.oic import AccessTokenRequest, Link, JRD
 from oicmsg.oic import CheckSessionRequest
 from oicmsg.oic import ClaimsRequest
 from oicmsg.oic import DiscoveryRequest
@@ -168,7 +168,7 @@ def test_msg_ser_json():
 
 def test_msg_ser_json_from_dict():
     ser = msg_ser_json({'street_address': "Kasamark 114", 'locality': "Umea",
-                   'country': "Sweden"}, "json")
+                        'country': "Sweden"}, "json")
 
     adc = address_deser(ser, "json")
     assert _eq(adc.keys(), ['street_address', 'locality', 'country'])
@@ -188,7 +188,7 @@ def test_msg_ser_urlencoded():
     pre = AddressClaim(street_address="Kasamark 114", locality="Umea",
                        country="Sweden")
 
-    ser = msg_ser(pre, "urlencoded")
+    ser = msg_ser(pre.to_dict(), "urlencoded")
 
     adc = address_deser(ser, "urlencoded")
     assert _eq(adc.keys(), ['street_address', 'locality', 'country'])
@@ -198,7 +198,7 @@ def test_msg_ser_dict():
     pre = AddressClaim(street_address="Kasamark 114", locality="Umea",
                        country="Sweden")
 
-    ser = msg_ser(pre, "dict")
+    ser = msg_ser(pre.to_dict(), "dict")
 
     adc = address_deser(ser, "dict")
     assert _eq(adc.keys(), ['street_address', 'locality', 'country'])
@@ -247,6 +247,23 @@ def test_claims_ser_from_dict_to_urlencoded():
     cl = Claims().from_urlencoded(claims)
     assert _eq(cl.keys(), ['name', 'nickname', 'email', 'email_verified',
                            'picture'])
+
+
+def test_discovery_request():
+    request = {'rel': "http://openid.net/specs/connect/1.0/issuer",
+               'resource': 'diana@localhost'}
+
+    req = DiscoveryRequest().from_json(json.dumps(request))
+    assert set(req.keys()) == {'rel', 'resource'}
+
+
+def test_discovery_response():
+    link = Link(href='https://example.com/op',
+                rel="http://openid.net/specs/connect/1.0/issuer")
+
+    resp = JRD(subject='diana@localhost', links=[link])
+
+    assert set(resp.keys()) == {'subject', 'links'}
 
 
 class TestProviderConfigurationResponse(object):
@@ -781,9 +798,10 @@ def test_birthdate(bdate):
 
 
 def test_factory():
-    dr = factory('DiscoveryRequest', principal='local@domain')
+    dr = factory('DiscoveryRequest', resource='local@domain',
+                 rel="http://openid.net/specs/connect/1.0/issuer")
     assert isinstance(dr, DiscoveryRequest)
-    assert list(dr.keys()) == ['principal']
+    assert set(dr.keys()) == {'resource', 'rel'}
 
 
 def test_factory_chain():
@@ -808,7 +826,6 @@ def test_scope2claims():
         'sub': None, "email": None, "email_verified": None,
         "phone_number": None, "phone_number_verified": None
     }
-
 
 # class ClaimsRequest(Message):
 # class ClientRegistrationErrorResponse(oauth2.ErrorResponse):

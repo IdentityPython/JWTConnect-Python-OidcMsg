@@ -980,12 +980,72 @@ class UserInfoErrorResponse(oauth2.ErrorResponse):
 
 
 class DiscoveryRequest(Message):
-    c_param = {"principal": SINGLE_REQUIRED_STRING,
-               "service": SINGLE_REQUIRED_STRING}
+    c_param = {"resource": SINGLE_REQUIRED_STRING,
+               "rel": SINGLE_REQUIRED_STRING}
 
 
-class DiscoveryResponse(Message):
-    c_param = {"locations": REQUIRED_LIST_OF_STRINGS}
+class Link(Message):
+    """
+    https://tools.ietf.org/html/rfc5988
+    """
+    c_param = {
+        "rel": SINGLE_REQUIRED_STRING,
+        "type": SINGLE_OPTIONAL_STRING,
+        "href": SINGLE_OPTIONAL_STRING,
+        "titles": SINGLE_OPTIONAL_DICT,
+        "properties": SINGLE_OPTIONAL_DICT
+    }
+
+
+def link_deser(val, sformat="urlencoded"):
+    if isinstance(val, Link):
+        return val
+    elif sformat in ["dict", "json"]:
+        if not isinstance(val, str):
+            val = json.dumps(val)
+            sformat = "json"
+    return Link().deserialize(val, sformat)
+
+
+def msg_ser(inst, sformat, lev=0):
+    if sformat in ["urlencoded", "json"]:
+        if isinstance(inst, dict):
+            if sformat == 'json':
+                res = json.dumps(inst)
+            else:
+                res = urlencode([(k, v) for k, v in inst.items()])
+        elif isinstance(inst, Link):
+            res = inst.serialize(sformat, lev)
+        else:
+            res = inst
+    elif sformat == "dict":
+        if isinstance(inst, Link):
+            res = inst.serialize(sformat, lev)
+        elif isinstance(inst, dict):
+            res = inst
+        elif isinstance(inst, str):  # Iff ID Token
+            res = inst
+        else:
+            raise MessageException("Wrong type: %s" % type(inst))
+    else:
+        raise OicMsgError("Unknown sformat", inst)
+
+    return res
+
+
+REQUIRED_LINKS = ([Link], True, msg_ser, link_deser, False)
+
+
+class JRD(Message):
+    """
+    JSON Resource Descriptor https://tools.ietf.org/html/rfc7033#section-4.4
+    """
+    claim = {
+        "subject": SINGLE_OPTIONAL_STRING,
+        "aliases": OPTIONAL_LIST_OF_STRINGS,
+        "properties": SINGLE_OPTIONAL_DICT,
+        "links": REQUIRED_LINKS
+    }
 
 
 class ResourceRequest(Message):
