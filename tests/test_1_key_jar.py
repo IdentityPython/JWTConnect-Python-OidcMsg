@@ -24,17 +24,17 @@ JWK0 = {"keys": [
     {'kty': 'RSA', 'e': 'AQAB', 'kid': "abc",
      'n':
          'wf-wiusGhA-gleZYQAOPQlNUIucPiqXdPVyieDqQbXXOPBe3nuggtVzeq7pVFH1dZz4dY2Q2LA5DaegvP8kRvoSB_87ds3dy3Rfym_GUSc5'
-          'B0l1TgEobcyaep8jguRoHto6GWHfCfKqoUYZq4N8vh4LLMQwLR6zi6Jtu82nB5k8'}
+         'B0l1TgEobcyaep8jguRoHto6GWHfCfKqoUYZq4N8vh4LLMQwLR6zi6Jtu82nB5k8'}
 ]}
 
 JWK1 = {"keys": [
     {
         "n":
             "zkpUgEgXICI54blf6iWiD2RbMDCOO1jV0VSff1MFFnujM4othfMsad7H1kRo50YM5S_X9TdvrpdOfpz5aBaKFhT6Ziv0nhtcekq1eRl8"
-             "mjBlvGKCE5XGk-0LFSDwvqgkJoFYInq7bu0a4JEzKs5AyJY75YlGh879k1Uu2Sv3ZZOunfV1O1Orta-NvS-aG_jN5cstVbCGWE20H0vF"
-             "VrJKNx0Zf-u-aA-syM4uX7wdWgQ"
+            "mjBlvGKCE5XGk-0LFSDwvqgkJoFYInq7bu0a4JEzKs5AyJY75YlGh879k1Uu2Sv3ZZOunfV1O1Orta-NvS-aG_jN5cstVbCGWE20H0vF"
+            "VrJKNx0Zf-u-aA-syM4uX7wdWgQ"
             "-owoEMHge0GmGgzso2lwOYf_4znanLwEuO3p5aabEaFoKNR4K6GjQcjBcYmDEE4CtfRU9AEmhcD1k"
-             "leiTB9TjPWkgDmT9MXsGxBHf3AKT5w",
+            "leiTB9TjPWkgDmT9MXsGxBHf3AKT5w",
         "e": "AQAB", "kty": "RSA", "kid": "rsa1"},
     {
         "k":
@@ -51,12 +51,12 @@ JWK2 = {
             "kty": "RSA",
             "n":
                 "kSCWg6q9iYxvJE2NIhSyOiKvqoWCO2GFipgH0sTSAs5FalHQosk9ZNTztX0ywS_AHsBeQPqYygfYVJL6_EgzVuwRk5txr9e3n1um"
-                 "l94fLyq_AXbwo9yAduf4dCHTP8CWR1dnDR"
+                "l94fLyq_AXbwo9yAduf4dCHTP8CWR1dnDR"
                 "-Qnz_4PYlWVEuuHHONOw_blbfdMjhY"
                 "-C_BYM2E3pRxbohBb3x__CfueV7ddz2LYiH3"
-                 "wjz0QS_7kjPiNCsXcNyKQEOTkbHFi3mu0u13SQwNddhcynd_GTgWN8A"
+                "wjz0QS_7kjPiNCsXcNyKQEOTkbHFi3mu0u13SQwNddhcynd_GTgWN8A"
                 "-6SN1r4hzpjFKFLbZnBt77ACSiYx-IHK4Mp-NaVEi5wQt"
-                 "SsjQtI--XsokxRDqYLwus1I1SihgbV_STTg5enufuw",
+                "SsjQtI--XsokxRDqYLwus1I1SihgbV_STTg5enufuw",
             "use": "sig",
             "x5c": [
                 "MIIDPjCCAiqgAwIBAgIQsRiM0jheFZhKk49YD0SK1TAJBgUrDgMCHQUAMC0xKzApBgNVBAMTImFjY291bnRzLmFjY2Vzc2NvbnRyb"
@@ -86,10 +86,10 @@ JWK2 = {
             "kty": "RSA",
             "n":
                 "vIqz-4-ER_vNWLON9yv8hIYV737JQ6rCl6XfzOC628seYUPf0TaGk91CFxefhzh23V9Tkq-RtwN1Vs_z57hO82kkzL-cQHZX3bMJ"
-                 "D-GEGOKXCEXURN7VMyZWMAuzQoW9vFb1k3cR1RW_EW_P"
+                "D-GEGOKXCEXURN7VMyZWMAuzQoW9vFb1k3cR1RW_EW_P"
                 "-C8bb2dCGXhBYqPfHyimvz2WarXhntPSbM5XyS5v5yCw5T_Vuwqqsio3"
-                 "V8wooWGMpp61y12NhN8bNVDQAkDPNu2DT9DXB1g0CeFINp_KAS_qQ2Kq6TSvRHJqxRR68RezYtje9KAqwqx4jxlmVAQy0T3-T-IA"
-                 "bsk1wRtWDndhO6s1Os-dck5TzyZ_dNOhfXgelixLUQ",
+                "V8wooWGMpp61y12NhN8bNVDQAkDPNu2DT9DXB1g0CeFINp_KAS_qQ2Kq6TSvRHJqxRR68RezYtje9KAqwqx4jxlmVAQy0T3-T-IA"
+                "bsk1wRtWDndhO6s1Os-dck5TzyZ_dNOhfXgelixLUQ",
             "use": "sig",
             "x5c": [
                 "MIIC4jCCAcqgAwIBAgIQQNXrmzhLN4VGlUXDYCRT3zANBgkqhkiG9w0BAQsFADAtMSswKQYDVQQDEyJhY2NvdW50cy5hY2Nlc3Njb"
@@ -147,7 +147,7 @@ JWK2 = {
             "kty": "RSA",
             "n":
                 "x7HNcD9ZxTFRaAgZ7-gdYLkgQua3zvQseqBJIt8Uq3MimInMZoE9QGQeSML7qZPlowb5BUakdLI70ayM4vN36--0ht8-oCHhl8Yj"
-                 "GFQkU-Iv2yahWHEP-1EK6eOEYu6INQP9Lk0HMk3QViLwshwb"
+                "GFQkU-Iv2yahWHEP-1EK6eOEYu6INQP9Lk0HMk3QViLwshwb"
                 "-KXVD02jdmX2HNdYJdPyc0c",
             "use": "sig",
             "x5c": [
@@ -304,7 +304,8 @@ class TestKeyJar(object):
         assert ks.get('enc', 'oct', 'http://www.example.org/')
 
     # def test_get_by_kid(self):
-    #     kb = keybundle_from_local_file("file://%s/jwk.json" % BASE_PATH, "jwks",
+    #     kb = keybundle_from_local_file("file://%s/jwk.json" % BASE_PATH,
+    # "jwks",
     #                                    ["sig"])
     #     kj = KeyJar()
     #     kj.issuer_keys["https://example.com"] = [kb]
@@ -418,10 +419,10 @@ JWK_UK = {"keys": [
     {
         "n":
             "zkpUgEgXICI54blf6iWiD2RbMDCOO1jV0VSff1MFFnujM4othfMsad7H1kRo50YM5S_X9TdvrpdOfpz5aBaKFhT6Ziv0nhtcekq1eRl8"
-             "mjBlvGKCE5XGk-0LFSDwvqgkJoFYInq7bu0a4JEzKs5AyJY75YlGh879k1Uu2Sv3ZZOunfV1O1Orta-NvS-aG_jN5cstVbCGWE20H0vF"
-             "VrJKNx0Zf-u-aA-syM4uX7wdWgQ"
+            "mjBlvGKCE5XGk-0LFSDwvqgkJoFYInq7bu0a4JEzKs5AyJY75YlGh879k1Uu2Sv3ZZOunfV1O1Orta-NvS-aG_jN5cstVbCGWE20H0vF"
+            "VrJKNx0Zf-u-aA-syM4uX7wdWgQ"
             "-owoEMHge0GmGgzso2lwOYf_4znanLwEuO3p5aabEaFoKNR4K6GjQcjBcYmDEE4CtfRU9AEmhcD1k"
-             "leiTB9TjPWkgDmT9MXsGxBHf3AKT5w",
+            "leiTB9TjPWkgDmT9MXsGxBHf3AKT5w",
         "e": "AQAB", "kty": "RSA", "kid": "rsa1"},
     {
         "k":
@@ -561,18 +562,25 @@ class TestVerifyJWTKeys(object):
             {"type": "RSA", "use": ["sig"]},
         ]
 
-        kj1 = build_keyjar(mkey)[1]
-        kj2 = build_keyjar(skey)[1]
-        self.keyjar = KeyJar()
-        self.keyjar['A'] = kj1['']
-        self.keyjar['B'] = kj2['']
+        self.alice_keyjar = build_keyjar(mkey)[1]
+        self.bob_keyjar = build_keyjar(skey)[1]
+        self.alice_keyjar['Alice'] = self.alice_keyjar['']
+        self.bob_keyjar['Bob'] = self.bob_keyjar['']
 
-        _jws = JWS('{"aud": "A"}', alg='RS256')
-        sig_key = self.keyjar.get_signing_key('rsa',owner='A')[0]
+        # To Alice's keyjar add Bob's public keys
+        self.alice_keyjar.import_jwks(
+            self.bob_keyjar.export_jwks(issuer='Bob'), 'Bob')
+
+        # To Bob's keyjar add Alice's public keys
+        self.bob_keyjar.import_jwks(
+            self.alice_keyjar.export_jwks(issuer='Alice'), 'Alice')
+
+        _jws = JWS('{"aud": "Bob", "iss": "Alice"}', alg='RS256')
+        sig_key = self.alice_keyjar.get_signing_key('rsa', owner='Alice')[0]
         self.sjwt_a = _jws.sign_compact([sig_key])
 
-        _jws = JWS('{"aud": "B"}', alg='RS256')
-        sig_key = self.keyjar.get_signing_key('rsa',owner='B')[0]
+        _jws = JWS('{"aud": "Alice", "iss": "Bob"}', alg='RS256')
+        sig_key = self.bob_keyjar.get_signing_key('rsa', owner='Bob')[0]
         self.sjwt_b = _jws.sign_compact([sig_key])
 
     def test_no_kid_multiple_keys(self):
@@ -580,79 +588,85 @@ class TestVerifyJWTKeys(object):
         _jwt = factory(self.sjwt_a)
         # remove kid reference
         _jwt.jwt.headers['kid'] = ''
-        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt)
+        keys = self.bob_keyjar.get_jwt_verify_keys(_jwt.jwt)
         assert len(keys) == 0
+        keys = self.bob_keyjar.get_jwt_verify_keys(_jwt.jwt,
+                                                   allow_missing_kid=True)
+        assert len(keys) == 3
 
     def test_no_kid_single_key(self):
         _jwt = factory(self.sjwt_b)
         _jwt.jwt.headers['kid'] = ''
-        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt)
+        keys = self.alice_keyjar.get_jwt_verify_keys(_jwt.jwt)
         assert len(keys) == 1
 
     def test_no_kid_multiple_keys_no_kid_issuer(self):
         a_kids = [k.kid for k in
-                  self.keyjar.get_verify_key(owner='A', key_type='RSA')]
-        no_kid_issuer = {'A': a_kids}
+                  self.alice_keyjar.get_verify_key(owner='Alice',
+                                                   key_type='RSA')]
+        no_kid_issuer = {'Alice': a_kids}
         _jwt = factory(self.sjwt_a)
         _jwt.jwt.headers['kid'] = ''
-        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt,
-                                               no_kid_issuer=no_kid_issuer)
+        keys = self.bob_keyjar.get_jwt_verify_keys(_jwt.jwt,
+                                                   no_kid_issuer=no_kid_issuer)
         assert len(keys) == 3
         assert set([k.kid for k in keys]) == set(a_kids)
 
     def test_no_kid_multiple_keys_no_kid_issuer_lim(self):
         a_kids = [k.kid for k in
-                  self.keyjar.get_verify_key(owner='A', key_type='RSA')]
-        no_kid_issuer = {'A': []}
+                  self.alice_keyjar.get_verify_key(owner='Alice',
+                                                   key_type='RSA')]
+        no_kid_issuer = {'Alice': []}
         _jwt = factory(self.sjwt_a)
         _jwt.jwt.headers['kid'] = ''
-        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt,
-                                               no_kid_issuer=no_kid_issuer)
+        keys = self.bob_keyjar.get_jwt_verify_keys(_jwt.jwt,
+                                                   no_kid_issuer=no_kid_issuer)
         assert len(keys) == 3
         assert set([k.kid for k in keys]) == set(a_kids)
 
     def test_matching_kid(self):
         _jwt = factory(self.sjwt_b)
-        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt)
+        keys = self.alice_keyjar.get_jwt_verify_keys(_jwt.jwt)
         assert len(keys) == 1
 
     def test_no_matching_kid(self):
         _jwt = factory(self.sjwt_b)
         _jwt.jwt.headers['kid'] = 'abcdef'
-        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt)
+        keys = self.alice_keyjar.get_jwt_verify_keys(_jwt.jwt)
         assert keys == []
 
     def test_aud(self):
-        self.keyjar.import_jwks(JWK1, issuer='D')
+        self.alice_keyjar.import_jwks(JWK1, issuer='D')
+        self.bob_keyjar.import_jwks(JWK1, issuer='D')
 
         _jws = JWS('{"iss": "D", "aud": "A"}', alg='HS256')
-        sig_key = self.keyjar.get_signing_key('oct', owner='D')[0]
+        sig_key = self.alice_keyjar.get_signing_key('oct', owner='D')[0]
         _sjwt = _jws.sign_compact([sig_key])
 
         no_kid_issuer = {'D': []}
 
         _jwt = factory(_sjwt)
 
-        keys = self.keyjar.get_jwt_verify_keys(_jwt.jwt,
-                                               no_kid_issuer=no_kid_issuer)
+        keys = self.bob_keyjar.get_jwt_verify_keys(_jwt.jwt,
+                                                   no_kid_issuer=no_kid_issuer)
         assert len(keys) == 1
 
 
 def test_copy():
     kj = KeyJar()
-    kj['A'] = [KeyBundle(JWK0['keys'])]
-    kj['B'] = [KeyBundle(JWK1['keys'])]
+    kj['Alice'] = [KeyBundle(JWK0['keys'])]
+    kj['Bob'] = [KeyBundle(JWK1['keys'])]
     kj['C'] = [KeyBundle(JWK2['keys'])]
 
     kjc = kj.copy()
 
-    assert set(kjc.owners()) == {'A', 'B', 'C'}
+    assert set(kjc.owners()) == {'Alice', 'Bob', 'C'}
 
-    assert len(kjc.get('sig', 'oct', 'A')) == 0
-    assert len(kjc.get('sig', 'rsa', 'A')) == 1
+    assert len(kjc.get('sig', 'oct', 'Alice')) == 0
+    assert len(kjc.get('sig', 'rsa', 'Alice')) == 1
 
-    assert len(kjc.get('sig', 'oct', 'B')) == 1
-    assert len(kjc.get('sig', 'rsa', 'B')) == 1
+    assert len(kjc.get('sig', 'oct', 'Bob')) == 1
+    assert len(kjc.get('sig', 'rsa', 'Bob')) == 1
 
     assert len(kjc.get('sig', 'oct', 'C')) == 0
     assert len(kjc.get('sig', 'rsa', 'C')) == 4
