@@ -513,7 +513,7 @@ class RegistrationRequest(Message):
         "client_uri": SINGLE_OPTIONAL_STRING,
         "policy_uri": SINGLE_OPTIONAL_STRING,
         "tos_uri": SINGLE_OPTIONAL_STRING,
-        "jwks": SINGLE_OPTIONAL_STRING,
+        "jwks": SINGLE_OPTIONAL_DICT,
         "jwks_uri": SINGLE_OPTIONAL_STRING,
         "sector_identifier_uri": SINGLE_OPTIONAL_STRING,
         "subject_type": SINGLE_OPTIONAL_STRING,
