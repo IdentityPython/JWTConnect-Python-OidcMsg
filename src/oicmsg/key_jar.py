@@ -498,6 +498,9 @@ class KeyJar(object):
         keys = self.get(key_use='enc', owner='', key_type=_key_type)
         keys = self._add_key(keys, '', 'enc', _key_type, _kid, {'': None})
 
+        # Only want the private keys. Symmetric keys are also fine
+        keys = [k for k in keys if not k.is_private_key()]
+
         return keys
 
     def get_jwt_verify_keys(self, jwt, **kwargs):
@@ -572,6 +575,8 @@ class KeyJar(object):
                 keys = self._add_key(keys, _payload[ent], 'sig', _key_type,
                                      _kid, nki, allow_missing_kid)
 
+        # Only want the public keys. Symmetric keys are also OK.
+        keys = [k for k in keys if not k.is_public_key()]
         return keys
 
     def copy(self):
