@@ -499,7 +499,7 @@ class KeyJar(object):
         keys = self._add_key(keys, '', 'enc', _key_type, _kid, {'': None})
 
         # Only want the private keys. Symmetric keys are also fine
-        keys = [k for k in keys if not k.is_private_key()]
+        keys = [k for k in keys if k.is_private_key()]
 
         return keys
 
@@ -576,7 +576,7 @@ class KeyJar(object):
                                      _kid, nki, allow_missing_kid)
 
         # Only want the public keys. Symmetric keys are also OK.
-        keys = [k for k in keys if not k.is_public_key()]
+        keys = [k for k in keys if k.is_public_key()]
         return keys
 
     def copy(self):
