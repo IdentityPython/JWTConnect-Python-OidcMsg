@@ -474,7 +474,7 @@ class Message(MutableMapping):
         _jws = JWS(self.to_json(lev), alg=algorithm)
         return _jws.sign_compact(key)
 
-    def from_jwt(self, txt, key=None, verify=True, keyjar=None, **kwargs):
+    def from_jwt(self, txt, keyjar, verify=True, **kwargs):
         """
         Given a signed and/or encrypted JWT, verify its correctness and then
         create a class instance from the content.
@@ -501,14 +501,9 @@ class Message(MutableMapping):
                     raise WrongEncryptionAlgorithm("%s != %s" % (
                         _jw["enc"], kwargs["algs"]["encenc"]))
 
-            if keyjar:
-                dkeys = keyjar.get_decrypt_key(owner="")
-                if "sender" in kwargs:
-                    dkeys.extend(keyjar.get_deccrypt_key(owner=kwargs["sender"]))
-            elif key:
-                dkeys = key
-            else:
-                dkeys = []
+            dkeys = keyjar.get_decrypt_key(owner="")
+            if "sender" in kwargs:
+                dkeys.extend(keyjar.get_deccrypt_key(owner=kwargs["sender"]))
 
             logger.debug('Decrypt class: {}'.format(_jw.__class__))
             _res = _jw.decrypt(txt, dkeys)
@@ -533,10 +528,9 @@ class Message(MutableMapping):
                 jso = _jwt.payload()
                 _header = _jwt.headers
 
-                if key is None:
-                    key = []
+                key = []
 
-                if keyjar is not None and "sender" in kwargs:
+                if "sender" in kwargs:
                     key.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
 
                 logger.debug("Raw JSON: {}".format(jso))

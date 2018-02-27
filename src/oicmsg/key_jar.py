@@ -1,5 +1,4 @@
-import six
-from future.backports.urllib.parse import urlsplit
+from urllib.parse import urlsplit
 
 import json
 import logging
@@ -564,7 +563,7 @@ class KeyJar(object):
                 continue
             if ent == "aud":
                 # list or basestring
-                if isinstance(_payload["aud"], six.string_types):
+                if isinstance(_payload["aud"], str):
                     _aud = [_payload["aud"]]
                 else:
                     _aud = _payload["aud"]

@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 import time
-
-from future.backports.urllib.parse import parse_qs
-from future.backports.urllib.parse import urlencode
-
 import json
 import os
 import sys
+from urllib.parse import parse_qs
+from urllib.parse import urlencode
 
 import pytest
 
 from cryptojwt.exception import BadSignature
-from cryptojwt.jwk import SYMKey
 from cryptojwt.jws import alg2keytype
+from oicmsg.key_jar import KeyJar
 
 from oicmsg import time_util
 from oicmsg.exception import MissingRequiredAttribute
@@ -591,9 +589,10 @@ class TestAccessTokenResponse(object):
         idval = {'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
                  'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'}
         idts = IdToken(**idval)
-        key = SYMKey(key="TestPassword")
-        _signed_jwt = idts.to_jwt(key=[key], algorithm="HS256", lifetime=300)
-
+        keyjar = KeyJar()
+        keyjar.add_symmetric('', "TestPassword")
+        _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
+                                  algorithm="HS256", lifetime=300)
         # Mess with the signed id_token
         p = _signed_jwt.split(".")
         p[2] = "aaa"
@@ -604,21 +603,23 @@ class TestAccessTokenResponse(object):
 
         at = AccessTokenResponse(**_info)
         with pytest.raises(BadSignature):
-            at.verify(key=[key])
+            at.verify(keyjar=keyjar)
 
     def test_wrong_alg(self):
         idval = {'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
                  'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'}
         idts = IdToken(**idval)
-        key = SYMKey(key="TestPassword")
-        _signed_jwt = idts.to_jwt(key=[key], algorithm="HS256", lifetime=300)
+        keyjar = KeyJar()
+        keyjar.add_symmetric('', "TestPassword")
+        _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
+                                  algorithm="HS256", lifetime=300)
 
         _info = {"access_token": "accessTok", "id_token": _signed_jwt,
                  "token_type": "Bearer", "expires_in": 3600}
 
         at = AccessTokenResponse(**_info)
         with pytest.raises(WrongSigningAlgorithm):
-            at.verify(key=[key], algs={"sign": "HS512"})
+            at.verify(keyjar=keyjar, algs={"sign": "HS512"})
 
 
 def test_at_hash():
@@ -629,15 +630,17 @@ def test_at_hash():
     idval.update(_token)
 
     idts = IdToken(**idval)
-    key = SYMKey(key="TestPassword")
-    _signed_jwt = idts.to_jwt(key=[key], algorithm="HS256", lifetime=lifetime)
+    keyjar = KeyJar()
+    keyjar.add_symmetric('', "TestPassword")
+    _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
+                              algorithm="HS256", lifetime=lifetime)
 
     _info = {"id_token": _signed_jwt, "token_type": "Bearer",
              "expires_in": lifetime}
     _info.update(_token)
 
     at = AuthorizationResponse(**_info)
-    assert at.verify(key=[key], algs={"sign": "HS256"})
+    assert at.verify(keyjar=keyjar, algs={"sign": "HS256"})
     assert 'at_hash' in at['verified_id_token']
 
 
@@ -650,15 +653,18 @@ def test_c_hash():
     idval.update(_token)
 
     idts = IdToken(**idval)
-    key = SYMKey(key="TestPassword")
-    _signed_jwt = idts.to_jwt(key=[key], algorithm="HS256", lifetime=lifetime)
+    keyjar = KeyJar()
+    keyjar.add_symmetric('', "TestPassword")
+
+    _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
+                              algorithm="HS256", lifetime=lifetime)
 
     _info = {"id_token": _signed_jwt, "token_type": "Bearer",
              "expires_in": lifetime}
     _info.update(_token)
 
     at = AuthorizationResponse(**_info)
-    r = at.verify(key=[key], algs={"sign": "HS256"})
+    r = at.verify(keyjar=keyjar, algs={"sign": "HS256"})
     assert 'c_hash' in at['verified_id_token']
 
 
@@ -671,8 +677,11 @@ def test_missing_c_hash():
     # idval.update(_token)
 
     idts = IdToken(**idval)
-    key = SYMKey(key="TestPassword")
-    _signed_jwt = idts.to_jwt(key=[key], algorithm="HS256", lifetime=lifetime)
+    keyjar = KeyJar()
+    keyjar.add_symmetric('', "TestPassword")
+
+    _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
+                              algorithm="HS256", lifetime=lifetime)
 
     _info = {"id_token": _signed_jwt, "token_type": "Bearer",
              "expires_in": lifetime}
@@ -680,7 +689,7 @@ def test_missing_c_hash():
 
     at = AuthorizationResponse(**_info)
     with pytest.raises(MissingRequiredAttribute):
-        at.verify(key=[key], algs={"sign": "HS256"})
+        at.verify(keyjar=keyjar, algs={"sign": "HS256"})
 
 
 def test_id_token():
@@ -750,7 +759,10 @@ class TestEndSessionRequest(object):
             state="state0")
 
         request = EndSessionRequest().from_urlencoded(esreq.to_urlencoded())
-        request.verify(key=_symkey)
+        keyjar=KeyJar()
+        for _key in _symkey:
+            keyjar.add_symmetric('', _key.key)
+        request.verify(keyjar=keyjar)
         assert isinstance(request, EndSessionRequest)
         assert _eq(request.keys(), ['id_token_hint', 'redirect_url', 'state'])
         assert request["state"] == "state0"
@@ -763,7 +775,9 @@ class TestCheckSessionRequest(object):
         csr = CheckSessionRequest(
             id_token=IDTOKEN.to_jwt(key=_symkey, algorithm="HS256",
                                     lifetime=300))
-        assert csr.verify(key=_symkey)
+        keyjar = KeyJar()
+        keyjar.add_kb('', KC_SYM_S)
+        assert csr.verify(keyjar=keyjar)
 
 
 class TestClaimsRequest(object):

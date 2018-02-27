@@ -1,8 +1,8 @@
 # encoding: utf-8
 import uuid
 
-from future.backports.urllib.parse import urlencode
-from future.backports.urllib.parse import urlparse
+from urllib.parse import urlencode
+from urllib.parse import urlparse
 
 import inspect
 import json
@@ -244,7 +244,7 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
         if "id_token" in self:
             # Try to decode the JWT, checks the signature
             args = {}
-            for arg in ["key", "keyjar", "algs", "sender", "allow_missing_kid"]:
+            for arg in ["keyjar", "algs", "sender", "allow_missing_kid"]:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:
@@ -289,7 +289,7 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
         if "id_token" in self:
             # Try to decode the JWT, checks the signature
             args = {}
-            for arg in ["key", "keyjar", "algs", "sender"]:
+            for arg in ["keyjar", "algs", "sender"]:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:
@@ -378,7 +378,7 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
         super(AuthorizationRequest, self).verify(**kwargs)
 
         args = {}
-        for arg in ["key", "keyjar", "opponent_id", "sender"]:
+        for arg in ["keyjar", "opponent_id", "sender"]:
             try:
                 args[arg] = kwargs[arg]
             except KeyError:
@@ -737,7 +737,7 @@ class MessageWithIdToken(Message):
         if "id_token" in self:
             # Try to decode the JWT, checks the signature
             args = {}
-            for arg in ["key", "keyjar", "algs", "sender"]:
+            for arg in ["keyjar", "algs", "sender"]:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:
@@ -783,7 +783,7 @@ class EndSessionRequest(Message):
         if "id_token_hint" in self:
             # Try to decode the JWT, checks the signature
             args = {}
-            for arg in ["key", "keyjar", "algs", "sender"]:
+            for arg in ["keyjar", "algs", "sender"]:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:

@@ -1,13 +1,12 @@
-# pylint: disable=no-self-use,missing-docstring
-from future.backports.urllib.parse import parse_qs
-from future.backports.urllib.parse import urlparse
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
 
 import json
-
 import pytest
+
 from cryptojwt.jwk import SYMKey
 
-from oicmsg.key_jar import build_keyjar, public_keys_keyjar
+from oicmsg.key_jar import build_keyjar, public_keys_keyjar, KeyJar
 from oicmsg.message import json_deserializer
 from oicmsg.message import json_serializer
 from oicmsg.message import OPTIONAL_LIST_OF_MESSAGES
@@ -175,10 +174,12 @@ class TestMessage(object):
                             opt_str_list=["one", "two"],
                             req_str_list=["spike", "lee"],
                             opt_json='{"ford": "green"}')
-        keys = [SYMKey(key="A1B2C3D4")]
-        jws = item.to_jwt(keys, "HS256")
+        keyjar = KeyJar()
+        keyjar.add_symmetric('', b"A1B2C3D4")
+        jws = item.to_jwt(key=keyjar.get_signing_key('oct'),
+                          algorithm="HS256")
 
-        jitem = DummyMessage().from_jwt(jws, key=keys)
+        jitem = DummyMessage().from_jwt(jws, keyjar)
 
         assert _eq(jitem.keys(), ['opt_str', 'req_str', 'opt_json',
                                   'req_str_list', 'opt_str_list', 'opt_int'])
@@ -204,7 +205,9 @@ class TestMessage(object):
         keys = [SYMKey(key="A1B2C3D4")]
         jwe = msg.to_jwe(keys, alg="A128KW", enc="A128CBC-HS256")
 
-        jitem = DummyMessage().from_jwt(jwe, key=keys)
+        keyjar = KeyJar()
+        keyjar.add_symmetric('', 'A1B2C3D4')
+        jitem = DummyMessage().from_jwt(jwe, keyjar)
 
         assert _eq(jitem.keys(), ['opt_str', 'req_str', 'opt_json',
                                   'req_str_list', 'opt_str_list', 'opt_int'])
@@ -270,7 +273,7 @@ class TestMessage(object):
 def test_to_jwt(keytype, alg):
     msg = Message(a='foo', b='bar', c='tjoho')
     _jwt = msg.to_jwt(KEYJAR.get_signing_key(keytype, ''), alg)
-    msg1 = Message().from_jwt(_jwt, PUBLIC_KEYJAR.get_signing_key(keytype, ''))
+    msg1 = Message().from_jwt(_jwt, PUBLIC_KEYJAR)
     assert msg1 == msg
 
 
