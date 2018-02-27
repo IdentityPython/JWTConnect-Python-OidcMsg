@@ -21,11 +21,30 @@ Using this class you should be able to:
 
     - build a message,
     - verify that a message's parameters are correct, that all that are marked as required are present and all (required and optional) are of the right type
-    - serialize the message into the on-the-wire representation
+    - serialize the message into the correct on-the-wire representation
     - deserialize a received message from the on-the-wire representation into a :py:class:`oicmsg.message.Message` instance.
 
-I will try to walk you through these steps using example from RFC6749 (section
+I will try to walk you through these steps below using example from RFC6749 (section
 4.1 and 4.2).
+
+The :py:class:`oicmsg.message.Messag` class is the base class the oicmsg
+package contains subclasses representing all the messages defined in
+OpenID Connect and OAuth2.
+
+What oicmsg also contains are tools for handling keys.
+
+There is the :py:class:`oicmsg.key_bundle.KeyBundle` class that can handle
+keys that have the same origin. That for instance comes from one file or has
+been fetched from a web site.
+
+The :py:class:`oicmsg.key_jar.KeyJar` class stores keys from many issuers.
+Where the keys for each issuer is kept in one or more KeyBundle instances.
+
+And finally there is the :py:class:`oicmsg.jwt.JWT` class who is a sub class
+of the :py:class:`cryptojwt.jwt` that knows about KeyJars.
+
+This intro hopes to give you an overview of what you can do with the package.
+More specific descriptions can be found under *howto*.
 
 Entity sending a message
 ------------------------
