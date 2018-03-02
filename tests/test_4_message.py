@@ -6,20 +6,20 @@ import pytest
 
 from cryptojwt.jwk import SYMKey
 
-from oicmsg.key_jar import build_keyjar, public_keys_keyjar, KeyJar
-from oicmsg.message import json_deserializer
-from oicmsg.message import json_serializer
-from oicmsg.message import OPTIONAL_LIST_OF_MESSAGES
-from oicmsg.message import OPTIONAL_LIST_OF_STRINGS
-from oicmsg.message import OPTIONAL_MESSAGE
-from oicmsg.message import REQUIRED_LIST_OF_STRINGS
-from oicmsg.message import SINGLE_OPTIONAL_INT
-from oicmsg.message import SINGLE_OPTIONAL_JSON
-from oicmsg.message import SINGLE_OPTIONAL_STRING
-from oicmsg.message import SINGLE_REQUIRED_STRING
-from oicmsg.message import sp_sep_list_deserializer
+from oidcmsg.key_jar import build_keyjar, public_keys_keyjar, KeyJar
+from oidcmsg.message import json_deserializer
+from oidcmsg.message import json_serializer
+from oidcmsg.message import OPTIONAL_LIST_OF_MESSAGES
+from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
+from oidcmsg.message import OPTIONAL_MESSAGE
+from oidcmsg.message import REQUIRED_LIST_OF_STRINGS
+from oidcmsg.message import SINGLE_OPTIONAL_INT
+from oidcmsg.message import SINGLE_OPTIONAL_JSON
+from oidcmsg.message import SINGLE_OPTIONAL_STRING
+from oidcmsg.message import SINGLE_REQUIRED_STRING
+from oidcmsg.message import sp_sep_list_deserializer
 
-from oicmsg.oauth2 import Message
+from oidcmsg.oauth2 import Message
 
 __author__ = 'Roland Hedberg'
 

@@ -1,15 +1,15 @@
 .. _jwt_howto:
 
-How to use the oicmsg JWT class
-*******************************
+How to use the oidcmsg JWT class
+********************************
 
 This is the base class for handling signing or signing and encrypting JSON Web
 Token.
 
 A simple example::
 
-    >>> from oicmsg.key_jar import KeyJar
-    >>> from oicmsg.jwt import JWT
+    >>> from oidcmsg.key_jar import KeyJar
+    >>> from oidcmsg.jwt import JWT
     >>> kj = KeyJar()
     >>> kj.add_symmetric(owner='', key='client_secret', usage=['sig'])
     >>> kj['https://fedop.example.org'] = kj['']
@@ -29,13 +29,13 @@ identifier for the local entity is the empty string ''.
 
 The reason for storing the symmetric key under 2 different identifiers (in
 line 5) is that when the unpacking is done (line 10) the
-:py:class:`oicmsg.jwt.JWT` instance will look at the payload of the json web
+:py:class:`oidcmsg.jwt.JWT` instance will look at the payload of the json web
 token to see who the issuer of the json web token is and then use that
 identifier when searching for keys in the KeyJar that can be used for verifying
 the signature on the json web token.
 
 *info* which is returned by the unpack method is actually a
-:py:class:`oicmsg.oic.JsonWebToken`
+:py:class:`oidcmsg.oidc.JsonWebToken`
 instance. So you can do a bit more with it like you can see what the header
 of the json web token looked like::
 

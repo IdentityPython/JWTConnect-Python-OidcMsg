@@ -11,11 +11,11 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptojwt.jwk import RSAKey
 from cryptojwt.jwk import SYMKey
 
-from oicmsg.key_bundle import create_and_store_rsa_key_pair
-from oicmsg.key_bundle import dump_jwks
-from oicmsg.key_bundle import rsa_init
-from oicmsg.key_bundle import keybundle_from_local_file
-from oicmsg.key_bundle import KeyBundle
+from oidcmsg.key_bundle import create_and_store_rsa_key_pair
+from oidcmsg.key_bundle import dump_jwks
+from oidcmsg.key_bundle import rsa_init
+from oidcmsg.key_bundle import keybundle_from_local_file
+from oidcmsg.key_bundle import KeyBundle
 
 __author__ = 'Roland Hedberg'
 
@@ -186,7 +186,7 @@ def test_create_and_store_rsa_key_pair():
     assert isinstance(key, rsa.RSAPrivateKey)
 
     # default
-    filename = os.path.join('.', 'oicmsg')
+    filename = os.path.join('.', 'oidcmsg')
     assert os.path.isfile(filename)
     assert os.path.isfile('{}.pub'.format(filename))
 

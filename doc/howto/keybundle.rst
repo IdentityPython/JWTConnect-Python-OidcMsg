@@ -1,9 +1,9 @@
 .. _keybundle_howto:
 
-How to use the oicmsg KeyBundle class
-*************************************
+How to use the oidcmsg KeyBundle class
+**************************************
 
-The :py:class:`oicmsg.key_bundle.KeyBundle` class represents a set of keys
+The :py:class:`oidcmsg.key_bundle.KeyBundle` class represents a set of keys
 with a common origin.
 
 The idea behind the class is that it should be the link between a set of
@@ -28,7 +28,7 @@ Initiating a key bundle
 
 Loading a symmetric key::
 
-    >>> from oicmsg.key_bundle import KeyBundle
+    >>> from oidcmsg.key_bundle import KeyBundle
     >>> desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
     >>> kb = KeyBundle([desc])
     >>> kb.keys()
@@ -36,7 +36,7 @@ Loading a symmetric key::
 
 Loading from a file::
 
-    >>> from oicmsg.key_bundle import KeyBundle
+    >>> from oidcmsg.key_bundle import KeyBundle
     >>> print(open('jwks.json').read())
     {
       "keys": [
@@ -63,7 +63,7 @@ Loading from a file::
 
 and if DER encoded RSA key file instead::
 
-    >>> from oicmsg.key_bundle import KeyBundle
+    >>> from oidcmsg.key_bundle import KeyBundle
     >>> print(open('keys/rsa_enc.pub').read())
     -----BEGIN RSA PUBLIC KEY-----
     MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC8J/Zxwi86zUGgv1KwSz17SHIA
@@ -96,7 +96,7 @@ If you initiated with key descriptions then no update can be made unless you
 manually delete, or mark as inactive, the old keys and load new key
 descriptions.::
 
-    >>> from oicmsg.key_bundle import KeyBundle
+    >>> from oidcmsg.key_bundle import KeyBundle
     >>> desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
     >>> kb = KeyBundle([desc])
     >>> kb.keys()
@@ -113,7 +113,7 @@ descriptions.::
 
 or::
 
-    >>> from oicmsg.key_bundle import KeyBundle
+    >>> from oidcmsg.key_bundle import KeyBundle
     >>> desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
     >>> kb = KeyBundle([desc])
     >>> for k in kb.keys():
@@ -134,7 +134,7 @@ Getting access to keys
 
 To pick out one key based on the Key Identifier (kid) you can do this::
 
-    >>> from oicmsg.key_bundle import KeyBundle
+    >>> from oidcmsg.key_bundle import KeyBundle
     >>> print(open('jwks1.json').read())
     {"keys": [
         {
@@ -157,7 +157,7 @@ To pick out one key based on the Key Identifier (kid) you can do this::
 
 Get all keys of specific type (note that here the JWKS describes private keys)::
 
-    >>> from oicmsg.key_bundle import KeyBundle
+    >>> from oidcmsg.key_bundle import KeyBundle
     >>> print(open('jwks2.json').read())
     {
       "keys": [
@@ -210,7 +210,7 @@ Other things you can do
 
 You can construct a JWKS from the keys in a KeyBundle instance like this::
 
-    >>> from oicmsg.key_bundle import KeyBundle
+    >>> from oidcmsg.key_bundle import KeyBundle
     >>> kb = KeyBundle(source='file://keys/rsa_enc.pub', fileformat='der', keyusage=['sig'])
     >>> print(kb.jwks())
     {"keys": [{"n": "vCf2ccIvOs1BoL9SsEs9e0hyANI61VG2WPoXjSSV1_r6OtJntY-E7AI4Y6qsLFbG17Bj5_AIP74wyAxXRC9nvXJTySGbBfv5fhdciKtzXuafa9xSbTeUdJWwnoIxtVsiW6_-F7K_KcaIwxF3Rg1cxZQtjHIUdhK4X_4EYnDhXvc", "kty": "RSA", "use": "sig", "e": "AQAB"}]}

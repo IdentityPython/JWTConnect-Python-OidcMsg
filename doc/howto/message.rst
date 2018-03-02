@@ -1,32 +1,32 @@
-.. _oicmsg_howto:
+.. _oidcmsg_howto:
 
-How to use the oicmsg Message class
-***********************************
+How to use the oidcmsg Message class
+************************************
 
 Basic usage
 -----------
 
-An oicmsg :py:class:`oicmsg.message.Message` instance have some
+An oidcmsg :py:class:`oidcmsg.message.Message` instance have some
 functionality common with Python dictionaries.
 So you can do things like assign values to a key::
 
-    >>> from oicmsg.message import Message
+    >>> from oidcmsg.message import Message
     >>> msg = Message()
     >>> msg['key'] = 'value'
 
 And you can read a value assigned to a key::
 
-    >>> from oicmsg.message import Message
+    >>> from oidcmsg.message import Message
     >>> msg = Message()
     >>> msg['key'] = 'value'
     >>> val = msg['key']
     >>> print(val)
     value
 
-:py:class:`oicmsg.message.Message` also supports other dictionary
+:py:class:`oidcmsg.message.Message` also supports other dictionary
 methods::
 
-    >>> from oicmsg.message import Message
+    >>> from oidcmsg.message import Message
     >>> msg = Message()
     >>> msg['key'] = 'value'
     >>> list(msg.keys())
@@ -49,7 +49,7 @@ methods::
 
 Like a dictionary one can also do::
 
-    >>> from oicmsg.message import Message
+    >>> from oidcmsg.message import Message
     >>> msg = Message(key='value', other=6)
     >>> print(msg)
     {'other': 6, 'key': 'value'}
@@ -58,7 +58,7 @@ Like a dictionary one can also do::
 Serialization/deserialization
 -----------------------------
 
-Since instances of :py:class:`oicmsg.message.Message` will be used
+Since instances of :py:class:`oidcmsg.message.Message` will be used
 in an environment where information are to be sent over a wire it must be
 possible to serialize the information in such an instance to a format that
 can be transmitted over-the-wire.
@@ -75,7 +75,7 @@ The format supported are:
 
 An example using url encoding::
 
-    >>> from oicmsg.message import Message
+    >>> from oidcmsg.message import Message
     >>> msg = Message()
     >>> msg['key'] = 'value'
     >>> msg['another'] = 2
@@ -90,7 +90,7 @@ An example using url encoding::
 
 Same thing using JSON::
 
-    >>> from oicmsg.message import Message
+    >>> from oidcmsg.message import Message
     >>> msg = Message(key='value', another=2)
     >>> msg.to_urlencoded()
     'another=2&key=value'
@@ -104,7 +104,7 @@ Same thing using JSON::
 Regarding signed Jason Web Tokens we need a key so I create a
 simple symmetric one:
 
-    >>> from oicmsg.message import Message
+    >>> from oidcmsg.message import Message
     >>> from cryptojwt.jwk import SYMKey
     >>> msg = Message(key='value', another=2)
     >>> keys = [SYMKey(key="A1B2C3D4")]
@@ -130,10 +130,10 @@ The OAuth2 and OpenID Connect specifications does all that.
 But both of them also states that extra attributes can always occur and
 should be allowed.
 
-A :py:class:`oicmsg.message.Message` class ínstance can deal with this.
+A :py:class:`oidcmsg.message.Message` class ínstance can deal with this.
 
 Let's take the basic error response as an example. This message
-is defined thus in oicmsg::
+is defined thus in oidcmsg::
 
     class ErrorResponse(Message):
     c_param = {"error": SINGLE_REQUIRED_STRING,
@@ -146,7 +146,7 @@ string values.
 
 What does this look like then::
 
-    >>> from oicmsg.oauth2 import ErrorResponse
+    >>> from oidcmsg.oauth2 import ErrorResponse
     >>> err = ErrorResponse(error='invalid_request')
     >>> err.verify()
     True
@@ -157,7 +157,7 @@ If we forget to provide the *error* attribute::
     >>> err = ErrorResponse(error_description='Some strange error')
     >>> err.verify()
     Traceback (most recent call last):
-      File "/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/site-packages/oicmsg-0.0.1-py3.5.egg/oicmsg/message.py", line 617, in verify
+      File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/oidcmsg-0.1.0-py3.6.egg/oidcmsg/message.py", line 617, in verify
         val = self._dict[attribute]
     KeyError: 'error'
 
@@ -165,16 +165,16 @@ If we forget to provide the *error* attribute::
 
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-      File "/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/site-packages/oicmsg-0.0.1-py3.5.egg/oicmsg/message.py", line 620, in verify
+      File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/oidcmsg-0.1.0-py3.6.egg/oidcmsg/message.py", line 620, in verify
         raise MissingRequiredAttribute("%s" % attribute)
-    oicmsg.exception.MissingRequiredAttribute: Missing required attribute 'error'
+    oidcmsg.exception.MissingRequiredAttribute: Missing required attribute 'error'
 
 an exception will be raised.
 
 If you provide extra attributes, that is OK but those attributes can not be
 verified.
 
-    >>> from oicmsg.oauth2 import ErrorResponse
+    >>> from oidcmsg.oauth2 import ErrorResponse
     >>> err = ErrorResponse(error='invalid_request', error_code=500)
     >>> err.verify()
     True

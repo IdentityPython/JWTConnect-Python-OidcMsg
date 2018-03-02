@@ -14,18 +14,18 @@ from cryptojwt.jwe import JWE
 from cryptojwt.jws import JWS
 from cryptojwt import SimpleJWT
 
-from oicmsg.exception import DecodeError
-from oicmsg.exception import FormatError
-from oicmsg.exception import MessageException
-from oicmsg.exception import MissingRequiredAttribute
-from oicmsg.exception import MissingSigningKey
-from oicmsg.exception import NotAllowedValue
-from oicmsg.exception import OicMsgError
-from oicmsg.exception import ParameterError
-from oicmsg.exception import TooManyValues
-from oicmsg.exception import WrongEncryptionAlgorithm
-from oicmsg.exception import WrongSigningAlgorithm
-from oicmsg.key_jar import update_keyjar
+from oidcmsg.exception import DecodeError
+from oidcmsg.exception import FormatError
+from oidcmsg.exception import MessageException
+from oidcmsg.exception import MissingRequiredAttribute
+from oidcmsg.exception import MissingSigningKey
+from oidcmsg.exception import NotAllowedValue
+from oidcmsg.exception import OidcMsgError
+from oidcmsg.exception import ParameterError
+from oidcmsg.exception import TooManyValues
+from oidcmsg.exception import WrongEncryptionAlgorithm
+from oidcmsg.exception import WrongSigningAlgorithm
+from oidcmsg.key_jar import update_keyjar
 
 logger = logging.getLogger(__name__)
 
@@ -922,7 +922,7 @@ def msg_ser(inst, sformat, lev=0):
         else:
             raise MessageException("Wrong type: %s" % type(inst))
     else:
-        raise OicMsgError("Unknown sformat", inst)
+        raise OidcMsgError("Unknown sformat", inst)
 
     return res
 

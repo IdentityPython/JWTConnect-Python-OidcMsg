@@ -18,8 +18,8 @@ from cryptojwt.jwk import RSAKey
 from cryptojwt.jwk import SYMKey
 from cryptojwt.jwk import rsa_load
 
-from oicmsg.exception import UnknownKeyType
-from oicmsg.exception import UpdateFailed
+from oidcmsg.exception import UnknownKeyType
+from oidcmsg.exception import UpdateFailed
 
 __author__ = 'Roland Hedberg'
 
@@ -56,7 +56,7 @@ def harmonize_usage(use):
         return list(set([MAP[u] for u in use if u in ul]))
 
 
-def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048, use=''):
+def create_and_store_rsa_key_pair(name="oidcmsg", path=".", size=2048, use=''):
     """
     Mints a new RSA key pair and stores it in a file.
     
@@ -104,7 +104,7 @@ def create_and_store_rsa_key_pair(name="oicmsg", path=".", size=2048, use=''):
 
 def rsa_init(spec):
     """
-    Initiates a :py:class:`oicmsg.oauth.keybundle.KeyBundle` instance
+    Initiates a :py:class:`oidcmsg.oauth.keybundle.KeyBundle` instance
     containing newly minted RSA keys according to a spec.
     
     Example of specification::

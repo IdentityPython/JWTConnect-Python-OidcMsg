@@ -5,7 +5,7 @@ SPHINXBUILD   = sphinx-build
 SPHINXABUILD  = sphinx-autobuild
 BUILDDIR      = doc/_build
 DOCDIR        = doc/
-OICDIR        = src/oicmsg
+OICDIR        = src/oidcmsg
 TESTDIR       = tests
 
 help:

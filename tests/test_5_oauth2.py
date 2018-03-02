@@ -6,24 +6,24 @@ import json
 
 import pytest
 
-from oicmsg.exception import MissingRequiredAttribute
-from oicmsg.key_jar import build_keyjar
-from oicmsg.message import DecodeError
-from oicmsg.message import json_deserializer
-from oicmsg.message import json_serializer
-from oicmsg.message import sp_sep_list_deserializer
+from oidcmsg.exception import MissingRequiredAttribute
+from oidcmsg.key_jar import build_keyjar
+from oidcmsg.message import DecodeError
+from oidcmsg.message import json_deserializer
+from oidcmsg.message import json_serializer
+from oidcmsg.message import sp_sep_list_deserializer
 
-from oicmsg.oauth2 import factory
-from oicmsg.oauth2 import AccessTokenRequest
-from oicmsg.oauth2 import AccessTokenResponse
-from oicmsg.oauth2 import AuthorizationErrorResponse
-from oicmsg.oauth2 import AuthorizationRequest
-from oicmsg.oauth2 import AuthorizationResponse
-from oicmsg.oauth2 import CCAccessTokenRequest
-from oicmsg.oauth2 import ErrorResponse
-from oicmsg.oauth2 import RefreshAccessTokenRequest
-from oicmsg.oauth2 import ROPCAccessTokenRequest
-from oicmsg.oauth2 import TokenErrorResponse
+from oidcmsg.oauth2 import factory
+from oidcmsg.oauth2 import AccessTokenRequest
+from oidcmsg.oauth2 import AccessTokenResponse
+from oidcmsg.oauth2 import AuthorizationErrorResponse
+from oidcmsg.oauth2 import AuthorizationRequest
+from oidcmsg.oauth2 import AuthorizationResponse
+from oidcmsg.oauth2 import CCAccessTokenRequest
+from oidcmsg.oauth2 import ErrorResponse
+from oidcmsg.oauth2 import RefreshAccessTokenRequest
+from oidcmsg.oauth2 import ROPCAccessTokenRequest
+from oidcmsg.oauth2 import TokenErrorResponse
 
 __author__ = 'Roland Hedberg'
 

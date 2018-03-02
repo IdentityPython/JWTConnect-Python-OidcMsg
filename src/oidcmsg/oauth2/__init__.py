@@ -2,15 +2,15 @@ import inspect
 import logging
 import sys
 
-from oicmsg.exception import VerificationError
-from oicmsg.message import Message
-from oicmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
-from oicmsg.message import OPTIONAL_LIST_OF_STRINGS
-from oicmsg.message import REQUIRED_LIST_OF_SP_SEP_STRINGS
-from oicmsg.message import REQUIRED_LIST_OF_STRINGS
-from oicmsg.message import SINGLE_OPTIONAL_INT
-from oicmsg.message import SINGLE_OPTIONAL_STRING
-from oicmsg.message import SINGLE_REQUIRED_STRING
+from oidcmsg.exception import VerificationError
+from oidcmsg.message import Message
+from oidcmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
+from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
+from oidcmsg.message import REQUIRED_LIST_OF_SP_SEP_STRINGS
+from oidcmsg.message import REQUIRED_LIST_OF_STRINGS
+from oidcmsg.message import SINGLE_OPTIONAL_INT
+from oidcmsg.message import SINGLE_OPTIONAL_STRING
+from oidcmsg.message import SINGLE_REQUIRED_STRING
 
 logger = logging.getLogger(__name__)
 

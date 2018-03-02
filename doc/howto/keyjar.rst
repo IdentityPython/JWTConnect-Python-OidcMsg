@@ -1,11 +1,11 @@
 .. _keyjar_howto:
 
-How to use the oicmsg KeyJar class
-**********************************
+How to use the oidcmsg KeyJar class
+***********************************
 
 
-While the :py:class:`oicmsg.key_bundle.KeyBundle` class represents a set of keys
-with a common origin. The :py:class:`oicmsg.key_jar.KeyJar` class is
+While the :py:class:`oidcmsg.key_bundle.KeyBundle` class represents a set of keys
+with a common origin. The :py:class:`oidcmsg.key_jar.KeyJar` class is
 supposed to handle several sets of keys from several different origins.
 To do that it connects key bundles to identifiers for their owner.
 
@@ -18,8 +18,8 @@ How to add keys to a KeyJar
 One way is to first create a KeyBundle instance and then add it to the
 KeyJar. ::
 
-    from oicmsg.key_jar import KeyJar
-    from oicmsg.key_bundle import keybundle_from_local_file
+    from oidcmsg.key_jar import KeyJar
+    from oidcmsg.key_bundle import keybundle_from_local_file
     >>> kj = KeyJar()
     >>> kb = keybundle_from_local_file(RSAKEY, "rsa", ["sig"])
     >>> kj.add_kb('https://issuer.example.com', kb)
@@ -29,7 +29,7 @@ KeyJar. ::
 The two other common cases are adding a symmetric key. In OAuth2/OIDC
 this could be the client secret.
 
-    >>> from oicmsg.key_jar import KeyJar
+    >>> from oidcmsg.key_jar import KeyJar
     >>> kj = KeyJar()
     >>> kj.add_symmetric(owner='', key='client_secret', usage=['sig'])
     >>> kj.keys()
@@ -41,7 +41,7 @@ KeyJar instance.
 The second use case is that someone has publish a jwks_uri and we want
 to add that information to the KeyJar::
 
-    >>> from oicmsg.key_jar import KeyJar
+    >>> from oidcmsg.key_jar import KeyJar
     >>> kj = KeyJar()
     >>> kj.add_url(owner='https://example.com/op/', url='https://example.com/op/jwks.json')
     >>> kj.keys()
@@ -51,8 +51,8 @@ to add that information to the KeyJar::
 If you have a set of KeyBundles belonging to an owner then you can add them
 all together.::
 
-    >>> from oicmsg.key_jar import KeyJar
-    >>> from oicmsg.key_bundle import KeyBundle
+    >>> from oidcmsg.key_jar import KeyJar
+    >>> from oidcmsg.key_bundle import KeyBundle
     >>> desc = {"kty": "oct", "key": "supersecret", "use": "sig"}
     >>> kb1 = KeyBundle([desc])
     >>> kb2 = KeyBundle(source='https://example.com/op/jwks.json')
@@ -78,7 +78,7 @@ For this you have a search interface, where you can specify these things ;
 
 An example::
 
-    >>> from oicmsg.key_bundle import KeyBundle
+    >>> from oidcmsg.key_bundle import KeyBundle
     >>> print(open('jwks1.json').read())
     {"keys": [
         {

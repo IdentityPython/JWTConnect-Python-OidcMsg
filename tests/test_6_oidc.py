@@ -2,48 +2,50 @@
 import time
 import json
 import os
+import pytest
 import sys
+
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
 
-import pytest
-
 from cryptojwt.exception import BadSignature
 from cryptojwt.jws import alg2keytype
-from oicmsg.key_jar import KeyJar
 
-from oicmsg import time_util
-from oicmsg.exception import MissingRequiredAttribute
-from oicmsg.exception import NotAllowedValue
-from oicmsg.exception import WrongSigningAlgorithm
-from oicmsg.key_bundle import KeyBundle
-from oicmsg.oauth2 import ErrorResponse
-from oicmsg.oic import AccessTokenRequest, Link, JRD
-from oicmsg.oic import CheckSessionRequest
-from oicmsg.oic import ClaimsRequest
-from oicmsg.oic import DiscoveryRequest
-from oicmsg.oic import factory
-from oicmsg.oic import msg_ser_json
-from oicmsg.oic import AccessTokenResponse
-from oicmsg.oic import AuthnToken
-from oicmsg.oic import AuthorizationErrorResponse
-from oicmsg.oic import AuthorizationResponse
-from oicmsg.oic import EndSessionRequest
-from oicmsg.oic import EndSessionResponse
-from oicmsg.oic import AddressClaim
-from oicmsg.oic import AuthorizationRequest
-from oicmsg.oic import Claims
-from oicmsg.oic import IdToken
-from oicmsg.oic import OpenIDSchema
-from oicmsg.oic import ProviderConfigurationResponse
-from oicmsg.oic import RegistrationRequest
-from oicmsg.oic import RegistrationResponse
-from oicmsg.oic import address_deser
-from oicmsg.oic import claims_deser
-from oicmsg.oic import claims_ser
-from oicmsg.oic import msg_ser
-from oicmsg.oic import scope2claims
-from oicmsg.time_util import utc_time_sans_frac
+from oidcmsg import time_util
+from oidcmsg.exception import MissingRequiredAttribute
+from oidcmsg.exception import NotAllowedValue
+from oidcmsg.exception import WrongSigningAlgorithm
+from oidcmsg.key_bundle import KeyBundle
+from oidcmsg.key_jar import KeyJar
+from oidcmsg.oauth2 import ErrorResponse
+from oidcmsg.oidc import AccessTokenRequest
+from oidcmsg.oidc import CheckSessionRequest
+from oidcmsg.oidc import ClaimsRequest
+from oidcmsg.oidc import DiscoveryRequest
+from oidcmsg.oidc import factory
+from oidcmsg.oidc import msg_ser_json
+from oidcmsg.oidc import AccessTokenResponse
+from oidcmsg.oidc import AuthnToken
+from oidcmsg.oidc import AuthorizationErrorResponse
+from oidcmsg.oidc import AuthorizationResponse
+from oidcmsg.oidc import EndSessionRequest
+from oidcmsg.oidc import EndSessionResponse
+from oidcmsg.oidc import AddressClaim
+from oidcmsg.oidc import AuthorizationRequest
+from oidcmsg.oidc import Claims
+from oidcmsg.oidc import IdToken
+from oidcmsg.oidc import JRD
+from oidcmsg.oidc import Link
+from oidcmsg.oidc import OpenIDSchema
+from oidcmsg.oidc import ProviderConfigurationResponse
+from oidcmsg.oidc import RegistrationRequest
+from oidcmsg.oidc import RegistrationResponse
+from oidcmsg.oidc import address_deser
+from oidcmsg.oidc import claims_deser
+from oidcmsg.oidc import claims_ser
+from oidcmsg.oidc import msg_ser
+from oidcmsg.oidc import scope2claims
+from oidcmsg.time_util import utc_time_sans_frac
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              '..', '..')))

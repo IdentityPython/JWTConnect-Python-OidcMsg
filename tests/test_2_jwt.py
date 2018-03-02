@@ -2,10 +2,10 @@ import os
 
 from cryptojwt.jwk import RSAKey
 
-from oicmsg.jwt import JWT
-from oicmsg.key_bundle import KeyBundle
-from oicmsg.key_jar import build_keyjar, KeyJar
-from oicmsg.oic import JsonWebToken
+from oidcmsg.jwt import JWT
+from oidcmsg.key_bundle import KeyBundle
+from oidcmsg.key_jar import build_keyjar, KeyJar
+from oidcmsg.oidc import JsonWebToken
 
 __author__ = 'Roland Hedberg'
 

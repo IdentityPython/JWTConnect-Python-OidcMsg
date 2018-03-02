@@ -1,4 +1,4 @@
-.. _oicmsg_message:
+.. _oidcmsg_message:
 
 *********************
 Base protocol message
@@ -7,8 +7,8 @@ Base protocol message
 :Author: Roland Hedberg
 
 
-oicmsg.message
-==============
+oidcmsg.message
+===============
 
-.. automodule:: oicmsg.message
+.. automodule:: oidcmsg.message
    :members:

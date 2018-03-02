@@ -6,11 +6,11 @@ from cryptojwt.exception import JWKESTException
 from cryptojwt.jws import factory
 from cryptojwt.jws import JWS
 
-from oicmsg.key_bundle import keybundle_from_local_file
-from oicmsg.key_bundle import KeyBundle
-from oicmsg.key_jar import build_keyjar
-from oicmsg.key_jar import key_export
-from oicmsg.key_jar import KeyJar
+from oidcmsg.key_bundle import keybundle_from_local_file
+from oidcmsg.key_bundle import KeyBundle
+from oidcmsg.key_jar import build_keyjar
+from oidcmsg.key_jar import key_export
+from oidcmsg.key_jar import KeyJar
 
 __author__ = 'Roland Hedberg'
 

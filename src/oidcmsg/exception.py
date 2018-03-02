@@ -1,45 +1,45 @@
 __author__ = 'Roland Hedberg'
 
 
-class OicMsgError(Exception):
+class OidcMsgError(Exception):
     def __init__(self, errmsg, content_type="", *args):
         Exception.__init__(self, errmsg, *args)
         self.content_type = content_type
 
 
-class MissingAttribute(OicMsgError):
+class MissingAttribute(OidcMsgError):
     pass
 
 
-class UnsupportedMethod(OicMsgError):
+class UnsupportedMethod(OidcMsgError):
     pass
 
 
-class MissingParameter(OicMsgError):
+class MissingParameter(OidcMsgError):
     pass
 
 
-class UnknownAssertionType(OicMsgError):
+class UnknownAssertionType(OidcMsgError):
     pass
 
 
-class ParameterError(OicMsgError):
+class ParameterError(OidcMsgError):
     pass
 
 
-class URIError(OicMsgError):
+class URIError(OidcMsgError):
     pass
 
 
-class ParseError(OicMsgError):
+class ParseError(OidcMsgError):
     pass
 
 
-class FailedAuthentication(OicMsgError):
+class FailedAuthentication(OidcMsgError):
     pass
 
 
-class NotForMe(OicMsgError):
+class NotForMe(OidcMsgError):
     pass
 
 
@@ -47,15 +47,15 @@ class UnSupported(Exception):
     pass
 
 
-class MessageException(OicMsgError):
+class MessageException(OidcMsgError):
     pass
 
 
-class IssuerMismatch(OicMsgError):
+class IssuerMismatch(OidcMsgError):
     pass
 
 
-class RestrictionError(OicMsgError):
+class RestrictionError(OidcMsgError):
     pass
 
 
@@ -71,35 +71,35 @@ class ModificationForbidden(Exception):
     pass
 
 
-class RegistrationError(OicMsgError):
+class RegistrationError(OidcMsgError):
     pass
 
 
-class CommunicationError(OicMsgError):
+class CommunicationError(OidcMsgError):
     pass
 
 
-class RequestError(OicMsgError):
+class RequestError(OidcMsgError):
     pass
 
 
-class AuthnToOld(OicMsgError):
+class AuthnToOld(OidcMsgError):
     pass
 
 
-class ImproperlyConfigured(OicMsgError):
+class ImproperlyConfigured(OidcMsgError):
     pass
 
 
-class SubMismatch(OicMsgError):
+class SubMismatch(OidcMsgError):
     pass
 
 
-class FormatError(OicMsgError):
+class FormatError(OidcMsgError):
     pass
 
 
-class VerificationError(OicMsgError):
+class VerificationError(OidcMsgError):
     pass
 
 
@@ -107,7 +107,7 @@ class MissingRequiredValue(MessageException):
     pass
 
 
-class MissingSigningKey(OicMsgError):
+class MissingSigningKey(OidcMsgError):
     pass
 
 
@@ -119,11 +119,11 @@ class DecodeError(MessageException):
     pass
 
 
-class GrantExpired(OicMsgError):
+class GrantExpired(OidcMsgError):
     pass
 
 
-class OldAccessToken(OicMsgError):
+class OldAccessToken(OidcMsgError):
     pass
 
 
@@ -152,11 +152,11 @@ class MissingRequiredAttribute(MessageException):
         return "Missing required attribute '%s'" % self.args[0]
 
 
-class InvalidRequest(OicMsgError):
+class InvalidRequest(OidcMsgError):
     pass
 
 
-class KeyIOError(OicMsgError):
+class KeyIOError(OidcMsgError):
     pass
 
 

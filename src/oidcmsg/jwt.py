@@ -1,6 +1,6 @@
 from cryptojwt import jwt
 
-from oicmsg.oic import JsonWebToken
+from oidcmsg.oic import JsonWebToken
 
 __author__ = 'Roland Hedberg'
 

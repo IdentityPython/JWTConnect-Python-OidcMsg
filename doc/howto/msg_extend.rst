@@ -1,7 +1,7 @@
-.. _oicmsg_extend:
+.. _oidcmsg_extend:
 
-How to extend oicmsg
-====================
+How to extend oidcmsg
+=====================
 
 By extending I mean adding a new message class.
 In most case starting with an existing class is probably the way to go.

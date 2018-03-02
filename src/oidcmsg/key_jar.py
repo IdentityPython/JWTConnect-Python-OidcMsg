@@ -13,16 +13,18 @@ from cryptojwt import as_unicode
 from cryptojwt import b64e
 from cryptojwt import jwe
 from cryptojwt import jws
-from cryptojwt.jwk import DeSerializationNotPossible, NIST2SEC, SYMKey
+from cryptojwt.jwk import DeSerializationNotPossible
 from cryptojwt.jwk import ECKey
+from cryptojwt.jwk import NIST2SEC
 from cryptojwt.jwk import RSAKey
 from cryptojwt.jwk import rsa_load
+from cryptojwt.jwk import SYMKey
 
-from oicmsg.exception import MessageException
-from oicmsg.exception import OicMsgError
-from oicmsg.key_bundle import create_and_store_rsa_key_pair
-from oicmsg.key_bundle import KeyBundle
-from oicmsg.key_bundle import rsa_init
+from oidcmsg.exception import MessageException
+from oidcmsg.exception import OidcMsgError
+from oidcmsg.key_bundle import create_and_store_rsa_key_pair
+from oidcmsg.key_bundle import KeyBundle
+from oidcmsg.key_bundle import rsa_init
 
 __author__ = 'Roland Hedberg'
 
@@ -38,7 +40,7 @@ def raise_exception(excep, descr, error='service_error'):
     raise excep(_err, 'application/json')
 
 
-class KeyIOError(OicMsgError):
+class KeyIOError(OidcMsgError):
     pass
 
 
@@ -76,13 +78,13 @@ class KeyJar(object):
     def add_url(self, owner, url, **kwargs):
         """
         Add a set of keys by url. This method will create a 
-        :py:class:`oicmsg.oauth2.keybundle.KeyBundle` instance with the
+        :py:class:`oidcmsg.oauth2.keybundle.KeyBundle` instance with the
         url as source specification.
         
         :param owner: Who issued the keys
         :param url: Where can the key/-s be found
         :param kwargs: extra parameters for instantiating KeyBundle
-        :return: A :py:class:`oicmsg.oauth2.keybundle.KeyBundle` instance
+        :return: A :py:class:`oidcmsg.oauth2.keybundle.KeyBundle` instance
         """
 
         if not url:
@@ -131,7 +133,7 @@ class KeyJar(object):
         Add a key bundle and bind it to an identifier
         
         :param owner: Owner of the keys in the keybundle
-        :param kb: A :py:class:`oicmsg.key_bundle.KeyBundle` instance
+        :param kb: A :py:class:`oidcmsg.key_bundle.KeyBundle` instance
         """
         try:
             self.issuer_keys[owner].append(kb)
@@ -728,7 +730,7 @@ def ec_init(spec):
 
 def keyjar_init(instance, key_conf, kid_template=""):
     """
-    Will add to an already existing :py:class:`oicmsg.oauth2.Message` instance
+    Will add to an already existing :py:class:`oidcmsg.oauth2.Message` instance
     or create a new keyjar. As a side effekt the keyjar attribute of the 
     instance is updated.
     
@@ -768,7 +770,7 @@ def _new_rsa_key(spec):
 
 def build_keyjar(key_conf, kid_template="", keyjar=None, kidd=None):
     """
-    Initiates a new :py:class:`oicmsg.oauth2.Message` instance and
+    Initiates a new :py:class:`oidcmsg.oauth2.Message` instance and
     populates it with keys according to the key configuration.
     
     Configuration of the type ::

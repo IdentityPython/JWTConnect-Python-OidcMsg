@@ -14,30 +14,30 @@ import time
 from cryptojwt import as_unicode
 from cryptojwt import jws
 
-from oicmsg import oauth2
-from oicmsg import time_util
-from oicmsg.exception import InvalidRequest
-from oicmsg.exception import IssuerMismatch
-from oicmsg.exception import MessageException
-from oicmsg.exception import MissingRequiredAttribute
-from oicmsg.exception import MissingRequiredValue
-from oicmsg.exception import NotAllowedValue
-from oicmsg.exception import NotForMe
-from oicmsg.exception import OicMsgError
-from oicmsg.exception import SchemeError
-from oicmsg.exception import VerificationError
-from oicmsg.message import Message
-from oicmsg.message import msg_ser
-from oicmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
-from oicmsg.message import OPTIONAL_LIST_OF_STRINGS
-from oicmsg.message import OPTIONAL_MESSAGE
-from oicmsg.message import REQUIRED_LIST_OF_SP_SEP_STRINGS
-from oicmsg.message import REQUIRED_LIST_OF_STRINGS
-from oicmsg.message import SINGLE_OPTIONAL_INT
-from oicmsg.message import SINGLE_OPTIONAL_JSON
-from oicmsg.message import SINGLE_OPTIONAL_STRING
-from oicmsg.message import SINGLE_REQUIRED_STRING
-from oicmsg.time_util import utc_time_sans_frac
+from oidcmsg import oauth2
+from oidcmsg import time_util
+from oidcmsg.exception import InvalidRequest
+from oidcmsg.exception import IssuerMismatch
+from oidcmsg.exception import MessageException
+from oidcmsg.exception import MissingRequiredAttribute
+from oidcmsg.exception import MissingRequiredValue
+from oidcmsg.exception import NotAllowedValue
+from oidcmsg.exception import NotForMe
+from oidcmsg.exception import OidcMsgError
+from oidcmsg.exception import SchemeError
+from oidcmsg.exception import VerificationError
+from oidcmsg.message import Message
+from oidcmsg.message import msg_ser
+from oidcmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
+from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
+from oidcmsg.message import OPTIONAL_MESSAGE
+from oidcmsg.message import REQUIRED_LIST_OF_SP_SEP_STRINGS
+from oidcmsg.message import REQUIRED_LIST_OF_STRINGS
+from oidcmsg.message import SINGLE_OPTIONAL_INT
+from oidcmsg.message import SINGLE_OPTIONAL_JSON
+from oidcmsg.message import SINGLE_OPTIONAL_STRING
+from oidcmsg.message import SINGLE_REQUIRED_STRING
+from oidcmsg.time_util import utc_time_sans_frac
 
 __author__ = 'Roland Hedberg'
 
@@ -152,7 +152,7 @@ def claims_ser(val, sformat="urlencoded", lev=0):
         else:
             raise MessageException("Wrong type: %s" % type(item))
     else:
-        raise OicMsgError("Unknown sformat: %s" % sformat, val)
+        raise OidcMsgError("Unknown sformat: %s" % sformat, val)
 
     return res
 
@@ -1028,7 +1028,7 @@ def msg_ser(inst, sformat, lev=0):
         else:
             raise MessageException("Wrong type: %s" % type(inst))
     else:
-        raise OicMsgError("Unknown sformat", inst)
+        raise OidcMsgError("Unknown sformat", inst)
 
     return res
 

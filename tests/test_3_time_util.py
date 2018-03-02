@@ -8,24 +8,24 @@ from datetime import datetime
 
 import pytest
 
-from oicmsg.time_util import TimeUtilError
-from oicmsg.time_util import a_while_ago
-from oicmsg.time_util import add_duration
-from oicmsg.time_util import after
-from oicmsg.time_util import before
-from oicmsg.time_util import f_quotient
-from oicmsg.time_util import in_a_while
-from oicmsg.time_util import instant
-from oicmsg.time_util import later_than
-from oicmsg.time_util import modulo
-from oicmsg.time_util import not_before
-from oicmsg.time_util import not_on_or_after
-from oicmsg.time_util import parse_duration
-from oicmsg.time_util import shift_time
-from oicmsg.time_util import str_to_time
-from oicmsg.time_util import time_a_while_ago
-from oicmsg.time_util import utc_time_sans_frac
-from oicmsg.time_util import valid
+from oidcmsg.time_util import TimeUtilError
+from oidcmsg.time_util import a_while_ago
+from oidcmsg.time_util import add_duration
+from oidcmsg.time_util import after
+from oidcmsg.time_util import before
+from oidcmsg.time_util import f_quotient
+from oidcmsg.time_util import in_a_while
+from oidcmsg.time_util import instant
+from oidcmsg.time_util import later_than
+from oidcmsg.time_util import modulo
+from oidcmsg.time_util import not_before
+from oidcmsg.time_util import not_on_or_after
+from oidcmsg.time_util import parse_duration
+from oidcmsg.time_util import shift_time
+from oidcmsg.time_util import str_to_time
+from oidcmsg.time_util import time_a_while_ago
+from oidcmsg.time_util import utc_time_sans_frac
+from oidcmsg.time_util import valid
 
 __author__ = 'rohe0002'
 

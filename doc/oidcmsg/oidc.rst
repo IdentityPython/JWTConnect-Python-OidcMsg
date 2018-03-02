@@ -1,4 +1,4 @@
-.. _oicmsg_oic:
+.. _oidcmsg_oic:
 
 ********************************
 OpenID Connect protocol messages
@@ -7,10 +7,10 @@ OpenID Connect protocol messages
 :Author: Roland Hedberg
 
 
-oicmsg\.oic package
-===================
+oidcmsg\.oidc package
+=====================
 
-.. automodule:: oicmsg.oic
+.. automodule:: oidcmsg.oidc
    :members:
    :undoc-members:
    :show-inheritance:
