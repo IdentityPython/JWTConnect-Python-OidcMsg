@@ -37,6 +37,7 @@ from oidcmsg.message import SINGLE_OPTIONAL_INT
 from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
 from oidcmsg.message import SINGLE_REQUIRED_STRING
+from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.time_util import utc_time_sans_frac
 
 __author__ = 'Roland Hedberg'
@@ -69,10 +70,11 @@ def json_ser(val, sformat=None, lev=0):
 def json_deser(val, sformat=None, lev=0):
     return json.loads(val)
 
+
 # value type, required, serializer, deserializer, null value allowed
 SINGLE_OPTIONAL_BOOLEAN = (bool, False, None, None, False)
 SINGLE_OPTIONAL_JSON_WN = (dict, False, json_ser, json_deser, True)
-#SINGLE_OPTIONAL_JSON_CONV = (dict, False, json_conv, json_rest, True)
+# SINGLE_OPTIONAL_JSON_CONV = (dict, False, json_conv, json_rest, True)
 SINGLE_REQUIRED_INT = (int, True, None, None, False)
 
 
@@ -416,7 +418,9 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
             else:
                 try:
                     if self['nonce'] != kwargs['nonce']:
-                        raise ValueError('Nonce in id_token not matching nonce in authz request')
+                        raise ValueError(
+                            'Nonce in id_token not matching nonce in authz '
+                            'request')
                 except KeyError:
                     pass
 
@@ -455,29 +459,33 @@ class AddressClaim(Message):
                "country": SINGLE_OPTIONAL_STRING}
 
 
-class OpenIDSchema(Message):
-    c_param = {"sub": SINGLE_REQUIRED_STRING,
-               "name": SINGLE_OPTIONAL_STRING,
-               "given_name": SINGLE_OPTIONAL_STRING,
-               "family_name": SINGLE_OPTIONAL_STRING,
-               "middle_name": SINGLE_OPTIONAL_STRING,
-               "nickname": SINGLE_OPTIONAL_STRING,
-               "preferred_username": SINGLE_OPTIONAL_STRING,
-               "profile": SINGLE_OPTIONAL_STRING,
-               "picture": SINGLE_OPTIONAL_STRING,
-               "website": SINGLE_OPTIONAL_STRING,
-               "email": SINGLE_OPTIONAL_STRING,
-               "email_verified": SINGLE_OPTIONAL_BOOLEAN,
-               "gender": SINGLE_OPTIONAL_STRING,
-               "birthdate": SINGLE_OPTIONAL_STRING,
-               "zoneinfo": SINGLE_OPTIONAL_STRING,
-               "locale": SINGLE_OPTIONAL_STRING,
-               "phone_number": SINGLE_OPTIONAL_STRING,
-               "phone_number_verified": SINGLE_OPTIONAL_BOOLEAN,
-               "address": OPTIONAL_ADDRESS,
-               "updated_at": SINGLE_OPTIONAL_INT,
-               "_claim_names": OPTIONAL_MESSAGE,
-               "_claim_sources": OPTIONAL_MESSAGE}
+class OpenIDSchema(ResponseMessage):
+    c_param = ResponseMessage.c_param.copy()
+    c_param.update(
+        {
+            "sub": SINGLE_REQUIRED_STRING,
+            "name": SINGLE_OPTIONAL_STRING,
+            "given_name": SINGLE_OPTIONAL_STRING,
+            "family_name": SINGLE_OPTIONAL_STRING,
+            "middle_name": SINGLE_OPTIONAL_STRING,
+            "nickname": SINGLE_OPTIONAL_STRING,
+            "preferred_username": SINGLE_OPTIONAL_STRING,
+            "profile": SINGLE_OPTIONAL_STRING,
+            "picture": SINGLE_OPTIONAL_STRING,
+            "website": SINGLE_OPTIONAL_STRING,
+            "email": SINGLE_OPTIONAL_STRING,
+            "email_verified": SINGLE_OPTIONAL_BOOLEAN,
+            "gender": SINGLE_OPTIONAL_STRING,
+            "birthdate": SINGLE_OPTIONAL_STRING,
+            "zoneinfo": SINGLE_OPTIONAL_STRING,
+            "locale": SINGLE_OPTIONAL_STRING,
+            "phone_number": SINGLE_OPTIONAL_STRING,
+            "phone_number_verified": SINGLE_OPTIONAL_BOOLEAN,
+            "address": OPTIONAL_ADDRESS,
+            "updated_at": SINGLE_OPTIONAL_INT,
+            "_claim_names": OPTIONAL_MESSAGE,
+            "_claim_sources": OPTIONAL_MESSAGE
+        })
 
     def verify(self, **kwargs):
         super(OpenIDSchema, self).verify(**kwargs)
@@ -570,18 +578,20 @@ class RegistrationRequest(Message):
         return True
 
 
-class RegistrationResponse(Message):
+class RegistrationResponse(ResponseMessage):
     """
     Response to client_register registration requests
     """
-    c_param = {
-        "client_id": SINGLE_REQUIRED_STRING,
-        "client_secret": SINGLE_OPTIONAL_STRING,
-        "registration_access_token": SINGLE_OPTIONAL_STRING,
-        "registration_client_uri": SINGLE_OPTIONAL_STRING,
-        "client_id_issued_at": SINGLE_OPTIONAL_INT,
-        "client_secret_expires_at": SINGLE_OPTIONAL_INT,
-    }
+    c_param = ResponseMessage.c_param.copy()
+    c_param.update(
+        {
+            "client_id": SINGLE_REQUIRED_STRING,
+            "client_secret": SINGLE_OPTIONAL_STRING,
+            "registration_access_token": SINGLE_OPTIONAL_STRING,
+            "registration_client_uri": SINGLE_OPTIONAL_STRING,
+            "client_id_issued_at": SINGLE_OPTIONAL_INT,
+            "client_secret_expires_at": SINGLE_OPTIONAL_INT
+        })
     c_param.update(RegistrationRequest.c_param)
 
     def verify(self, **kwargs):
@@ -603,7 +613,7 @@ class RegistrationResponse(Message):
         return True
 
 
-class ClientRegistrationErrorResponse(oauth2.ErrorResponse):
+class ClientRegistrationErrorResponse(oauth2.ResponseMessage):
     c_allowed_values = {"error": ["invalid_redirect_uri",
                                   "invalid_client_metadata",
                                   "invalid_configuration_parameter"]}
@@ -758,8 +768,9 @@ class RefreshSessionRequest(MessageWithIdToken):
                     "state": SINGLE_REQUIRED_STRING})
 
 
-class RefreshSessionResponse(MessageWithIdToken):
+class RefreshSessionResponse(MessageWithIdToken, ResponseMessage):
     c_param = MessageWithIdToken.c_param.copy()
+    c_param.update(ResponseMessage.c_param.copy())
     c_param.update({"state": SINGLE_REQUIRED_STRING})
 
 
@@ -798,8 +809,9 @@ class EndSessionRequest(Message):
         return True
 
 
-class EndSessionResponse(Message):
-    c_param = {"state": SINGLE_OPTIONAL_STRING}
+class EndSessionResponse(ResponseMessage):
+    c_param = ResponseMessage.c_param.copy()
+    c_param.update({"state": SINGLE_OPTIONAL_STRING})
 
 
 class Claims(Message):
@@ -818,8 +830,9 @@ class OpenIDRequest(AuthorizationRequest):
     pass
 
 
-class ProviderConfigurationResponse(Message):
-    c_param = {
+class ProviderConfigurationResponse(ResponseMessage):
+    c_param = ResponseMessage.c_param.copy()
+    c_param.update({
         "issuer": SINGLE_REQUIRED_STRING,
         "authorization_endpoint": SINGLE_REQUIRED_STRING,
         "token_endpoint": SINGLE_OPTIONAL_STRING,
@@ -863,7 +876,7 @@ class ProviderConfigurationResponse(Message):
         # "jwk_encryption_url": SINGLE_OPTIONAL_STRING,
         # "x509_url": SINGLE_REQUIRED_STRING,
         # "x509_encryption_url": SINGLE_OPTIONAL_STRING,
-    }
+    })
     c_default = {"version": "3.0",
                  "token_endpoint_auth_methods_supported": [
                      "client_secret_basic"],
@@ -948,7 +961,7 @@ class JsonWebToken(Message):
                 pass
 
         return True
-    
+
 
 class AuthnToken(JsonWebToken):
     c_param = {
@@ -974,7 +987,7 @@ def jwt_deser(val, sformat="json"):
 SINGLE_OPTIONAL_JWT = (Message, False, msg_ser, jwt_deser, False)
 
 
-class UserInfoErrorResponse(oauth2.ErrorResponse):
+class UserInfoErrorResponse(oauth2.ResponseMessage):
     c_allowed_values = {"error": ["invalid_schema", "invalid_request",
                                   "invalid_token", "insufficient_scope"]}
 
@@ -1036,7 +1049,7 @@ def msg_ser(inst, sformat, lev=0):
 REQUIRED_LINKS = ([Link], True, msg_ser, link_deser, False)
 
 
-class JRD(Message):
+class JRD(ResponseMessage):
     """
     JSON Resource Descriptor https://tools.ietf.org/html/rfc7033#section-4.4
     """

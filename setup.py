@@ -43,7 +43,6 @@ if sys.version_info[0] == 2 and sys.version_info[1] == 6:
 else:
     extra_install_requires = []
 
-version = ''
 with open('src/oidcmsg/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
                         fd.read(), re.MULTILINE).group(1)

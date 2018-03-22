@@ -17,7 +17,7 @@ from oidcmsg.exception import NotAllowedValue
 from oidcmsg.exception import WrongSigningAlgorithm
 from oidcmsg.key_bundle import KeyBundle
 from oidcmsg.key_jar import KeyJar
-from oidcmsg.oauth2 import ErrorResponse
+from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.oidc import AccessTokenRequest
 from oidcmsg.oidc import CheckSessionRequest
 from oidcmsg.oidc import ClaimsRequest
@@ -821,8 +821,8 @@ def test_factory():
 
 
 def test_factory_chain():
-    dr = factory('ErrorResponse', error='some_error')
-    assert isinstance(dr, ErrorResponse)
+    dr = factory('ResponseMessage', error='some_error')
+    assert isinstance(dr, ResponseMessage)
     assert list(dr.keys()) == ['error']
 
 

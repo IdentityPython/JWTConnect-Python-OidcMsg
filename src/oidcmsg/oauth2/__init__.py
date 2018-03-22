@@ -15,22 +15,28 @@ from oidcmsg.message import SINGLE_REQUIRED_STRING
 logger = logging.getLogger(__name__)
 
 
-class ErrorResponse(Message):
+class ResponseMessage(Message):
     """
     The basic error response
     """
-    c_param = {"error": SINGLE_REQUIRED_STRING,
+    c_param = {"error": SINGLE_OPTIONAL_STRING,
                "error_description": SINGLE_OPTIONAL_STRING,
                "error_uri": SINGLE_OPTIONAL_STRING}
 
+    def is_error_message(self):
+        if 'error' in self:
+            return True
+        else:
+            return False
 
-class AuthorizationErrorResponse(ErrorResponse):
+
+class AuthorizationErrorResponse(ResponseMessage):
     """
     Authorization error response.
     """
-    c_param = ErrorResponse.c_param.copy()
+    c_param = ResponseMessage.c_param.copy()
     c_param.update({"state": SINGLE_OPTIONAL_STRING})
-    c_allowed_values = ErrorResponse.c_allowed_values.copy()
+    c_allowed_values = ResponseMessage.c_allowed_values.copy()
     c_allowed_values.update({"error": ["invalid_request",
                                        "unauthorized_client",
                                        "access_denied",
@@ -39,7 +45,7 @@ class AuthorizationErrorResponse(ErrorResponse):
                                        "temporarily_unavailable"]})
 
 
-class TokenErrorResponse(ErrorResponse):
+class TokenErrorResponse(ResponseMessage):
     """
     Error response from the token endpoint
     """
@@ -77,19 +83,20 @@ class AuthorizationRequest(Message):
     }
 
 
-class AuthorizationResponse(Message):
+class AuthorizationResponse(ResponseMessage):
     """
     An authorization response.
     If *client_id* is returned in the response it will be checked against
     a client_id value provided when calling the verify method.
     The same with *iss* (issuer).
     """
-    c_param = {
+    c_param = ResponseMessage.c_param.copy()
+    c_param.update({
         "code": SINGLE_REQUIRED_STRING,
         "state": SINGLE_OPTIONAL_STRING,
         'iss': SINGLE_OPTIONAL_STRING,
         'client_id': SINGLE_OPTIONAL_STRING
-    }
+    })
 
     def verify(self, **kwargs):
         super(AuthorizationResponse, self).verify(**kwargs)
@@ -113,24 +120,26 @@ class AuthorizationResponse(Message):
         return True
 
 
-class AccessTokenResponse(Message):
+class AccessTokenResponse(ResponseMessage):
     """
     Access token response
     """
-    c_param = {
+    c_param = ResponseMessage.c_param.copy()
+    c_param.update({
         "access_token": SINGLE_REQUIRED_STRING,
         "token_type": SINGLE_REQUIRED_STRING,
         "expires_in": SINGLE_OPTIONAL_INT,
         "refresh_token": SINGLE_OPTIONAL_STRING,
         "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
         "state": SINGLE_OPTIONAL_STRING
-    }
+    })
 
 
-class NoneResponse(Message):
-    c_param = {
+class NoneResponse(ResponseMessage):
+    c_param = ResponseMessage.c_param.copy()
+    c_param.update({
         "state": SINGLE_OPTIONAL_STRING
-    }
+    })
 
 
 class ROPCAccessTokenRequest(Message):
@@ -180,7 +189,8 @@ class ASConfigurationResponse(Message):
     """
     Authorization Server configuration response
     """
-    c_param = {
+    c_param = ResponseMessage.c_param.copy()
+    c_param.update({
         "issuer": SINGLE_REQUIRED_STRING,
         "authorization_endpoint": SINGLE_OPTIONAL_STRING,
         "token_endpoint": SINGLE_OPTIONAL_STRING,
@@ -199,7 +209,7 @@ class ASConfigurationResponse(Message):
         "op_tos_uri": SINGLE_OPTIONAL_STRING,
         'revocation_endpoint': SINGLE_OPTIONAL_STRING,
         'introspection_endpoint': SINGLE_OPTIONAL_STRING,
-    }
+    })
     c_default = {"version": "3.0"}
 
 

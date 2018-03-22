@@ -175,7 +175,7 @@ class TestMessage(object):
                             req_str_list=["spike", "lee"],
                             opt_json='{"ford": "green"}')
         keyjar = KeyJar()
-        keyjar.add_symmetric('', b"A1B2C3D4")
+        keyjar.add_symmetric('', b"A1B2C3D4E5F6G7H8")
         jws = item.to_jwt(key=keyjar.get_signing_key('oct'),
                           algorithm="HS256")
 
@@ -189,7 +189,7 @@ class TestMessage(object):
                            opt_str_list=["one", "two"],
                            req_str_list=["spike", "lee"],
                            opt_json='{"ford": "green"}')
-        keys = [SYMKey(key="A1B2C3D4")]
+        keys = [SYMKey(key="A1B2C3D4E5F6G7H8")]
         jwe = msg.to_jwe(keys, alg="A128KW", enc="A128CBC-HS256")
 
         jitem = DummyMessage().from_jwe(jwe, keys=keys)
@@ -283,7 +283,8 @@ def test_to_jwt(keytype, alg):
 ])
 def test_to_jwe(keytype, alg, enc):
     msg = Message(a='foo', b='bar', c='tjoho')
-    _jwe = msg.to_jwe(PUBLIC_KEYJAR.get_encrypt_key(keytype, ''), alg=alg, enc=enc)
+    _jwe = msg.to_jwe(PUBLIC_KEYJAR.get_encrypt_key(keytype, ''), alg=alg,
+                      enc=enc)
     msg1 = Message().from_jwe(_jwe, KEYJAR.get_encrypt_key(keytype, ''))
     assert msg1 == msg
 
