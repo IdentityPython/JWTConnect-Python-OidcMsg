@@ -161,6 +161,19 @@ The processing pattern on the receiving end is:
     3. Verify the correctness of the response
 
 
+What if the response reecived was an error message ?
+----------------------------------------------------
+
+All the response subclasses are subclasses of
+:py:class:`oidcmsg.oauth2.ResponseMessage` and that class provides you with one
+method that is useful in this case::
+
+    >>> from oidcmsg.oauth2 import AccessTokenResponse
+    >>> response = {'error':'invalid_client'}
+    >>> message = AccessTokenResponse(**response)
+    >>> message.is_error_message()
+    True
+
 Serialization methods
 ---------------------
 
