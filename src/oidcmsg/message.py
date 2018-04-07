@@ -520,9 +520,9 @@ class Message(MutableMapping):
         if _jw:
             if "sigalg" in kwargs:
                 _alg = _jw.jwt.headers["alg"]
-                if kwargs["sign"] != _alg:
+                if kwargs["sigalg"] != _alg:
                     raise WrongSigningAlgorithm("%s != %s" % (
-                        _alg, kwargs["sign"]))
+                        _alg, kwargs["sigalg"]))
             try:
                 _jwt = SimpleJWT().unpack(txt)
                 jso = _jwt.payload()

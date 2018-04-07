@@ -621,7 +621,7 @@ class TestAccessTokenResponse(object):
 
         at = AccessTokenResponse(**_info)
         with pytest.raises(WrongSigningAlgorithm):
-            at.verify(keyjar=keyjar, algs={"sign": "HS512"})
+            at.verify(keyjar=keyjar, sigalg="HS512")
 
 
 def test_at_hash():
@@ -642,7 +642,7 @@ def test_at_hash():
     _info.update(_token)
 
     at = AuthorizationResponse(**_info)
-    assert at.verify(keyjar=keyjar, algs={"sign": "HS256"})
+    assert at.verify(keyjar=keyjar, sigalg="HS256")
     assert 'at_hash' in at['verified_id_token']
 
 
@@ -666,7 +666,7 @@ def test_c_hash():
     _info.update(_token)
 
     at = AuthorizationResponse(**_info)
-    r = at.verify(keyjar=keyjar, algs={"sign": "HS256"})
+    r = at.verify(keyjar=keyjar, sigalg="HS256")
     assert 'c_hash' in at['verified_id_token']
 
 
@@ -691,7 +691,7 @@ def test_missing_c_hash():
 
     at = AuthorizationResponse(**_info)
     with pytest.raises(MissingRequiredAttribute):
-        at.verify(keyjar=keyjar, algs={"sign": "HS256"})
+        at.verify(keyjar=keyjar, sigalg="HS256")
 
 
 def test_id_token():

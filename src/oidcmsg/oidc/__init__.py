@@ -229,7 +229,7 @@ def check_char_set(string, allowed):
 
 # -----------------------------------------------------------------------------
 
-ID_TOKEN_VERIFY_ARGS = ['keyjar','verify', 'encalg', 'encenc', 'signalg',
+ID_TOKEN_VERIFY_ARGS = ['keyjar','verify', 'encalg', 'encenc', 'sigalg',
                         'issuer', 'allow_missing_kid', 'no_kid_issuer',
                         'trusting', 'skew', 'nonce_storage_time', 'client_id']
 
