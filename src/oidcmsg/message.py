@@ -492,18 +492,18 @@ class Message(MutableMapping):
         if _jw:
             logger.debug("JWE headers: {}".format(_jw.jwt.headers))
 
-            if "algs" in kwargs and "encalg" in kwargs["algs"]:
-                if kwargs["algs"]["encalg"] != _jw["alg"]:
+            if "encalg" in kwargs:
+                if kwargs["encalg"] != _jw["alg"]:
                     raise WrongEncryptionAlgorithm("%s != %s" % (
-                        _jw["alg"], kwargs["algs"]["encalg"]))
+                        _jw["alg"], ["encalg"]))
 
-                if kwargs["algs"]["encenc"] != _jw["enc"]:
+                if kwargs["encenc"] != _jw["enc"]:
                     raise WrongEncryptionAlgorithm("%s != %s" % (
-                        _jw["enc"], kwargs["algs"]["encenc"]))
+                        _jw["enc"], kwargs["encenc"]))
 
             dkeys = keyjar.get_decrypt_key(owner="")
-            if "sender" in kwargs:
-                dkeys.extend(keyjar.get_deccrypt_key(owner=kwargs["sender"]))
+            # if "sender" in kwargs:
+            #     dkeys.extend(keyjar.get_deccrypt_key(owner=kwargs["sender"]))
 
             logger.debug('Decrypt class: {}'.format(_jw.__class__))
             _res = _jw.decrypt(txt, dkeys)
@@ -518,11 +518,11 @@ class Message(MutableMapping):
 
         _jw = jws.factory(txt)
         if _jw:
-            if "algs" in kwargs and "sign" in kwargs["algs"]:
+            if "sigalg" in kwargs:
                 _alg = _jw.jwt.headers["alg"]
-                if kwargs["algs"]["sign"] != _alg:
+                if kwargs["sign"] != _alg:
                     raise WrongSigningAlgorithm("%s != %s" % (
-                        _alg, kwargs["algs"]["sign"]))
+                        _alg, kwargs["sign"]))
             try:
                 _jwt = SimpleJWT().unpack(txt)
                 jso = _jwt.payload()
@@ -530,8 +530,8 @@ class Message(MutableMapping):
 
                 key = []
 
-                if "sender" in kwargs:
-                    key.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
+                # if "sender" in kwargs:
+                #     key.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
 
                 logger.debug("Raw JSON: {}".format(jso))
                 logger.debug("JWS header: {}".format(_header))

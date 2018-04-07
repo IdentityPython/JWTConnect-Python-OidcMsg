@@ -229,6 +229,10 @@ def check_char_set(string, allowed):
 
 # -----------------------------------------------------------------------------
 
+ID_TOKEN_VERIFY_ARGS = ['keyjar','verify', 'encalg', 'encenc', 'signalg',
+                        'issuer', 'allow_missing_kid', 'no_kid_issuer',
+                        'trusting', 'skew', 'nonce_storage_time', 'client_id']
+
 class RefreshAccessTokenRequest(oauth2.RefreshAccessTokenRequest):
     pass
 
@@ -246,7 +250,7 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
         if "id_token" in self:
             # Try to decode the JWT, checks the signature
             args = {}
-            for arg in ["keyjar", "algs", "sender", "allow_missing_kid"]:
+            for arg in ID_TOKEN_VERIFY_ARGS:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:
@@ -291,7 +295,7 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
         if "id_token" in self:
             # Try to decode the JWT, checks the signature
             args = {}
-            for arg in ["keyjar", "algs", "sender"]:
+            for arg in ID_TOKEN_VERIFY_ARGS:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:
@@ -747,7 +751,7 @@ class MessageWithIdToken(Message):
         if "id_token" in self:
             # Try to decode the JWT, checks the signature
             args = {}
-            for arg in ["keyjar", "algs", "sender"]:
+            for arg in ID_TOKEN_VERIFY_ARGS:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:
@@ -794,7 +798,7 @@ class EndSessionRequest(Message):
         if "id_token_hint" in self:
             # Try to decode the JWT, checks the signature
             args = {}
-            for arg in ["keyjar", "algs", "sender"]:
+            for arg in ID_TOKEN_VERIFY_ARGS:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:

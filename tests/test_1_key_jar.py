@@ -193,7 +193,7 @@ def test_build_keyjar():
 
 def test_build_keyjar_missing(tmpdir):
     keys = [
-        {"type": "RSA", "key": os.path.join(tmpdir.dirname, "missisng_file"),
+        {"type": "RSA", "key": os.path.join(tmpdir.dirname, "missing_file"),
          "use": ["enc", "sig"]}]
 
     jwks, keyjar, kidd = build_keyjar(keys)
