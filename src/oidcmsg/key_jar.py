@@ -78,8 +78,9 @@ class KeyJar(object):
     def add_url(self, owner, url, **kwargs):
         """
         Add a set of keys by url. This method will create a 
-        :py:class:`oidcmsg.oauth2.keybundle.KeyBundle` instance with the
-        url as source specification.
+        :py:class:`oidcmsg.key_bundle.KeyBundle` instance with the
+        url as source specification. If no fileformat is given it's assumed
+        that what's on the other side is a JWKS.
         
         :param owner: Who issued the keys
         :param url: Where can the key/-s be found
@@ -554,12 +555,6 @@ class KeyJar(object):
                 except KeyError:
                     pass
 
-        try:
-            keys = self._add_key(keys, kwargs["opponent_id"], 'sig', _key_type,
-                                 _kid, nki, allow_missing_kid)
-        except KeyError:
-            pass
-
         for ent in ["iss", "aud", "client_id"]:
             if ent not in _payload:
                 continue
@@ -685,7 +680,6 @@ def key_export(baseurl, local_path, vault, keyjar, **kwargs):
 # ================= create RSA key ======================
 
 
-
 def proper_path(path):
     """
     Clean up the path specification so it looks like something I could use.
@@ -770,9 +764,6 @@ def _new_rsa_key(spec):
 
 def build_keyjar(key_conf, kid_template="", keyjar=None, kidd=None):
     """
-    Initiates a new :py:class:`oidcmsg.oauth2.Message` instance and
-    populates it with keys according to the key configuration.
-    
     Configuration of the type ::
     
         keys = [
