@@ -104,7 +104,7 @@ def create_and_store_rsa_key_pair(name="oidcmsg", path=".", size=2048, use=''):
 
 def rsa_init(spec):
     """
-    Initiates a :py:class:`oidcmsg.oauth.keybundle.KeyBundle` instance
+    Initiates a :py:class:`oidcmsg.keybundle.KeyBundle` instance
     containing newly minted RSA keys according to a spec.
     
     Example of specification::
