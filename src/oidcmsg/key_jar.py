@@ -543,7 +543,14 @@ class KeyJar(object):
         try:
             _iss = _payload['iss']
         except KeyError:
-            _iss = ''
+            try:
+                _iss = kwargs['iss']
+            except KeyError:
+                _iss = ''
+
+        if _iss:
+            keys = self._add_key(keys, _iss, 'sig', _key_type,
+                                 _kid, nki, allow_missing_kid)
 
         # First extend the keyjar if allowed
         if "jku" in jwt.headers and _iss:
@@ -555,7 +562,7 @@ class KeyJar(object):
                 except KeyError:
                     pass
 
-        for ent in ["iss", "aud", "client_id"]:
+        for ent in ["aud", "client_id"]:
             if ent not in _payload:
                 continue
             if ent == "aud":
