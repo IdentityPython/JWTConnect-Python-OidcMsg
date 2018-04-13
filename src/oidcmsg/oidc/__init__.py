@@ -740,6 +740,10 @@ class IdToken(OpenIDSchema):
             if (_iat + _storage_time) < (_now - _skew):
                 raise IATError('Issued too long ago')
 
+        if 'nonce' in kwargs:
+            if kwargs['nonce'] != self['nonce']:
+                raise ValueError('Not the same nonce')
+
         return True
 
 
