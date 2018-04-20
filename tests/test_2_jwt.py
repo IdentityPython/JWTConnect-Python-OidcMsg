@@ -1,6 +1,8 @@
 import os
 
+import pytest
 from cryptojwt.jwk import RSAKey
+from cryptojwt.jws import SignerAlgError
 
 from oidcmsg.jwt import JWT
 from oidcmsg.key_bundle import KeyBundle
@@ -116,3 +118,14 @@ def test_jwt_pack_unpack_sym():
     bob = JWT(kj, iss=BOB)
     info = bob.unpack(_jwt)
     assert info
+
+
+def test_jwt_pack_and_unpack_alg_none():
+    alice = JWT(alice_keyjar, iss=ALICE, sign_alg='none')
+    payload = {'sub': 'sub'}
+    _jwt = alice.pack(payload=payload)
+
+    bob = JWT(bob_keyjar, iss=BOB)
+    # alg = 'none' is NOT accepted
+    with pytest.raises(SignerAlgError):
+        bob.unpack(_jwt)
