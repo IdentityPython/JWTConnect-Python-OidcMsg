@@ -910,6 +910,22 @@ def public_keys_keyjar(from_kj, origin, to_kj=None, receiver=''):
 
 
 def init_key_jar(private_path, keydefs, public_path):
+    """
+    If a JWKS with private keys exists create a KeyJar from it.
+    If not, then a set of keys are created based on the keydefs specification.
+    Those keys will be stored in 2 places one with the private keys another
+    with public keys. A KeyJar instance will also be instantiated with the
+    newly minted keys.
+
+    :param private_path: A file path to a file that contains a JWKS with
+        private keys.
+    :param keydefs: A definition of what keys should be created if they are
+        not already available
+    :param public_path: A file path to a file that contains a JWKS with public
+        keys
+    :return: An instantiated :py:class;`oidcmsg.key_jar.KeyJar` instance
+    """
+
     if os.path.isfile(private_path):
         _jwks = open(private_path, 'r').read()
         _kj = KeyJar()
