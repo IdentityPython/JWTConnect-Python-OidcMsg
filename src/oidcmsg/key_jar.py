@@ -909,7 +909,7 @@ def public_keys_keyjar(from_kj, origin, to_kj=None, receiver=''):
     return to_kj
 
 
-def init_key_jar(private_path, keydefs, public_path):
+def init_key_jar(public_path, private_path='', key_defs=''):
     """
     If a JWKS with private keys exists create a KeyJar from it.
     If not, then a set of keys are created based on the keydefs specification.
@@ -917,32 +917,37 @@ def init_key_jar(private_path, keydefs, public_path):
     with public keys. A KeyJar instance will also be instantiated with the
     newly minted keys.
 
-    :param private_path: A file path to a file that contains a JWKS with
-        private keys.
-    :param keydefs: A definition of what keys should be created if they are
-        not already available
     :param public_path: A file path to a file that contains a JWKS with public
         keys
+    :param private_path: A file path to a file that contains a JWKS with
+        private keys.
+    :param key_defs: A definition of what keys should be created if they are
+        not already available
     :return: An instantiated :py:class;`oidcmsg.key_jar.KeyJar` instance
     """
 
-    if os.path.isfile(private_path):
-        _jwks = open(private_path, 'r').read()
-        _kj = KeyJar()
-        _kj.import_jwks(json.loads(_jwks), '')
-    else:
-        _kj = build_keyjar(keydefs)[1]
-        jwks = _kj.export_jwks(private=True)
-        head, tail = os.path.split(private_path)
-        if not os.path.isdir(head):
-            os.makedirs(head)
-        fp = open(private_path, 'w')
+    if private_path:
+        if os.path.isfile(private_path):
+            _jwks = open(private_path, 'r').read()
+            _kj = KeyJar()
+            _kj.import_jwks(json.loads(_jwks), '')
+        else:
+            _kj = build_keyjar(keydefs)[1]
+            jwks = _kj.export_jwks(private=True)
+            head, tail = os.path.split(private_path)
+            if not os.path.isdir(head):
+                os.makedirs(head)
+            fp = open(private_path, 'w')
+            fp.write(json.dumps(jwks))
+            fp.close()
+
+        jwks = _kj.export_jwks()  # public part
+        fp = open(public_path, 'w')
         fp.write(json.dumps(jwks))
         fp.close()
-
-    jwks = _kj.export_jwks()  # public part
-    fp = open(public_path, 'w')
-    fp.write(json.dumps(jwks))
-    fp.close()
+    else:
+        _jwks = open(public_path, 'r').read()
+        _kj = KeyJar()
+        _kj.import_jwks(json.loads(_jwks), '')
 
     return _kj
