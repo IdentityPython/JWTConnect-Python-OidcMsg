@@ -932,7 +932,7 @@ def init_key_jar(public_path, private_path='', key_defs=''):
             _kj = KeyJar()
             _kj.import_jwks(json.loads(_jwks), '')
         else:
-            _kj = build_keyjar(keydefs)[1]
+            _kj = build_keyjar(key_defs)[1]
             jwks = _kj.export_jwks(private=True)
             head, tail = os.path.split(private_path)
             if not os.path.isdir(head):
@@ -941,10 +941,11 @@ def init_key_jar(public_path, private_path='', key_defs=''):
             fp.write(json.dumps(jwks))
             fp.close()
 
-        jwks = _kj.export_jwks()  # public part
-        fp = open(public_path, 'w')
-        fp.write(json.dumps(jwks))
-        fp.close()
+        if public_path:
+            jwks = _kj.export_jwks()  # public part
+            fp = open(public_path, 'w')
+            fp.write(json.dumps(jwks))
+            fp.close()
     else:
         _jwks = open(public_path, 'r').read()
         _kj = KeyJar()
