@@ -907,3 +907,26 @@ def public_keys_keyjar(from_kj, origin, to_kj=None, receiver=''):
         to_kj.add_kb(receiver, nkb)
 
     return to_kj
+
+
+def init_key_jar(private_path, keydefs, public_path):
+    if os.path.isfile(private_path):
+        _jwks = open(private_path, 'r').read()
+        _kj = KeyJar()
+        _kj.import_jwks(json.loads(_jwks), '')
+    else:
+        _kj = build_keyjar(keydefs)[1]
+        jwks = _kj.export_jwks(private=True)
+        head, tail = os.path.split(private_path)
+        if not os.path.isdir(head):
+            os.makedirs(head)
+        fp = open(private_path, 'w')
+        fp.write(json.dumps(jwks))
+        fp.close()
+
+    jwks = _kj.export_jwks()  # public part
+    fp = open(public_path, 'w')
+    fp.write(json.dumps(jwks))
+    fp.close()
+
+    return _kj
