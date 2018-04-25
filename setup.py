@@ -71,4 +71,5 @@ setup(
     ],
     zip_safe=False,
     cmdclass={'test': PyTest},
+    scripts=['tools/create_jwks.py']
 )
