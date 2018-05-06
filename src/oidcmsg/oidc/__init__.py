@@ -1061,12 +1061,20 @@ class JRD(ResponseMessage):
     """
     JSON Resource Descriptor https://tools.ietf.org/html/rfc7033#section-4.4
     """
-    claim = {
+    c_param = {
         "subject": SINGLE_OPTIONAL_STRING,
         "aliases": OPTIONAL_LIST_OF_STRINGS,
         "properties": SINGLE_OPTIONAL_DICT,
         "links": REQUIRED_LINKS
     }
+
+
+class WebFingerRequest(Message):
+    c_param = {
+        "resource": SINGLE_REQUIRED_STRING,
+        "rel": SINGLE_REQUIRED_STRING
+    }
+    c_default = {"rel": "http://openid.net/specs/connect/1.0/issuer"}
 
 
 class ResourceRequest(Message):
