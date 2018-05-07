@@ -1018,7 +1018,7 @@ class Link(Message):
     }
 
 
-def link_deser(val, sformat="urlencoded"):
+def _l_deser(val, sformat):
     if isinstance(val, Link):
         return val
     elif sformat in ["dict", "json"]:
@@ -1028,7 +1028,14 @@ def link_deser(val, sformat="urlencoded"):
     return Link().deserialize(val, sformat)
 
 
-def msg_ser(inst, sformat, lev=0):
+def link_deser(val, sformat="urlencoded"):
+    if isinstance(val, list):
+        return [_l_deser(v, sformat) for v in val]
+    else:
+        return _l_deser(val, sformat)
+
+
+def link_ser(inst, sformat, lev=0):
     if sformat in ["urlencoded", "json"]:
         if isinstance(inst, dict):
             if sformat == 'json':
@@ -1054,7 +1061,14 @@ def msg_ser(inst, sformat, lev=0):
     return res
 
 
-REQUIRED_LINKS = ([Link], True, msg_ser, link_deser, False)
+def link_list_ser(inst, sformat, lev=0):
+    if isinstance(inst, list):
+        return [link_ser(v, sformat) for v in inst]
+    else:
+        return link_ser(inst, sformat)
+
+
+REQUIRED_LINKS = ([Link], True, link_list_ser, link_deser, False)
 
 
 class JRD(ResponseMessage):
