@@ -259,7 +259,7 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
             if not idt.verify(**kwargs):
                 return False
 
-            self["verified_id_token"] = idt
+            self["__verified_id_token"] = idt
             logger.info('Verified ID Token: {}'.format(idt.to_dict()))
 
         return True
@@ -325,7 +325,7 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
                 if idt["c_hash"] != jws.left_hash(self["code"], hfunc):
                     raise CHashError("Failed to verify code hash", idt)
 
-            self["verified_id_token"] = idt
+            self["__verified_id_token"] = idt
         return True
 
 
