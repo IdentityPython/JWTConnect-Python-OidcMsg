@@ -14,6 +14,7 @@ from oidcmsg.message import json_serializer
 from oidcmsg.message import sp_sep_list_deserializer
 
 from oidcmsg.oauth2 import factory
+from oidcmsg.oauth2 import is_error_message
 from oidcmsg.oauth2 import AccessTokenRequest
 from oidcmsg.oauth2 import AccessTokenResponse
 from oidcmsg.oauth2 import AuthorizationErrorResponse
@@ -508,12 +509,12 @@ class TestResponseMessage_error(object):
         assert ue_str != ueo_str
         assert "error_message" not in ueo_str
         assert "error_message" in ue_str
-        assert err.is_error_message()
+        assert is_error_message(err)
 
     def test_auth_error_message(self):
         resp = AuthorizationResponse(error="invalid_request",
                                      error_description="Something was missing")
-        assert resp.is_error_message()
+        assert is_error_message(resp)
 
 
 def test_factory():
