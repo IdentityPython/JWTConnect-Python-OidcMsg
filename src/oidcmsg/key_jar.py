@@ -936,7 +936,7 @@ def init_key_jar(public_path, private_path='', key_defs='', iss=''):
             _kj = build_keyjar(key_defs)[1]
             jwks = _kj.export_jwks(private=True)
             head, tail = os.path.split(private_path)
-            if not os.path.isdir(head):
+            if head and not os.path.isdir(head):
                 os.makedirs(head)
             fp = open(private_path, 'w')
             fp.write(json.dumps(jwks))
