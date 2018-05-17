@@ -897,7 +897,7 @@ def public_keys_keyjar(from_kj, origin, to_kj=None, receiver=''):
     return to_kj
 
 
-def init_key_jar(public_path, private_path='', key_defs=''):
+def init_key_jar(public_path, private_path='', key_defs='', iss=''):
     """
     If a JWKS with private keys exists create a KeyJar from it.
     If not, then a set of keys are created based on the keydefs specification.
@@ -911,6 +911,7 @@ def init_key_jar(public_path, private_path='', key_defs=''):
         private keys.
     :param key_defs: A definition of what keys should be created if they are
         not already available
+    :param iss: Issuer ID
     :return: An instantiated :py:class;`oidcmsg.key_jar.KeyJar` instance
     """
 
@@ -934,9 +935,16 @@ def init_key_jar(public_path, private_path='', key_defs=''):
             fp = open(public_path, 'w')
             fp.write(json.dumps(jwks))
             fp.close()
+
+            if iss:
+                _kj.import_jwks(jwks, iss)
+
     else:
         _jwks = open(public_path, 'r').read()
         _kj = KeyJar()
         _kj.import_jwks(json.loads(_jwks), '')
+
+        if iss:
+            _kj.import_jwks(json.loads(_jwks), iss)
 
     return _kj

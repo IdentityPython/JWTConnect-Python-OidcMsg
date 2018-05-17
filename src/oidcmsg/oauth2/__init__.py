@@ -15,6 +15,13 @@ from oidcmsg.message import SINGLE_REQUIRED_STRING
 logger = logging.getLogger(__name__)
 
 
+def is_error_message(msg):
+    if 'error' in msg:
+        return True
+    else:
+        return False
+
+
 class ResponseMessage(Message):
     """
     The basic error response
@@ -22,12 +29,6 @@ class ResponseMessage(Message):
     c_param = {"error": SINGLE_OPTIONAL_STRING,
                "error_description": SINGLE_OPTIONAL_STRING,
                "error_uri": SINGLE_OPTIONAL_STRING}
-
-    def is_error_message(self):
-        if 'error' in self:
-            return True
-        else:
-            return False
 
 
 class AuthorizationErrorResponse(ResponseMessage):
