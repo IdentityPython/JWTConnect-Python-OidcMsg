@@ -884,27 +884,15 @@ def public_keys_keyjar(from_kj, origin, to_kj=None, receiver=''):
     :param from_kj: The KeyJar instance that contains the private keys
     :param origin: The owner ID
     :param to_kj: The KeyJar that is the receiver of the public keys
-    :param receiver: The owner ID under which the publci keys should be stored
+    :param receiver: The owner ID under which the public keys should be stored
     :return: The modified KeyJar instance
-
     """
+
     if to_kj is None:
         to_kj = KeyJar()
 
-    for kb in from_kj[origin]:
-        nkb = KeyBundle()
-        for key in kb.keys():
-            _ser = key.serialize()
-            if isinstance(key, RSAKey):
-                _key = RSAKey(**_ser)
-                nkb.append(_key)
-            elif isinstance(key, ECKey):
-                _key = ECKey(**_ser)
-                nkb.append(_key)
-            elif isinstance(key, SYMKey):
-                _key = SYMKey(**_ser)
-                nkb.append(_key)
-        to_kj.add_kb(receiver, nkb)
+    _jwks = from_kj.export_jwks(origin)
+    to_kj.import_jwks(_jwks, receiver)
 
     return to_kj
 
