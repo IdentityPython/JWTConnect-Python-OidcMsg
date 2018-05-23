@@ -3,8 +3,10 @@ import copy
 import json
 import logging
 from collections import MutableMapping
-from urllib.parse import urlencode, parse_qs
+from urllib.parse import parse_qs
+from urllib.parse import urlencode
 
+from cryptojwt import as_bytes
 from cryptojwt import as_unicode
 from cryptojwt import jwe
 from cryptojwt import jws
@@ -458,7 +460,12 @@ class Message(MutableMapping):
         :param kwargs: extra keyword arguments
         :return: The instantiated instance 
         """
-        return self.from_dict(json.loads(txt))
+        try:
+            _dict = json.loads(txt)
+        except TypeError:
+            _dict = json.loads(as_bytes(txt))
+
+        return self.from_dict(_dict)
 
     def to_jwt(self, key=None, algorithm="", lev=0, lifetime=0):
         """
