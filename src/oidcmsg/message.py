@@ -6,7 +6,6 @@ from collections import MutableMapping
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
 
-from cryptojwt import as_bytes
 from cryptojwt import as_unicode
 from cryptojwt import jwe
 from cryptojwt import jws
@@ -463,7 +462,7 @@ class Message(MutableMapping):
         try:
             _dict = json.loads(txt)
         except TypeError:
-            _dict = json.loads(as_bytes(txt))
+            _dict = json.loads(as_unicode(txt))
 
         return self.from_dict(_dict)
 
