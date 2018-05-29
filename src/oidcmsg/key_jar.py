@@ -18,7 +18,6 @@ from cryptojwt.jwk import ECKey
 from cryptojwt.jwk import NIST2SEC
 from cryptojwt.jwk import RSAKey
 from cryptojwt.jwk import rsa_load
-from cryptojwt.jwk import SYMKey
 
 from oidcmsg.exception import MessageException
 from oidcmsg.exception import OidcMsgError
@@ -799,6 +798,7 @@ def build_keyjar(key_conf, kid_template="", keyjar=None, kidd=None):
     for spec in key_conf:
         typ = spec["type"].upper()
 
+        kb = {}
         if typ == "RSA":
             if "key" in spec:
                 error_to_catch = (OSError, IOError,
@@ -891,7 +891,7 @@ def public_keys_keyjar(from_kj, origin, to_kj=None, receiver=''):
     if to_kj is None:
         to_kj = KeyJar()
 
-    _jwks = from_kj.export_jwks(origin)
+    _jwks = from_kj.export_jwks(issuer=origin)
     to_kj.import_jwks(_jwks, receiver)
 
     return to_kj
