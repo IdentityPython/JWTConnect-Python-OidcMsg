@@ -410,7 +410,7 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
         if "id_token_hint" in self:
             if isinstance(self["id_token_hint"], six.string_types):
                 idt = IdToken().from_jwt(str(self["id_token_hint"]), **args)
-                self["id_token_hint"] = idt
+                self["verified_id_token_hint"] = idt
 
         if "response_type" not in self:
             raise MissingRequiredAttribute("response_type missing", self)
@@ -812,7 +812,7 @@ class EndSessionRequest(Message):
                 return False
 
             # replace the JWT with the IdToken instance
-            self["id_token_hint"] = idt
+            self["verified_id_token_hint"] = idt
 
         return True
 
