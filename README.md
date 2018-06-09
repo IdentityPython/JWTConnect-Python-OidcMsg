@@ -8,9 +8,14 @@ Handles serialising into a couple of formats (jwt, json, urlencoded and dict) an
 
 It also does verification of messages , that is :
 
-+ does all the required parameters have a value
-+ are the parameter values of the right type
-+ if there is a list of permitted values is a parameter value in that list.
++ verifies that all the required parameters are present and has a value
++ verifies that the parameter values are of the right type
++ verifies that if there is a list of permitted values, a parameter value is on 
+that list.
+
+and finally if the value is a signed and/or encrypted JWT this package
+will perform the necessary decryption and signature verification. 
+
 
 Also implements a **KeyJar** which keeps keys belonging to 
 different owners. One owner may have many keys.
