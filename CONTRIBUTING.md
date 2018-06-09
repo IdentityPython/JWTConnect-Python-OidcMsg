@@ -5,7 +5,7 @@ All contributions to JwtConnect are welcome!
 Note that as this library is planned to be used in high-profile production code,
 we insist on a very high standards for the code and design, but don't feel shy:
 discuss your plans over 
-[GitHub Issues](https://github.com/openid/AppAuth-Android/issues) and the
+[GitHub Issues](https://github.com/openid/JWTConnect-Python-OidcMsg/issues) and the
 [mailing list](http://lists.openid.net/mailman/listinfo/openid-specs-ab), and
 send in those pull requests!
 
@@ -41,16 +41,16 @@ requests).
 
 Before you work on a big new feature, get in touch to make sure that your work
 is inline with the direction of the project and get input on your architecture.
-You can file an [Issue](https://github.com/openid/AppAuth-Android/issues)
+You can file an [Issue](https://github.com/openid/JWTConnect-Python-OidcMsg/issues)
 discussing your proposal, or email the 
 [list](http://lists.openid.net/mailman/listinfo/openid-specs-ab). 
 
 ## Coding Standards
 
-The AppAuth library follows the
-[Google Coding Style](https://google.github.io/styleguide/javaguide.html) for
-the Java language. Please review your own code for adherence to the standard
-and make sure to run the `check` gradle target.
+The JWTCOnnect-Python-OidcMsg library follows the
+[PEP8](https://www.python.org/dev/peps/pep-0008/) 
+coding style for Python implementations. Please review your own code 
+for adherence to the standard.
 
 ## Pull Request Reviews
 
