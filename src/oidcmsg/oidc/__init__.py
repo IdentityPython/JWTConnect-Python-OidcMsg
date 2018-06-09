@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 import inspect
 import json
 import logging
-import six
 import sys
 import time
 
@@ -85,7 +84,7 @@ def idtoken_deser(val, sformat="urlencoded"):
 
 def address_deser(val, sformat="urlencoded"):
     if sformat in ["dict", "json"]:
-        if not isinstance(val, six.string_types):
+        if not isinstance(val, str):
             val = json.dumps(val)
             sformat = "json"
         elif sformat == "dict":
@@ -95,7 +94,7 @@ def address_deser(val, sformat="urlencoded"):
 
 def claims_deser(val, sformat="urlencoded"):
     if sformat in ["dict", "json"]:
-        if not isinstance(val, six.string_types):
+        if not isinstance(val, str):
             val = json.dumps(val)
             sformat = "json"
     return Claims().deserialize(val, sformat)
@@ -131,7 +130,7 @@ def msg_list_ser(insts, sformat, lev=0):
 
 def claims_ser(val, sformat="urlencoded", lev=0):
     # everything in c_extension
-    if isinstance(val, six.string_types):
+    if isinstance(val, str):
         item = val
     elif isinstance(val, list):
         item = val[0]
@@ -161,7 +160,7 @@ def claims_ser(val, sformat="urlencoded", lev=0):
 
 def registration_request_deser(val, sformat="urlencoded"):
     if sformat in ["dict", "json"]:
-        if not isinstance(val, six.string_types):
+        if not isinstance(val, str):
             val = json.dumps(val)
             sformat = "json"
     return RegistrationRequest().deserialize(val, sformat)
@@ -172,7 +171,7 @@ def claims_request_deser(val, sformat="json"):
     if sformat == "urlencoded":
         sformat = "json"
     if sformat in ["dict", "json"]:
-        if not isinstance(val, six.string_types):
+        if not isinstance(val, str):
             val = json.dumps(val)
             sformat = "json"
     return ClaimsRequest().deserialize(val, sformat)
@@ -183,7 +182,7 @@ def dict_deser(val, sformat="json"):
     if sformat == "urlencoded":
         sformat = "json"
     if sformat in ["dict", "json"]:
-        if not isinstance(val, six.string_types):
+        if not isinstance(val, str):
             val = json.dumps(val)
         elif isinstance(val, dict):
             return val
@@ -394,7 +393,7 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
             args["opponent_id"] = self["client_id"]
 
         if "request" in self:
-            if isinstance(self["request"], six.string_types):
+            if isinstance(self["request"], str):
                 # Try to decode the JWT, checks the signature
                 oidr = OpenIDRequest().from_jwt(str(self["request"]), **args)
 
@@ -408,7 +407,7 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
                 self["request"] = oidr
 
         if "id_token_hint" in self:
-            if isinstance(self["id_token_hint"], six.string_types):
+            if isinstance(self["id_token_hint"], str):
                 idt = IdToken().from_jwt(str(self["id_token_hint"]), **args)
                 self["verified_id_token_hint"] = idt
 
@@ -986,7 +985,7 @@ def jwt_deser(val, sformat="json"):
     if sformat == "urlencoded":
         sformat = "json"
     if sformat in ["dict", "json"]:
-        if not isinstance(val, six.string_types):
+        if not isinstance(val, str):
             val = json.dumps(val)
             sformat = "json"
     return JsonWebToken().deserialize(val, sformat)

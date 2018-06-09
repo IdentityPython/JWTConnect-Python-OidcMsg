@@ -5,7 +5,6 @@ import sys
 import time
 
 import requests
-import six
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -49,7 +48,7 @@ def harmonize_usage(use):
     :param use:
     :return: list of usage
     """
-    if type(use) in six.string_types:
+    if isinstance(use, str):
         return [MAP[use]]
     elif isinstance(use, list):
         ul = list(MAP.keys())
