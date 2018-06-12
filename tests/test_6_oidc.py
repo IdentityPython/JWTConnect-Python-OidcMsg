@@ -18,7 +18,7 @@ from oidcmsg.exception import WrongSigningAlgorithm
 from oidcmsg.key_bundle import KeyBundle
 from oidcmsg.key_jar import KeyJar
 from oidcmsg.oauth2 import ResponseMessage
-from oidcmsg.oidc import AccessTokenRequest
+from oidcmsg.oidc import AccessTokenRequest, verified_claim_name
 from oidcmsg.oidc import CheckSessionRequest
 from oidcmsg.oidc import ClaimsRequest
 from oidcmsg.oidc import DiscoveryRequest
@@ -643,7 +643,7 @@ def test_at_hash():
 
     at = AuthorizationResponse(**_info)
     assert at.verify(keyjar=keyjar, sigalg="HS256")
-    assert 'at_hash' in at['__verified_id_token']
+    assert 'at_hash' in at[verified_claim_name('id_token')]
 
 
 def test_c_hash():
@@ -667,7 +667,7 @@ def test_c_hash():
 
     at = AuthorizationResponse(**_info)
     r = at.verify(keyjar=keyjar, sigalg="HS256")
-    assert 'c_hash' in at['__verified_id_token']
+    assert 'c_hash' in at[verified_claim_name('id_token')]
 
 
 def test_missing_c_hash():
@@ -766,9 +766,12 @@ class TestEndSessionRequest(object):
             keyjar.add_symmetric('', _key.key)
         request.verify(keyjar=keyjar)
         assert isinstance(request, EndSessionRequest)
-        assert _eq(request.keys(), ['id_token_hint', 'redirect_url', 'state'])
+        assert _eq(request.keys(),
+                   [verified_claim_name('id_token_hint'), 'id_token_hint',
+                    'redirect_url', 'state'])
         assert request["state"] == "state0"
-        assert request["id_token_hint"]["aud"] == ["client_1"]
+        assert request[
+            verified_claim_name("id_token_hint")]["aud"] == ["client_1"]
 
 
 class TestCheckSessionRequest(object):

@@ -170,10 +170,15 @@ def claims_request_deser(val, sformat="json"):
     # never 'urlencoded'
     if sformat == "urlencoded":
         sformat = "json"
-    if sformat in ["dict", "json"]:
+
+    if sformat == "json":
         if not isinstance(val, str):
             val = json.dumps(val)
             sformat = "json"
+    elif sformat == 'dict':
+        if isinstance(val, str):
+            val = json.loads(val)
+
     return ClaimsRequest().deserialize(val, sformat)
 
 
@@ -232,6 +237,25 @@ ID_TOKEN_VERIFY_ARGS = ['keyjar','verify', 'encalg', 'encenc', 'sigalg',
                         'issuer', 'allow_missing_kid', 'no_kid_issuer',
                         'trusting', 'skew', 'nonce_storage_time', 'client_id']
 
+
+CLAIMS_WITH_VERIFIED = ['id_token', 'id_token_hint', 'request']
+VERIFIED_CLAIM_PREFIX = '__verified'
+
+
+def verified_claim_name(claim):
+    return '{}_{}'.format(VERIFIED_CLAIM_PREFIX, claim)
+
+
+def clear_verified_claims(msg):
+    for claim in CLAIMS_WITH_VERIFIED:
+        _vc_name = verified_claim_name(claim)
+        try:
+            del msg[_vc_name]
+        except KeyError:
+            pass
+    return  msg
+
+
 class RefreshAccessTokenRequest(oauth2.RefreshAccessTokenRequest):
     pass
 
@@ -246,6 +270,9 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
 
     def verify(self, **kwargs):
         super(AccessTokenResponse, self).verify(**kwargs)
+
+        clear_verified_claims(self)
+
         if "id_token" in self:
             # Try to decode the JWT, checks the signature
             args = {}
@@ -258,7 +285,7 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
             if not idt.verify(**kwargs):
                 return False
 
-            self["__verified_id_token"] = idt
+            self[verified_claim_name("id_token")] = idt
             logger.info('Verified ID Token: {}'.format(idt.to_dict()))
 
         return True
@@ -284,6 +311,7 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
 
     def verify(self, **kwargs):
         super(AuthorizationResponse, self).verify(**kwargs)
+        clear_verified_claims(self)
 
         if "aud" in self:
             if "client_id" in kwargs:
@@ -324,7 +352,7 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
                 if idt["c_hash"] != jws.left_hash(self["code"], hfunc):
                     raise CHashError("Failed to verify code hash", idt)
 
-            self["__verified_id_token"] = idt
+            self[verified_claim_name("id_token")] = idt
         return True
 
 
@@ -382,6 +410,8 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
         match."""
         super(AuthorizationRequest, self).verify(**kwargs)
 
+        clear_verified_claims(self)
+
         args = {}
         for arg in ["keyjar", "opponent_id", "sender"]:
             try:
@@ -404,7 +434,7 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
                             raise ValueError('{} != {}'.format(self[key], val))
 
                 # replace the JWT with the parsed and verified instance
-                self["request"] = oidr
+                self[verified_claim_name("request")] = oidr
 
         if "id_token_hint" in self:
             if isinstance(self["id_token_hint"], str):
@@ -798,6 +828,8 @@ class EndSessionRequest(Message):
 
     def verify(self, **kwargs):
         super(EndSessionRequest, self).verify(**kwargs)
+        clear_verified_claims(self)
+
         if "id_token_hint" in self:
             # Try to decode the JWT, checks the signature
             args = {}
@@ -811,7 +843,7 @@ class EndSessionRequest(Message):
                 return False
 
             # replace the JWT with the IdToken instance
-            self["verified_id_token_hint"] = idt
+            self[verified_claim_name("id_token_hint")] = idt
 
         return True
 
