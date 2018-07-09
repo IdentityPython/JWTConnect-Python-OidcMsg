@@ -16,9 +16,23 @@ class JWT(jwt.JWT):
         self.keyjar = keyjar
 
     def receiver_keys(self, receiver):
+        """
+        Get all the keys I have for a specific entity
+
+        :param receiver: The entity ID
+        :return: A list of keys
+        """
         return self.keyjar.get_issuer_keys(receiver)
 
     def receivers_keys(self):
+        """
+        Reorganize all the keys in the key jar into a dictionary disregarding
+        keybundle dependencies. The keys of the dictionary are the isseur IDs
+        and the values are all the keys that are connected to a specific
+        issuer.
+
+        :return: A dictionary
+        """
         res = {}
         for owner in self.keyjar.owners():
             if owner == '':
@@ -28,5 +42,11 @@ class JWT(jwt.JWT):
         return res
 
     def my_keys(self, id=''):
+        """
+        My default issuer/entity ID in the key jar is ''
+
+        :param id: An entity ID
+        :return: A list of keys
+        """
         return self.keyjar.get_issuer_keys(id)
 

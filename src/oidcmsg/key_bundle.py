@@ -391,7 +391,8 @@ class KeyBundle(object):
     def update(self):
         """
         Reload the keys if necessary
-        This is a forced update, will happen even if cache time has not elapsed
+        This is a forced update, will happen even if cache time has not elapsed.
+
         Replaced keys will be marked as inactive and not removed.        
         """
         res = True  # An update was successful
@@ -466,7 +467,7 @@ class KeyBundle(object):
 
     def remove_keys_by_type(self, typ):
         """
-        Remove keys that are of a specific kind or kind and value.
+        Remove keys that are of a specific type.
         
         :param typ: Type of key (rsa, ec, oct, ..)
         """
@@ -481,7 +482,7 @@ class KeyBundle(object):
         Create a JWKS
         
         :param private: Whether private key information should be included.
-        :return: A JWKS representation of the keys in this bundle 
+        :return: A JWKS JSON representation of the keys in this bundle
         """
         self._uptodate()
         keys = list()
@@ -524,7 +525,7 @@ class KeyBundle(object):
 
     def get_key_with_kid(self, kid):
         """
-        Return the key that as specific key ID (kid)
+        Return the key that has a specific key ID (kid)
         
         :param kid: The Key ID 
         :return: The key or None
@@ -544,8 +545,9 @@ class KeyBundle(object):
 
     def kids(self):
         """
-        Return a list of key IDs. Note that list list may be shorter then
-        the list of keys.
+        Return a list of key IDs. Note that this list may be shorter then
+        the list of keys. The reason might be that there are some keys with
+        no key ID.
         
         :return: A list of all the key IDs that exists in this bundle 
         """
@@ -595,6 +597,11 @@ class KeyBundle(object):
         return key in self._keys
 
     def copy(self):
+        """
+        Make deep copy of this KeyBundle
+
+        :return: The copy
+        """
         kb = KeyBundle()
         kb._keys = self._keys[:]
 

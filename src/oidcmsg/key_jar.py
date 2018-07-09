@@ -42,7 +42,7 @@ class UpdateFailed(KeyIOError):
 
 
 class KeyJar(object):
-    """ A keyjar contains a number of KeyBundles """
+    """ A keyjar contains a number of KeyBundles sorted by owner """
 
     def __init__(self, ca_certs=None, verify_ssl=True, keybundle_cls=KeyBundle,
                  remove_after=3600):
@@ -68,7 +68,7 @@ class KeyJar(object):
         """
         Add a set of keys by url. This method will create a 
         :py:class:`oidcmsg.key_bundle.KeyBundle` instance with the
-        url as source specification. If no fileformat is given it's assumed
+        url as source specification. If no file format is given it's assumed
         that what's on the other side is a JWKS.
         
         :param owner: Who issued the keys
@@ -78,20 +78,17 @@ class KeyJar(object):
         """
 
         if not url:
-            raise KeyError("No jwks_uri")
+            raise KeyError("No url given")
 
         if "/localhost:" in url or "/localhost/" in url:
-            kc = self.keybundle_cls(source=url, verify_ssl=False, **kwargs)
+            kb = self.keybundle_cls(source=url, verify_ssl=False, **kwargs)
         else:
-            kc = self.keybundle_cls(source=url, verify_ssl=self.verify_ssl,
+            kb = self.keybundle_cls(source=url, verify_ssl=self.verify_ssl,
                                     **kwargs)
 
-        try:
-            self.issuer_keys[owner].append(kc)
-        except KeyError:
-            self.issuer_keys[owner] = [kc]
+        self.add_kb(owner, kb)
 
-        return kc
+        return kb
 
     def add_symmetric(self, owner, key, usage=None):
         """
@@ -122,7 +119,7 @@ class KeyJar(object):
         """
         Add a key bundle and bind it to an identifier
         
-        :param owner: Owner of the keys in the keybundle
+        :param owner: Owner of the keys in the key bundle
         :param kb: A :py:class:`oidcmsg.key_bundle.KeyBundle` instance
         """
         try:
@@ -135,9 +132,8 @@ class KeyJar(object):
         Bind one or a list of key bundles to a special identifier.
         Will overwrite whatever was there before !!
         
-        :param owner: The owner of the keys in the keybundle/-s
+        :param owner: The owner of the keys in the key bundle/-s
         :param val: A single or a list of KeyBundle instance
-        :return: 
         """
         if not isinstance(val, list):
             val = [val]
@@ -150,7 +146,7 @@ class KeyJar(object):
 
     def items(self):
         """
-        Get all owner ID's and there key bundles
+        Get all owner ID's and their key bundles
         
         :return: list of 2-tuples (Owner ID., list of KeyBundles)
         """
@@ -162,7 +158,7 @@ class KeyJar(object):
 
         :param key_use: A key useful for this usage (enc, dec, sig, ver)
         :param key_type: Type of key (rsa, ec, oct, ..)
-        :param owner: Who is the owner of the keys, "" == me
+        :param owner: Who is the owner of the keys, "" == me (default)
         :param kid: A Key Identifier
         :return: A possibly empty list of keys
         """
@@ -216,7 +212,7 @@ class KeyJar(object):
                     else:
                         lst.append(key)
 
-        # if elliptic curve have to check I have a key of the right curve
+        # if elliptic curve, have to check if I have a key of the right curve
         if key_type == "EC" and "alg" in kwargs:
             name = "P-{}".format(kwargs["alg"][2:])  # the type
             _lst = []
@@ -238,6 +234,15 @@ class KeyJar(object):
         return lst
 
     def get_signing_key(self, key_type="", owner="", kid=None, **kwargs):
+        """
+        Shortcut to use for signing keys only.
+
+        :param key_type: Type of key (rsa, ec, oct, ..)
+        :param owner: Who is the owner of the keys, "" == me (default)
+        :param kid: A Key Identifier
+        :param kwargs: Extra key word arguments
+        :return: A possibly empty list of keys
+        """
         return self.get("sig", key_type, owner, kid, **kwargs)
 
     def get_verify_key(self, key_type="", owner="", kid=None, **kwargs):
@@ -250,6 +255,15 @@ class KeyJar(object):
         return self.get("dec", key_type, owner, kid, **kwargs)
 
     def keys_by_alg_and_usage(self, issuer, alg, usage):
+        """
+        Find all keys that can be used for a specific crypto algorithm and
+        usage by key owner.
+
+        :param issuer: Key owner
+        :param alg: a crypto algorithm
+        :param usage: What the key should be used for
+        :return: A possibly empty list of keys
+        """
         if usage in ["sig", "ver"]:
             ktype = jws.alg2keytype(alg)
         else:
@@ -258,6 +272,12 @@ class KeyJar(object):
         return self.get(usage, ktype, issuer)
 
     def get_issuer_keys(self, issuer):
+        """
+        Get all the keys that belong to an entity.
+
+        :param issuer: The entity ID
+        :return: A possibly empty list of keys
+        """
         res = []
         for kbl in self.issuer_keys[issuer]:
             res.extend(kbl.keys())
@@ -279,9 +299,21 @@ class KeyJar(object):
             raise
 
     def owners(self):
+        """
+        Return a list of all the entities that has keys in this key jar.
+
+        :return: A list of entity IDs
+        """
         return self.issuer_keys.keys()
 
     def match_owner(self, url):
+        """
+        Finds the first entity with keys in the key jar that matches the
+        given URL. The match is a leading substring match.
+
+        :param url:
+        :return:
+        """
         for owner in self.issuer_keys.keys():
             if url.startswith(owner):
                 return owner
@@ -301,7 +333,8 @@ class KeyJar(object):
         """
         Fetch keys from another server
 
-        :param pcr: The provider information
+        :param pcr: The provider information.
+            A :py:class:`oidcmsg.oidc.ProviderConfigurationResponse` instance.
         :param issuer: The provider URL
         :param replace: If all previously gathered keys from this provider
             should be replace.
@@ -334,6 +367,7 @@ class KeyJar(object):
 
         :param source: A source url
         :param issuer: The issuer of keys
+        :return: A :py:class:`oidcmsg.key_bundle.KeyBundle` instance or None
         """
         try:
             for kb in self.issuer_keys[issuer]:
@@ -347,9 +381,9 @@ class KeyJar(object):
         Produces a dictionary that later can be easily mapped into a 
         JSON string representing a JWKS.
         
-        :param private: 
-        :param issuer: 
-        :return: 
+        :param private: Whether it should be the private keys or the public
+        :param issuer: The entity ID.
+        :return: A dictionary with one key: 'keys'
         """
         keys = []
         for kb in self.issuer_keys[issuer]:
@@ -358,10 +392,18 @@ class KeyJar(object):
         return {"keys": keys}
 
     def export_jwks_as_json(self, private=False, issuer=""):
+        """
+        Export a JWKS as a JSON document.
+
+        :param private: Whether it should be the private keys or the public
+        :param issuer: The entity ID.
+        :return: A JSON representation of a JWKS
+        """
         return json.dumps(self.export_jwks(private, issuer))
 
     def import_jwks(self, jwks, issuer):
         """
+        Imports all the keys that are respresented in a JWKS
 
         :param jwks: Dictionary representation of a JWKS
         :param issuer: Who 'owns' the JWKS
@@ -379,6 +421,13 @@ class KeyJar(object):
                     _keys, verify_ssl=self.verify_ssl)]
 
     def import_jwks_as_json(self, js, issuer):
+        """
+        Imports all the keys that are represented in a JWKS expressed as a
+        JSON object
+
+        :param jwks: JSON representation of a JWKS
+        :param issuer: Who 'owns' the JWKS
+        """
         return self.import_jwks(json.loads(js), issuer)
 
     def __eq__(self, other):
@@ -406,8 +455,10 @@ class KeyJar(object):
         Goes through the complete list of issuers and for each of them removes
         outdated keys.
         Outdated keys are keys that has been marked as inactive at a time that
-        is longer ago then some set number of seconds.
-        The number of seconds a carried in the remove_after parameter.
+        is longer ago then some set number of seconds (when). If when=0 the
+        the base time is set to now.
+        The number of seconds a carried in the remove_after parameter in the
+        key jar.
 
         :param when: To facilitate testing
         """
@@ -466,7 +517,8 @@ class KeyJar(object):
 
     def get_jwt_decrypt_keys(self, jwt, **kwargs):
         """
-        Get decryption keys from a keyjar. 
+        Get decryption keys from a keyjar based on information carried
+        in a JWE.
         These keys should be usable to decrypt an encrypted JWT.
 
         :param jwt: A cryptojwt.jwt.JWT instance
@@ -496,8 +548,8 @@ class KeyJar(object):
 
     def get_jwt_verify_keys(self, jwt, **kwargs):
         """
-        Get keys from a keyjar. These keys should be usable to verify a 
-        signed JWT.
+        Get keys from a keyjar based on information in a JWS. These keys
+        should be usable to verify a signed JWT.
 
         :param jwt: A cryptojwt.jwt.JWT instance
         :param kwargs: Other key word arguments
@@ -572,6 +624,11 @@ class KeyJar(object):
         return keys
 
     def copy(self):
+        """
+        Make deep copy of this key jar.
+
+        :return: A :py:class:`oidcmsg.key_jar.KeyJar` instance
+        """
         kj = KeyJar()
         for owner in self.owners():
             kj[owner] = [kb.copy() for kb in self[owner]]
@@ -583,7 +640,10 @@ class KeyJar(object):
 
 def build_keyjar(key_conf, kid_template="", keyjar=None):
     """
-    Configuration of the type ::
+    Builds a :py:class:`oidcmsg.key_jar.KeyJar` instance or adds keys to
+    an existing KeyJar based on a key specification.
+
+    An example of such a specification::
     
         keys = [
             {"type": "RSA", "key": "cp_keys/key.pem", "use": ["enc", "sig"]},
@@ -593,7 +653,8 @@ def build_keyjar(key_conf, kid_template="", keyjar=None):
     
     
     :param key_conf: The key configuration
-    :param kid_template: A template by which to build the kids
+    :param kid_template: A template by which to build the key IDs. If no
+        kid_template is given then the built-in function add_kid() will be used.
     :param keyjar: If an KeyJar instance the new keys are added to this key jar.
     :return: A KeyJar instance
     """
@@ -630,7 +691,6 @@ def build_keyjar(key_conf, kid_template="", keyjar=None):
                 kid += 1
             else:
                 k.add_kid()
-            # kidd[k.use][k.kty] = k.kid
 
         keyjar.add_kb("", kb)
 
@@ -638,12 +698,25 @@ def build_keyjar(key_conf, kid_template="", keyjar=None):
 
 
 def update_keyjar(keyjar):
+    """
+    Go through the whole key jar, key bundle by key bundle and update them one
+    by one.
+
+    :param keyjar: The key jar to update
+    """
     for iss, kbl in keyjar.items():
         for kb in kbl:
             kb.update()
 
 
 def key_summary(keyjar, issuer):
+    """
+    Return a text representation of the keyjar.
+
+    :param keyjar: A :py:class:`oidcmsg.key_jar.KeyJar` instance
+    :param issuer: Which key owner that we are looking at
+    :return: A text representation of the keys
+    """
     try:
         kbl = keyjar[issuer]
     except KeyError:
