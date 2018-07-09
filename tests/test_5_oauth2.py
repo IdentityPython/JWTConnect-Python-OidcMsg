@@ -41,14 +41,14 @@ keym = [
     {"type": "RSA", "use": ["sig"]},
 ]
 
-KEYJAR = build_keyjar(keys)[1]
-IKEYJAR = build_keyjar(keys)[1]
+KEYJAR = build_keyjar(keys)
+IKEYJAR = build_keyjar(keys)
 IKEYJAR.issuer_keys['issuer'] = IKEYJAR.issuer_keys['']
 del IKEYJAR.issuer_keys['']
 
 KEYJARS = {}
 for iss in ['A', 'B', 'C']:
-    _kj = build_keyjar(keym)[1]
+    _kj = build_keyjar(keym)
     _kj.issuer_keys[iss] = _kj.issuer_keys['']
     del _kj.issuer_keys['']
     KEYJARS[iss] = _kj

@@ -8,10 +8,11 @@ import requests
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.rsa import generate_private_key
 
 from cryptojwt import as_unicode
-from cryptojwt.jwk import ECKey
+from cryptojwt.jwk import ECKey, NIST2SEC
 from cryptojwt.jwk import JWKException
 from cryptojwt.jwk import RSAKey
 from cryptojwt.jwk import SYMKey
@@ -116,6 +117,19 @@ def rsa_init(spec):
     :param spec:
     :return: KeyBundle
     """
+    if 'name' not in spec:
+        try:
+            _key_name = spec['key']
+        except KeyError:
+            pass
+        else:
+            if '/' in _key_name:
+                (head, tail) = os.path.split(spec['key'])
+                spec['path'] = head
+                spec['name'] = tail
+            else:
+                spec['name'] = _key_name
+
     arg = {}
     for param in ["name", "path", "size"]:
         try:
@@ -127,6 +141,25 @@ def rsa_init(spec):
     for use in harmonize_usage(spec["use"]):
         _key = create_and_store_rsa_key_pair(use=use, **arg)
         kb.append(RSAKey(use=use, key=_key))
+    return kb
+
+
+def ec_init(spec):
+    """
+    Initiate a keybundle with an elliptic curve key.
+
+    :param spec: Key specifics of the form::
+        {"type": "EC", "crv": "P-256", "use": ["sig"]}
+
+    :return: A KeyBundle instance
+    """
+
+    _key = ec.generate_private_key(NIST2SEC[spec['crv']], default_backend())
+
+    kb = KeyBundle(keytype="EC", keyusage=spec["use"])
+    for use in spec["use"]:
+        eck = ECKey(use=use).load_key(_key)
+        kb.append(eck)
     return kb
 
 

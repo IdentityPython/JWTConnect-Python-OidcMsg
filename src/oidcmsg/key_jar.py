@@ -1,12 +1,6 @@
-from urllib.parse import urlsplit
-
 import json
 import logging
 import os
-import sys
-
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import ec
 
 from cryptojwt import as_bytes
 from cryptojwt import as_unicode
@@ -14,15 +8,11 @@ from cryptojwt import b64e
 from cryptojwt import jwe
 from cryptojwt import jws
 from cryptojwt.jwk import DeSerializationNotPossible
-from cryptojwt.jwk import ECKey
-from cryptojwt.jwk import NIST2SEC
-from cryptojwt.jwk import RSAKey
-from cryptojwt.jwk import rsa_load
 
 from oidcmsg.exception import MessageException
 from oidcmsg.exception import OidcMsgError
-from oidcmsg.key_bundle import create_and_store_rsa_key_pair
 from oidcmsg.key_bundle import KeyBundle
+from oidcmsg.key_bundle import ec_init
 from oidcmsg.key_bundle import rsa_init
 
 __author__ = 'Roland Hedberg'
@@ -591,184 +581,7 @@ class KeyJar(object):
 # =============================================================================
 
 
-class RedirectStdStreams(object):
-    def __init__(self, stdout=None, stderr=None):
-        self._stdout = stdout or sys.stdout
-        self._stderr = stderr or sys.stderr
-
-    def __enter__(self):
-        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
-        self.old_stdout.flush()
-        self.old_stderr.flush()
-        sys.stdout, sys.stderr = self._stdout, self._stderr
-
-    def __exit__(self, exc_type, exc_value, trace_back):
-        self._stdout.flush()
-        self._stderr.flush()
-        sys.stdout = self.old_stdout
-        sys.stderr = self.old_stderr
-
-
-def key_setup(vault, **kwargs):
-    """
-    :param vault: Where the keys are kept
-    :return: 2-tuple: result of urlsplit and a dictionary with
-        parameter name as key and url and value
-    """
-    vault_path = proper_path(vault)
-
-    if not os.path.exists(vault_path):
-        os.makedirs(vault_path)
-
-    kb = KeyBundle()
-    for usage in ["sig", "enc"]:
-        if usage in kwargs:
-            if kwargs[usage] is None:
-                continue
-
-            _args = kwargs[usage]
-            if _args["alg"].upper() == "RSA":
-                try:
-                    _key = rsa_load('%s%s' % (vault_path, "pyoidc"))
-                except Exception:
-                    devnull = open(os.devnull, 'w')
-                    with RedirectStdStreams(stdout=devnull, stderr=devnull):
-                        _key = create_and_store_rsa_key_pair(
-                            path=vault_path)
-
-                k = RSAKey(key=_key, use=usage)
-                k.add_kid()
-                kb.append(k)
-    return kb
-
-
-def key_export(baseurl, local_path, vault, keyjar, **kwargs):
-    """
-    :param baseurl: The base URL to which the key file names are added
-    :param local_path: Where on the machine the export files are kept
-    :param vault: Where the keys are kept
-    :param keyjar: Where to store the exported keys
-    :return: 2-tuple: result of urlsplit and a dictionary with
-        parameter name as key and url and value
-    """
-    part = urlsplit(baseurl)
-
-    # deal with the export directory
-    if part.path.endswith("/"):
-        _path = part.path[:-1]
-    else:
-        _path = part.path[:]
-
-    local_path = proper_path("%s/%s" % (_path, local_path))
-
-    if not os.path.exists(local_path):
-        os.makedirs(local_path)
-
-    kb = key_setup(vault, **kwargs)
-
-    try:
-        keyjar[""].append(kb)
-    except KeyError:
-        keyjar[""] = kb
-
-    # the local filename
-    _export_filename = os.path.join(local_path, "jwks")
-
-    with open(_export_filename, "w") as f:
-        f.write(str(kb))
-
-    _url = "%s://%s%s" % (part.scheme, part.netloc,
-                          _export_filename[1:])
-
-    return _url
-
-
-# ================= create RSA key ======================
-
-
-def proper_path(path):
-    """
-    Clean up the path specification so it looks like something I could use.
-    "./" <path> "/"
-    """
-    if path.startswith("./"):
-        pass
-    elif path.startswith("/"):
-        path = ".%s" % path
-    elif path.startswith("."):
-        while path.startswith("."):
-            path = path[1:]
-        if path.startswith("/"):
-            path = ".%s" % path
-    else:
-        path = "./%s" % path
-
-    if not path.endswith("/"):
-        path += "/"
-
-    return path
-
-
-def ec_init(spec):
-    """
-    Initiate a keybundle with an elliptic curve key. 
-    
-    :param spec: Key specifics of the form::
-        {"type": "EC", "crv": "P-256", "use": ["sig"]}
-    
-    :return: A KeyBundle instance
-    """
-
-    _key = ec.generate_private_key(NIST2SEC[spec['crv']], default_backend())
-
-    kb = KeyBundle(keytype="EC", keyusage=spec["use"])
-    for use in spec["use"]:
-        eck = ECKey(use=use).load_key(_key)
-        kb.append(eck)
-    return kb
-
-
-def keyjar_init(instance, key_conf, kid_template=""):
-    """
-    Will add to an already existing :py:class:`oidcmsg.oauth2.Message` instance
-    or create a new keyjar. As a side effekt the keyjar attribute of the 
-    instance is updated.
-    
-    Configuration of the type::
-    
-        keys = [
-            {"type": "RSA", "key": "cp_keys/key.pem", "use": ["enc", "sig"]},
-            {"type": "EC", "crv": "P-256", "use": ["sig"]},
-            {"type": "EC", "crv": "P-256", "use": ["enc"]}
-        ]
-    
-
-    :param instance: server/client instance
-    :param key_conf: The key configuration
-    :param kid_template: A template by which to build the kids
-    :return: a JWKS as a dictionary
-    """
-
-    jwks, keyjar, kdd = build_keyjar(key_conf, kid_template, instance.keyjar,
-                                     instance.kid)
-
-    instance.keyjar = keyjar
-    instance.kid = kdd
-    return jwks
-
-
-def _new_rsa_key(spec):
-    if 'name' not in spec:
-        if '/' in spec['key']:
-            (head, tail) = os.path.split(spec['key'])
-            spec['path'] = head
-            spec['name'] = tail
-        else:
-            spec['name'] = spec['key']
-    return rsa_init(spec)
-
-
-def build_keyjar(key_conf, kid_template="", keyjar=None, kidd=None):
+def build_keyjar(key_conf, kid_template="", keyjar=None):
     """
     Configuration of the type ::
     
@@ -781,19 +594,14 @@ def build_keyjar(key_conf, kid_template="", keyjar=None, kidd=None):
     
     :param key_conf: The key configuration
     :param kid_template: A template by which to build the kids
-    :return: A tuple consisting of a JWKS dictionary, a KeyJar instance
-        and a representation of which kids that can be used for what.
-        Note the JWKS contains private key information !!
+    :param keyjar: If an KeyJar instance the new keys are added to this key jar.
+    :return: A KeyJar instance
     """
 
     if keyjar is None:
         keyjar = KeyJar()
 
-    if kidd is None:
-        kidd = {"sig": {}, "enc": {}}
-
     kid = 0
-    jwks = {"keys": []}
 
     for spec in key_conf:
         typ = spec["type"].upper()
@@ -808,7 +616,7 @@ def build_keyjar(key_conf, kid_template="", keyjar=None, kidd=None):
                                    fileformat="der",
                                    keytype=typ, keyusage=spec["use"])
                 except error_to_catch:
-                    kb = _new_rsa_key(spec)
+                    kb = rsa_init(spec)
                 except Exception:
                     raise
             else:
@@ -822,14 +630,11 @@ def build_keyjar(key_conf, kid_template="", keyjar=None, kidd=None):
                 kid += 1
             else:
                 k.add_kid()
-            kidd[k.use][k.kty] = k.kid
-
-        jwks["keys"].extend(
-            [k.serialize() for k in kb.keys() if k.kty != 'oct'])
+            # kidd[k.use][k.kty] = k.kid
 
         keyjar.add_kb("", kb)
 
-    return jwks, keyjar, kidd
+    return keyjar
 
 
 def update_keyjar(keyjar):
@@ -878,12 +683,12 @@ def check_key_availability(inst, jwt):
 def public_keys_keyjar(from_kj, origin, to_kj=None, receiver=''):
     """
     Due to cryptography's differentiating between public and private keys
-    this function that constructs the public equivalent to the private key
-    keyjar that build_keyjar creates.
+    this function will construct the public equivalent to the private keys
+    that a key jar may contain.
 
     :param from_kj: The KeyJar instance that contains the private keys
     :param origin: The owner ID
-    :param to_kj: The KeyJar that is the receiver of the public keys
+    :param to_kj: The KeyJar that is the receiver of the public keys.
     :param receiver: The owner ID under which the public keys should be stored
     :return: The modified KeyJar instance
     """
@@ -897,13 +702,32 @@ def public_keys_keyjar(from_kj, origin, to_kj=None, receiver=''):
     return to_kj
 
 
-def init_key_jar(public_path, private_path='', key_defs='', iss=''):
+def init_key_jar(public_path='', private_path='', key_defs=''):
     """
-    If a JWKS with private keys exists create a KeyJar from it.
-    If not, then a set of keys are created based on the keydefs specification.
-    Those keys will be stored in 2 places one with the private keys another
-    with public keys. A KeyJar instance will also be instantiated with the
-    newly minted keys.
+    A number of cases here:
+
+    1. A private path is given
+       a) The file exists and a JWKS is found there.
+          From that JWKS a KeyJar instance is built.
+       b)
+         If the private path file doesn't exit the key definitions are
+         used to build a KeyJar instance. A JWKS with the private keys are
+         written to the file named in private_path.
+       If a public path is also provided a JWKS with public keys are written
+       to that file.
+    2. A public path is given but no private path.
+       a) If the public path file exists then the JWKS in that file is used to
+          construct a KeyJar.
+       b) If no such file exists then a KeyJar will be built
+          based on the key_defs specification and a JWKS with the public keys
+          will be written to the public path file.
+    3. If neither a public path nor a private path is given then a KeyJar is
+       built based on the key_defs specification and no JWKS will be written
+       to file.
+
+    In all cases a KeyJar instance is returned
+
+    The keys stored in the KeyJar will be stored under the '' identifier.
 
     :param public_path: A file path to a file that contains a JWKS with public
         keys
@@ -911,7 +735,6 @@ def init_key_jar(public_path, private_path='', key_defs='', iss=''):
         private keys.
     :param key_defs: A definition of what keys should be created if they are
         not already available
-    :param iss: Issuer ID
     :return: An instantiated :py:class;`oidcmsg.key_jar.KeyJar` instance
     """
 
@@ -921,7 +744,7 @@ def init_key_jar(public_path, private_path='', key_defs='', iss=''):
             _kj = KeyJar()
             _kj.import_jwks(json.loads(_jwks), '')
         else:
-            _kj = build_keyjar(key_defs)[1]
+            _kj = build_keyjar(key_defs)
             jwks = _kj.export_jwks(private=True)
             head, tail = os.path.split(private_path)
             if head and not os.path.isdir(head):
@@ -935,16 +758,21 @@ def init_key_jar(public_path, private_path='', key_defs='', iss=''):
             fp = open(public_path, 'w')
             fp.write(json.dumps(jwks))
             fp.close()
-
-            if iss:
-                _kj.import_jwks(jwks, iss)
-
+    elif public_path:
+        if os.path.isfile(public_path):
+            _jwks = open(public_path, 'r').read()
+            _kj = KeyJar()
+            _kj.import_jwks(json.loads(_jwks), '')
+        else:
+            _kj = build_keyjar(key_defs)
+            _jwks = _kj.export_jwks()
+            head, tail = os.path.split(public_path)
+            if head and not os.path.isdir(head):
+                os.makedirs(head)
+            fp = open(public_path, 'w')
+            fp.write(json.dumps(_jwks))
+            fp.close()
     else:
-        _jwks = open(public_path, 'r').read()
-        _kj = KeyJar()
-        _kj.import_jwks(json.loads(_jwks), '')
-
-        if iss:
-            _kj.import_jwks(json.loads(_jwks), iss)
+        _kj = build_keyjar(key_defs)
 
     return _kj

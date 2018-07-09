@@ -9,7 +9,6 @@ from cryptojwt.jws import JWS
 from oidcmsg.key_bundle import keybundle_from_local_file
 from oidcmsg.key_bundle import KeyBundle
 from oidcmsg.key_jar import build_keyjar
-from oidcmsg.key_jar import key_export
 from oidcmsg.key_jar import KeyJar
 
 __author__ = 'Roland Hedberg'
@@ -179,16 +178,13 @@ def test_build_keyjar():
         {"type": "EC", "crv": "P-256", "use": ["sig"]},
     ]
 
-    jwks, keyjar, kidd = build_keyjar(keys)
+    keyjar = build_keyjar(keys)
+    jwks = keyjar.export_jwks()
     for key in jwks["keys"]:
         assert "d" not in key  # the JWKS shouldn't contain the private part
         # of the keys
 
     assert len(keyjar[""]) == 2  # 1 with RSA keys and 1 with EC key
-
-    assert "RSA" in kidd["enc"]
-    assert "RSA" in kidd["sig"]
-    assert "EC" in kidd["sig"]
 
 
 def test_build_keyjar_missing(tmpdir):
@@ -196,32 +192,9 @@ def test_build_keyjar_missing(tmpdir):
         {"type": "RSA", "key": os.path.join(tmpdir.dirname, "missing_file"),
          "use": ["enc", "sig"]}]
 
-    jwks, keyjar, kidd = build_keyjar(keys)
+    keyjar = build_keyjar(keys)
 
     assert len(keyjar[""]) == 1
-
-    assert "RSA" in kidd["enc"]
-    assert "RSA" in kidd["sig"]
-
-
-def test_key_export():
-    kj = KeyJar()
-    url = key_export("http://example.com/keys/", "outbound", "secret",
-                     keyjar=kj, sig={"alg": "rsa", "format": ["x509", "jwks"]})
-
-    assert url == "http://example.com/keys/outbound/jwks"
-
-    # Now a jwks should reside in './keys/outbound/jwks'
-
-    kb = KeyBundle(source='file://./keys/outbound/jwks')
-
-    # One key
-    assert len(kb) == 1
-    # more specifically one RSA key
-    assert len(kb.get('RSA')) == 1
-    k = kb.get('RSA')[0]
-    # For signing
-    assert k.use == 'sig'
 
 
 class TestKeyJar(object):
@@ -384,12 +357,12 @@ KEYDEFS = [
 
 def test_remove_after():
     # initial keyjar
-    keyjar = build_keyjar(KEYDEFS)[1]
+    keyjar = build_keyjar(KEYDEFS)
     _old = [k.kid for k in keyjar.get_issuer_keys('') if k.kid]
     assert len(_old) == 2
 
     # rotate_keys = create new keys + make the old as inactive
-    keyjar = build_keyjar(KEYDEFS, keyjar=keyjar)[1]
+    keyjar = build_keyjar(KEYDEFS, keyjar=keyjar)
 
     keyjar.remove_after = 1
     # None are remove since none are marked as inactive yet
@@ -562,8 +535,8 @@ class TestVerifyJWTKeys(object):
             {"type": "RSA", "use": ["sig"]},
         ]
 
-        self.alice_keyjar = build_keyjar(mkey)[1]
-        self.bob_keyjar = build_keyjar(skey)[1]
+        self.alice_keyjar = build_keyjar(mkey)
+        self.bob_keyjar = build_keyjar(skey)
         self.alice_keyjar['Alice'] = self.alice_keyjar['']
         self.bob_keyjar['Bob'] = self.bob_keyjar['']
 

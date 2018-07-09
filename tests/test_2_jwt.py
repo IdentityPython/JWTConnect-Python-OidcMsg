@@ -6,7 +6,8 @@ from cryptojwt.jws import SignerAlgError
 
 from oidcmsg.jwt import JWT
 from oidcmsg.key_bundle import KeyBundle
-from oidcmsg.key_jar import build_keyjar, KeyJar
+from oidcmsg.key_jar import build_keyjar
+from oidcmsg.key_jar import KeyJar
 from oidcmsg.oidc import JsonWebToken
 
 __author__ = 'Roland Hedberg'
@@ -22,7 +23,7 @@ keys = [
     {"type": "EC", "crv": "P-256", "use": ["sig"]},
     {"type": "EC", "crv": "P-256", "use": ["enc"]}
 ]
-alice_keyjar = build_keyjar(keys)[1]
+alice_keyjar = build_keyjar(keys)
 ALICE = 'https://alice.example.org'
 
 keys = [
@@ -33,7 +34,7 @@ keys = [
     {"type": "EC", "crv": "P-256", "use": ["sig"]},
     {"type": "EC", "crv": "P-256", "use": ["enc"]}
 ]
-bob_keyjar = build_keyjar(keys)[1]
+bob_keyjar = build_keyjar(keys)
 BOB = 'https://bob.example.com'
 
 # Need to add Alice's public keys to Bob's keyjar
