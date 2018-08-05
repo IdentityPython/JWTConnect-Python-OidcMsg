@@ -20,7 +20,7 @@ matrix:
   include:
     - python: 3.5
       env: TOXENV=py35
-
+    - env: TOXENV=isort-check
 script:
   - tox -e $TOXENV
 
