@@ -1,5 +1,4 @@
 import os
-
 import pytest
 from cryptojwt.jwk import RSAKey
 from cryptojwt.jws import SignerAlgError
