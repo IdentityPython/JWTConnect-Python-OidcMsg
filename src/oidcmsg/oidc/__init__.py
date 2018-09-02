@@ -11,7 +11,7 @@ import sys
 import time
 
 from cryptojwt import as_unicode
-from cryptojwt import jws
+from cryptojwt.jws.utils import left_hash
 
 from oidcmsg import oauth2
 from oidcmsg import time_util
@@ -233,10 +233,9 @@ def check_char_set(string, allowed):
 
 # -----------------------------------------------------------------------------
 
-ID_TOKEN_VERIFY_ARGS = ['keyjar','verify', 'encalg', 'encenc', 'sigalg',
+ID_TOKEN_VERIFY_ARGS = ['keyjar', 'verify', 'encalg', 'encenc', 'sigalg',
                         'issuer', 'allow_missing_kid', 'no_kid_issuer',
                         'trusting', 'skew', 'nonce_storage_time', 'client_id']
-
 
 CLAIMS_WITH_VERIFIED = ['id_token', 'id_token_hint', 'request']
 VERIFIED_CLAIM_PREFIX = '__verified'
@@ -253,7 +252,7 @@ def clear_verified_claims(msg):
             del msg[_vc_name]
         except KeyError:
             pass
-    return  msg
+    return msg
 
 
 class RefreshAccessTokenRequest(oauth2.RefreshAccessTokenRequest):
@@ -294,7 +293,7 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
 class UserInfoRequest(Message):
     c_param = {
         "access_token": SINGLE_OPTIONAL_STRING,
-    }
+        }
 
 
 class AuthorizationResponse(oauth2.AuthorizationResponse,
@@ -307,7 +306,7 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
         "access_token": SINGLE_OPTIONAL_STRING,
         "token_type": SINGLE_OPTIONAL_STRING,
         "id_token": SINGLE_OPTIONAL_IDTOKEN
-    })
+        })
 
     def verify(self, **kwargs):
         super(AuthorizationResponse, self).verify(**kwargs)
@@ -340,8 +339,8 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
                 if "at_hash" not in idt:
                     raise MissingRequiredAttribute("Missing at_hash property",
                                                    idt)
-                if idt["at_hash"] != jws.left_hash(self["access_token"],
-                                                   hfunc):
+                if idt["at_hash"] != left_hash(self["access_token"],
+                                               hfunc):
                     raise AtHashError(
                         "Failed to verify access_token hash", idt)
 
@@ -349,7 +348,7 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
                 if "c_hash" not in idt:
                     raise MissingRequiredAttribute("Missing c_hash property",
                                                    idt)
-                if idt["c_hash"] != jws.left_hash(self["code"], hfunc):
+                if idt["c_hash"] != left_hash(self["code"], hfunc):
                     raise CHashError("Failed to verify code hash", idt)
 
             self[verified_claim_name("id_token")] = idt
@@ -391,13 +390,13 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
             "request_uri": SINGLE_OPTIONAL_STRING,
             # "session_state": SINGLE_OPTIONAL_STRING,
             "response_mode": SINGLE_OPTIONAL_STRING,
-        }
-    )
+            }
+        )
     c_allowed_values = oauth2.AuthorizationRequest.c_allowed_values.copy()
     c_allowed_values.update({
         "display": ["page", "popup", "touch", "wap"],
         "prompt": ["none", "login", "consent", "select_account"]
-    })
+        })
 
     def verify(self, **kwargs):
         """Authorization Request parameters that are OPTIONAL in the OAuth 2.0
@@ -474,22 +473,26 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
 
 class AccessTokenRequest(oauth2.AccessTokenRequest):
     c_param = oauth2.AccessTokenRequest.c_param.copy()
-    c_param.update({"client_assertion_type": SINGLE_OPTIONAL_STRING,
-                    "client_assertion": SINGLE_OPTIONAL_STRING})
+    c_param.update({
+                       "client_assertion_type": SINGLE_OPTIONAL_STRING,
+                       "client_assertion": SINGLE_OPTIONAL_STRING
+                   })
     c_default = {"grant_type": "authorization_code"}
     c_allowed_values = {
         "client_assertion_type": [
             "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"],
-    }
+        }
 
 
 class AddressClaim(Message):
-    c_param = {"formatted": SINGLE_OPTIONAL_STRING,
-               "street_address": SINGLE_OPTIONAL_STRING,
-               "locality": SINGLE_OPTIONAL_STRING,
-               "region": SINGLE_OPTIONAL_STRING,
-               "postal_code": SINGLE_OPTIONAL_STRING,
-               "country": SINGLE_OPTIONAL_STRING}
+    c_param = {
+        "formatted": SINGLE_OPTIONAL_STRING,
+        "street_address": SINGLE_OPTIONAL_STRING,
+        "locality": SINGLE_OPTIONAL_STRING,
+        "region": SINGLE_OPTIONAL_STRING,
+        "postal_code": SINGLE_OPTIONAL_STRING,
+        "country": SINGLE_OPTIONAL_STRING
+    }
 
 
 class OpenIDSchema(ResponseMessage):
@@ -518,7 +521,7 @@ class OpenIDSchema(ResponseMessage):
             "updated_at": SINGLE_OPTIONAL_INT,
             "_claim_names": OPTIONAL_MESSAGE,
             "_claim_sources": OPTIONAL_MESSAGE
-        })
+            })
 
     def verify(self, **kwargs):
         super(OpenIDSchema, self).verify(**kwargs)
@@ -578,10 +581,12 @@ class RegistrationRequest(Message):
         # "client_secret": SINGLE_OPTIONAL_STRING,
         # "access_token": SINGLE_OPTIONAL_STRING,
         "post_logout_redirect_uris": OPTIONAL_LIST_OF_STRINGS,
-    }
+        }
     c_default = {"application_type": "web", "response_types": ["code"]}
-    c_allowed_values = {"application_type": ["native", "web"],
-                        "subject_type": ["public", "pairwise"]}
+    c_allowed_values = {
+        "application_type": ["native", "web"],
+        "subject_type": ["public", "pairwise"]
+    }
 
     def verify(self, **kwargs):
         super(RegistrationRequest, self).verify(**kwargs)
@@ -624,7 +629,7 @@ class RegistrationResponse(ResponseMessage):
             "registration_client_uri": SINGLE_OPTIONAL_STRING,
             "client_id_issued_at": SINGLE_OPTIONAL_INT,
             "client_secret_expires_at": SINGLE_OPTIONAL_INT
-        })
+            })
     c_param.update(RegistrationRequest.c_param)
 
     def verify(self, **kwargs):
@@ -647,9 +652,11 @@ class RegistrationResponse(ResponseMessage):
 
 
 class ClientRegistrationErrorResponse(oauth2.ResponseMessage):
-    c_allowed_values = {"error": ["invalid_redirect_uri",
-                                  "invalid_client_metadata",
-                                  "invalid_configuration_parameter"]}
+    c_allowed_values = {
+        "error": ["invalid_redirect_uri",
+                  "invalid_client_metadata",
+                  "invalid_configuration_parameter"]
+    }
 
 
 class IdToken(OpenIDSchema):
@@ -668,7 +675,7 @@ class IdToken(OpenIDSchema):
         "amr": OPTIONAL_LIST_OF_STRINGS,
         "azp": SINGLE_OPTIONAL_STRING,
         "sub_jwk": SINGLE_OPTIONAL_STRING
-    })
+        })
     hashable = {'access_token': 'at_hash', 'code': 'c_hash'}
 
     def val_hash(self, alg):
@@ -676,7 +683,7 @@ class IdToken(OpenIDSchema):
 
         for attr, hash_attr in self.hashable.items():
             try:
-                self[hash_attr] = jws.left_hash(as_unicode(self[attr]), halg)
+                self[hash_attr] = left_hash(as_unicode(self[attr]), halg)
             except KeyError:
                 pass
             else:
@@ -801,8 +808,10 @@ class MessageWithIdToken(Message):
 
 class RefreshSessionRequest(MessageWithIdToken):
     c_param = MessageWithIdToken.c_param.copy()
-    c_param.update({"redirect_url": SINGLE_REQUIRED_STRING,
-                    "state": SINGLE_REQUIRED_STRING})
+    c_param.update({
+                       "redirect_url": SINGLE_REQUIRED_STRING,
+                       "state": SINGLE_REQUIRED_STRING
+                   })
 
 
 class RefreshSessionResponse(MessageWithIdToken, ResponseMessage):
@@ -824,7 +833,7 @@ class EndSessionRequest(Message):
         "id_token_hint": SINGLE_OPTIONAL_IDTOKEN,
         "post_logout_redirect_uri": SINGLE_OPTIONAL_STRING,
         "state": SINGLE_OPTIONAL_STRING
-    }
+        }
 
     def verify(self, **kwargs):
         super(EndSessionRequest, self).verify(**kwargs)
@@ -862,7 +871,7 @@ class ClaimsRequest(Message):
     c_param = {
         "userinfo": OPTIONAL_MULTIPLE_Claims,
         "id_token": OPTIONAL_MULTIPLE_Claims
-    }
+        }
 
 
 class OpenIDRequest(AuthorizationRequest):
@@ -915,15 +924,17 @@ class ProviderConfigurationResponse(ResponseMessage):
         # "jwk_encryption_url": SINGLE_OPTIONAL_STRING,
         # "x509_url": SINGLE_REQUIRED_STRING,
         # "x509_encryption_url": SINGLE_OPTIONAL_STRING,
-    })
-    c_default = {"version": "3.0",
-                 "token_endpoint_auth_methods_supported": [
-                     "client_secret_basic"],
-                 "claims_parameter_supported": False,
-                 "request_parameter_supported": False,
-                 "request_uri_parameter_supported": True,
-                 "require_request_uri_registration": True,
-                 "grant_types_supported": ["authorization_code", "implicit"]}
+        })
+    c_default = {
+        "version": "3.0",
+        "token_endpoint_auth_methods_supported": [
+            "client_secret_basic"],
+        "claims_parameter_supported": False,
+        "request_parameter_supported": False,
+        "request_uri_parameter_supported": True,
+        "require_request_uri_registration": True,
+        "grant_types_supported": ["authorization_code", "implicit"]
+    }
 
     def verify(self, **kwargs):
         super(ProviderConfigurationResponse, self).verify(**kwargs)
@@ -960,7 +971,7 @@ class JsonWebToken(Message):
         "nbf": SINGLE_OPTIONAL_INT,
         "iat": SINGLE_OPTIONAL_INT,
         "jti": SINGLE_OPTIONAL_STRING,
-    }
+        }
 
     def verify(self, **kwargs):
         super(JsonWebToken, self).verify(**kwargs)
@@ -1010,7 +1021,7 @@ class AuthnToken(JsonWebToken):
         "jti": SINGLE_REQUIRED_STRING,
         "exp": SINGLE_REQUIRED_INT,
         "iat": SINGLE_OPTIONAL_INT,
-    }
+        }
 
 
 def jwt_deser(val, sformat="json"):
@@ -1027,13 +1038,17 @@ SINGLE_OPTIONAL_JWT = (Message, False, msg_ser, jwt_deser, False)
 
 
 class UserInfoErrorResponse(oauth2.ResponseMessage):
-    c_allowed_values = {"error": ["invalid_schema", "invalid_request",
-                                  "invalid_token", "insufficient_scope"]}
+    c_allowed_values = {
+        "error": ["invalid_schema", "invalid_request",
+                  "invalid_token", "insufficient_scope"]
+    }
 
 
 class DiscoveryRequest(Message):
-    c_param = {"resource": SINGLE_REQUIRED_STRING,
-               "rel": SINGLE_REQUIRED_STRING}
+    c_param = {
+        "resource": SINGLE_REQUIRED_STRING,
+        "rel": SINGLE_REQUIRED_STRING
+    }
 
 
 class Link(Message):
@@ -1046,7 +1061,7 @@ class Link(Message):
         "href": SINGLE_OPTIONAL_STRING,
         "titles": SINGLE_OPTIONAL_DICT,
         "properties": SINGLE_OPTIONAL_DICT
-    }
+        }
 
 
 def _l_deser(val, sformat):
@@ -1111,14 +1126,14 @@ class JRD(ResponseMessage):
         "aliases": OPTIONAL_LIST_OF_STRINGS,
         "properties": SINGLE_OPTIONAL_DICT,
         "links": REQUIRED_LINKS
-    }
+        }
 
 
 class WebFingerRequest(Message):
     c_param = {
         "resource": SINGLE_REQUIRED_STRING,
         "rel": SINGLE_REQUIRED_STRING
-    }
+        }
     c_default = {"rel": "http://openid.net/specs/connect/1.0/issuer"}
 
 
@@ -1136,7 +1151,7 @@ SCOPE2CLAIMS = {
     "address": ["address"],
     "phone": ["phone_number", "phone_number_verified"],
     "offline_access": []
-}
+    }
 
 
 def scope2claims(scopes):

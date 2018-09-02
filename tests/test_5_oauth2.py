@@ -1,13 +1,14 @@
 # pylint: disable=no-self-use,missing-docstring
-from future.backports.urllib.parse import parse_qs
-from future.backports.urllib.parse import urlparse
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
 
 import json
 
 import pytest
 
+from cryptojwt.key_jar import build_keyjar
+
 from oidcmsg.exception import MissingRequiredAttribute
-from oidcmsg.key_jar import build_keyjar
 from oidcmsg.message import DecodeError
 from oidcmsg.message import json_deserializer
 from oidcmsg.message import json_serializer

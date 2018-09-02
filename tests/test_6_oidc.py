@@ -9,16 +9,16 @@ from urllib.parse import parse_qs
 from urllib.parse import urlencode
 
 from cryptojwt.exception import BadSignature
-from cryptojwt.jws import alg2keytype
+from cryptojwt.jws.utils import alg2keytype
+from cryptojwt.key_bundle import KeyBundle
+from cryptojwt.key_jar import KeyJar
 
 from oidcmsg import time_util
 from oidcmsg.exception import MissingRequiredAttribute
 from oidcmsg.exception import NotAllowedValue
 from oidcmsg.exception import WrongSigningAlgorithm
-from oidcmsg.key_bundle import KeyBundle
-from oidcmsg.key_jar import KeyJar
 from oidcmsg.oauth2 import ResponseMessage
-from oidcmsg.oidc import AccessTokenRequest, verified_claim_name
+from oidcmsg.oidc import AccessTokenRequest
 from oidcmsg.oidc import CheckSessionRequest
 from oidcmsg.oidc import ClaimsRequest
 from oidcmsg.oidc import DiscoveryRequest
@@ -45,6 +45,7 @@ from oidcmsg.oidc import claims_deser
 from oidcmsg.oidc import claims_ser
 from oidcmsg.oidc import msg_ser
 from oidcmsg.oidc import scope2claims
+from oidcmsg.oidc import verified_claim_name
 from oidcmsg.time_util import utc_time_sans_frac
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
@@ -592,7 +593,7 @@ class TestAccessTokenResponse(object):
                  'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'}
         idts = IdToken(**idval)
         keyjar = KeyJar()
-        keyjar.add_symmetric('', "TestPassword")
+        keyjar.add_symmetric('', "SomeTestPassword")
         _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                                   algorithm="HS256", lifetime=300)
         # Mess with the signed id_token
@@ -612,7 +613,7 @@ class TestAccessTokenResponse(object):
                  'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'}
         idts = IdToken(**idval)
         keyjar = KeyJar()
-        keyjar.add_symmetric('', "TestPassword")
+        keyjar.add_symmetric('', "SomeTestPassword")
         _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                                   algorithm="HS256", lifetime=300)
 
@@ -633,7 +634,7 @@ def test_at_hash():
 
     idts = IdToken(**idval)
     keyjar = KeyJar()
-    keyjar.add_symmetric('', "TestPassword")
+    keyjar.add_symmetric('', "SomeTestPassword")
     _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                               algorithm="HS256", lifetime=lifetime)
 
@@ -656,7 +657,7 @@ def test_c_hash():
 
     idts = IdToken(**idval)
     keyjar = KeyJar()
-    keyjar.add_symmetric('', "TestPassword")
+    keyjar.add_symmetric('', "SomeTestPassword")
 
     _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                               algorithm="HS256", lifetime=lifetime)
@@ -680,7 +681,7 @@ def test_missing_c_hash():
 
     idts = IdToken(**idval)
     keyjar = KeyJar()
-    keyjar.add_symmetric('', "TestPassword")
+    keyjar.add_symmetric('', "SomeTestPassword")
 
     _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                               algorithm="HS256", lifetime=lifetime)

@@ -4,9 +4,11 @@ from urllib.parse import urlparse
 import json
 import pytest
 
-from cryptojwt.jwk import SYMKey
+from cryptojwt.jwk.hmac import SYMKey
+from cryptojwt.key_jar import build_keyjar
+from cryptojwt.key_jar import KeyJar
+from cryptojwt.key_jar import public_keys_keyjar
 
-from oidcmsg.key_jar import build_keyjar, public_keys_keyjar, KeyJar
 from oidcmsg.message import json_deserializer
 from oidcmsg.message import json_serializer
 from oidcmsg.message import OPTIONAL_LIST_OF_MESSAGES
@@ -202,11 +204,11 @@ class TestMessage(object):
                            opt_str_list=["one", "two"],
                            req_str_list=["spike", "lee"],
                            opt_json='{"ford": "green"}')
-        keys = [SYMKey(key="A1B2C3D4")]
+        keys = [SYMKey(key="A1B2C3D4E5F6G7H8")]
         jwe = msg.to_jwe(keys, alg="A128KW", enc="A128CBC-HS256")
 
         keyjar = KeyJar()
-        keyjar.add_symmetric('', 'A1B2C3D4')
+        keyjar.add_symmetric('', 'A1B2C3D4E5F6G7H8')
         jitem = DummyMessage().from_jwt(jwe, keyjar)
 
         assert _eq(jitem.keys(), ['opt_str', 'req_str', 'opt_json',

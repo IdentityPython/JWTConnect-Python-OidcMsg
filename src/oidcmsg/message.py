@@ -6,14 +6,14 @@ from collections import MutableMapping
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
 
-from cryptojwt import as_unicode
-from cryptojwt import jwe
-from cryptojwt import jws
-from cryptojwt.jwk import keyitems2keyreps
-from cryptojwt.jws import NoSuitableSigningKeys
-from cryptojwt.jwe import JWE
-from cryptojwt.jws import JWS
-from cryptojwt import SimpleJWT
+from cryptojwt.jws.exception import NoSuitableSigningKeys
+from cryptojwt.jwe.jwe import JWE
+from cryptojwt.jwe.jwe import factory as jwe_factory
+from cryptojwt.jws.jws import JWS
+from cryptojwt.jws.jws import SimpleJWT
+from cryptojwt.jws.jws import factory as jws_factory
+from cryptojwt.key_jar import update_keyjar
+from cryptojwt.utils import as_unicode
 
 from oidcmsg.exception import DecodeError
 from oidcmsg.exception import FormatError
@@ -26,7 +26,6 @@ from oidcmsg.exception import ParameterError
 from oidcmsg.exception import TooManyValues
 from oidcmsg.exception import WrongEncryptionAlgorithm
 from oidcmsg.exception import WrongSigningAlgorithm
-from oidcmsg.key_jar import update_keyjar
 
 logger = logging.getLogger(__name__)
 
@@ -494,7 +493,7 @@ class Message(MutableMapping):
         :return: A class instance
         """
 
-        _jw = jwe.factory(txt)
+        _jw = jwe_factory(txt)
         if _jw:
             logger.debug("JWE headers: {}".format(_jw.jwt.headers))
 
@@ -522,7 +521,7 @@ class Message(MutableMapping):
                 txt = as_unicode(_res)
             self.jwe_header = _jw.jwt.headers
 
-        _jw = jws.factory(txt)
+        _jw = jws_factory(txt)
         if _jw:
             if "sigalg" in kwargs:
                 _alg = _jw.jwt.headers["alg"]
@@ -530,7 +529,7 @@ class Message(MutableMapping):
                     raise WrongSigningAlgorithm("%s != %s" % (
                         _alg, kwargs["sigalg"]))
             try:
-                _jwt = SimpleJWT().unpack(txt)
+                _jwt = _jw.jwt
                 jso = _jwt.payload()
                 _header = _jwt.headers
 
@@ -768,7 +767,7 @@ class Message(MutableMapping):
         else:
             return False
 
-    def update(self, item):
+    def update(self, item, **kwargs):
         """
         Update the information in this instance.
         
@@ -788,16 +787,13 @@ class Message(MutableMapping):
         JSON object the body of a JWT. Then encrypt that JWT using the
         specified algorithms and the given keys. Return the encrypted JWT.
 
-        :param keys: Dictionary, keys are key type and key is the value or
-            simple list.
+        :param keys: list or KeyJar instance
         :param enc: Content Encryption Algorithm
         :param alg: Key Management Algorithm
         :param lev: Used for JSON construction
         :return: An encrypted JWT. If encryption failed an exception will be
             raised.
         """
-        if isinstance(keys, dict):
-            keys = keyitems2keyreps(keys)
 
         _jwe = JWE(self.to_json(lev), alg=alg, enc=enc)
         return _jwe.encrypt(keys)
@@ -808,12 +804,11 @@ class Message(MutableMapping):
         of the JWT into this object.
 
         :param msg: An encrypted JWT
-        :param keys: Dictionary, keys are key type and key is the value orsimple list.
+        :param keys: Possibly usable keys.
+        :type keys: list or KeyJar instance
         :return: The decrypted message. If decryption failed an exception
             will be raised.
         """
-        if isinstance(keys, dict):
-            keys = keyitems2keyreps(keys)
 
         jwe = JWE()
         _res = jwe.decrypt(msg, keys)

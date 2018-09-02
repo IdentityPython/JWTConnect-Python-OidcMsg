@@ -1,13 +1,13 @@
 import os
 
 import pytest
-from cryptojwt.jwk import RSAKey
-from cryptojwt.jws import SignerAlgError
+from cryptojwt.jwk.rsa import RSAKey
+from cryptojwt.jws.exception import SignerAlgError
+from cryptojwt.key_bundle import KeyBundle
+from cryptojwt.key_jar import build_keyjar
+from cryptojwt.key_jar import KeyJar
 
 from oidcmsg.jwt import JWT
-from oidcmsg.key_bundle import KeyBundle
-from oidcmsg.key_jar import build_keyjar
-from oidcmsg.key_jar import KeyJar
 from oidcmsg.oidc import JsonWebToken
 
 __author__ = 'Roland Hedberg'
@@ -108,7 +108,7 @@ def test_jwt_pack_encrypt():
 
 def test_jwt_pack_unpack_sym():
     kj = KeyJar()
-    kj.add_symmetric(owner='', key='client_secret', usage=['sig'])
+    kj.add_symmetric(owner='', key='hard_to_guess_client_secret', usage=['sig'])
     kj['https://fedop.example.org'] = kj['']
 
     alice = JWT(kj, iss=ALICE, sign_alg="HS256")
