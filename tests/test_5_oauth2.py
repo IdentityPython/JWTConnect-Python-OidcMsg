@@ -1,8 +1,7 @@
 # pylint: disable=no-self-use,missing-docstring
-from urllib.parse import parse_qs
-from urllib.parse import urlparse
 
 import json
+from urllib.parse import urlparse, parse_qs
 
 import pytest
 

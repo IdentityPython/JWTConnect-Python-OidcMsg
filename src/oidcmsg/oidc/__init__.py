@@ -377,7 +377,7 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
             "redirect_uri": SINGLE_REQUIRED_STRING,
             "nonce": SINGLE_OPTIONAL_STRING,
             "display": SINGLE_OPTIONAL_STRING,
-            "prompt": OPTIONAL_LIST_OF_STRINGS,
+            "prompt": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
             "max_age": SINGLE_OPTIONAL_INT,
             "ui_locales": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
             "claims_locales": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
