@@ -1,38 +1,42 @@
 # -*- coding: utf-8 -*-
-import time
 import json
 import os
-import pytest
 import sys
-
-from urllib.parse import parse_qs
+import time
+from urllib.parse import parse_qs, urlparse
 from urllib.parse import urlencode
 
+import pytest
 from cryptojwt.exception import BadSignature
 from cryptojwt.jws.utils import alg2keytype
+from cryptojwt.jwt import JWT
 from cryptojwt.key_bundle import KeyBundle
 from cryptojwt.key_jar import KeyJar
 
 from oidcmsg import time_util
+from oidcmsg.exception import MessageException
 from oidcmsg.exception import MissingRequiredAttribute
 from oidcmsg.exception import NotAllowedValue
+from oidcmsg.exception import OidcMsgError
 from oidcmsg.exception import WrongSigningAlgorithm
-from oidcmsg.oauth2 import ResponseMessage
-from oidcmsg.oidc import AccessTokenRequest
-from oidcmsg.oidc import CheckSessionRequest
-from oidcmsg.oidc import ClaimsRequest
-from oidcmsg.oidc import DiscoveryRequest
-from oidcmsg.oidc import factory
-from oidcmsg.oidc import msg_ser_json
+from oidcmsg.oauth2 import ResponseMessage, ROPCAccessTokenRequest
+from oidcmsg.oidc import AccessTokenRequest, make_openid_request
+from oidcmsg.oidc import dict_deser
+from oidcmsg.oidc import claims_match
+from oidcmsg.oidc import link_ser
+from oidcmsg.oidc import registration_request_deser
 from oidcmsg.oidc import AccessTokenResponse
+from oidcmsg.oidc import AddressClaim
 from oidcmsg.oidc import AuthnToken
 from oidcmsg.oidc import AuthorizationErrorResponse
+from oidcmsg.oidc import AuthorizationRequest
 from oidcmsg.oidc import AuthorizationResponse
+from oidcmsg.oidc import CheckSessionRequest
+from oidcmsg.oidc import Claims
+from oidcmsg.oidc import ClaimsRequest
+from oidcmsg.oidc import DiscoveryRequest
 from oidcmsg.oidc import EndSessionRequest
 from oidcmsg.oidc import EndSessionResponse
-from oidcmsg.oidc import AddressClaim
-from oidcmsg.oidc import AuthorizationRequest
-from oidcmsg.oidc import Claims
 from oidcmsg.oidc import IdToken
 from oidcmsg.oidc import JRD
 from oidcmsg.oidc import Link
@@ -43,7 +47,9 @@ from oidcmsg.oidc import RegistrationResponse
 from oidcmsg.oidc import address_deser
 from oidcmsg.oidc import claims_deser
 from oidcmsg.oidc import claims_ser
+from oidcmsg.oidc import factory
 from oidcmsg.oidc import msg_ser
+from oidcmsg.oidc import msg_ser_json
 from oidcmsg.oidc import scope2claims
 from oidcmsg.oidc import verified_claim_name
 from oidcmsg.time_util import utc_time_sans_frac
@@ -58,8 +64,10 @@ IDTOKEN = IdToken(iss="http://oic.example.org/", sub="sub",
                   aud=CLIENT_ID, exp=utc_time_sans_frac() + 300,
                   nonce="N0nce", iat=time.time())
 KC_SYM_S = KeyBundle(
-    {"kty": "oct", "key": "abcdefghijklmnop".encode("utf-8"), "use": "sig",
-     "alg": "HS256"})
+    {
+        "kty": "oct", "key": "abcdefghijklmnop".encode("utf-8"), "use": "sig",
+        "alg": "HS256"
+    })
 
 
 def query_string_compare(query_str1, query_str2):
@@ -168,8 +176,10 @@ def test_msg_ser_json():
 
 
 def test_msg_ser_json_from_dict():
-    ser = msg_ser_json({'street_address': "Kasamark 114", 'locality': "Umea",
-                        'country': "Sweden"}, "json")
+    ser = msg_ser_json({
+        'street_address': "Kasamark 114", 'locality': "Umea",
+        'country': "Sweden"
+    }, "json")
 
     adc = address_deser(ser, "json")
     assert _eq(adc.keys(), ['street_address', 'locality', 'country'])
@@ -181,6 +191,17 @@ def test_msg_ser_json_to_dict():
 
     ser = msg_ser_json(pre, "dict")
 
+    adc = address_deser(ser, "dict")
+    assert _eq(adc.keys(), ['street_address', 'locality', 'country'])
+
+
+def test_msg_ser_dict_to_dict():
+    pre = {
+        'street_address': "Kasamark 114", 'locality': "Umea",
+        'country': "Sweden"
+    }
+
+    ser = msg_ser_json(pre, "dict")
     adc = address_deser(ser, "dict")
     assert _eq(adc.keys(), ['street_address', 'locality', 'country'])
 
@@ -206,8 +227,10 @@ def test_msg_ser_dict():
 
 
 def test_msg_ser_from_dict():
-    pre = {"street_address": "Kasamark 114", "locality": "Umea",
-           "country": "Sweden"}
+    pre = {
+        "street_address": "Kasamark 114", "locality": "Umea",
+        "country": "Sweden"
+    }
 
     ser = msg_ser(pre, "dict")
 
@@ -250,9 +273,46 @@ def test_claims_ser_from_dict_to_urlencoded():
                            'picture'])
 
 
+def test_claims_ser_from_dict_to_dict():
+    claims = claims_ser({
+        "name": {"essential": True},
+        "nickname": None,
+        "email": {"essential": True},
+        "email_verified": {"essential": True},
+        "picture": None
+    }, sformat="dict")
+    cl = Claims(**claims)
+    assert _eq(cl.keys(), ['name', 'nickname', 'email', 'email_verified',
+                           'picture'])
+
+
+def test_claims_ser_from_dict_to_foo():
+    with pytest.raises(OidcMsgError):
+        _ = claims_ser({
+            "name": {"essential": True},
+            "nickname": None,
+            "email": {"essential": True},
+            "email_verified": {"essential": True},
+            "picture": None
+        }, sformat="foo")
+
+
+def test_claims_ser_wrong_type():
+    with pytest.raises(MessageException):
+        _ = claims_ser(json.dumps({
+            "name": {"essential": True},
+            "nickname": None,
+            "email": {"essential": True},
+            "email_verified": {"essential": True},
+            "picture": None
+        }), sformat="dict")
+
+
 def test_discovery_request():
-    request = {'rel': "http://openid.net/specs/connect/1.0/issuer",
-               'resource': 'diana@localhost'}
+    request = {
+        'rel': "http://openid.net/specs/connect/1.0/issuer",
+        'resource': 'diana@localhost'
+    }
 
     req = DiscoveryRequest().from_json(json.dumps(request))
     assert set(req.keys()) == {'rel', 'resource'}
@@ -265,6 +325,29 @@ def test_discovery_response():
     resp = JRD(subject='diana@localhost', links=[link])
 
     assert set(resp.keys()) == {'subject', 'links'}
+
+
+def test_link_ser1():
+    link = Link(href='https://example.com/op',
+                rel="http://openid.net/specs/connect/1.0/issuer")
+    _js = link_ser(link, 'json')
+    _lnk = json.loads(_js)
+    assert set(_lnk.keys()) == {'href', 'rel'}
+
+
+def test_link_ser_dict():
+    info = {
+        'href': 'https://example.com/op',
+        'rel': "http://openid.net/specs/connect/1.0/issuer"
+    }
+    _js = link_ser(info, 'json')
+    _lnk = json.loads(_js)
+    assert set(_lnk.keys()) == {'href', 'rel'}
+
+    _ue = link_ser(info, 'urlencoded')
+    assert _ue
+    res = parse_qs(_ue)
+    assert set(res.keys()) == {'href', 'rel'}
 
 
 class TestProviderConfigurationResponse(object):
@@ -466,10 +549,12 @@ class TestRegistrationRequest(object):
         assert req.verify()
         js = req.to_json()
         js_obj = json.loads(js)
-        expected_js_obj = {"redirect_uris": ["https://example.com/authz_cb"],
-                           "application_type": "web", "default_acr": "foo",
-                           "require_auth_time": True, "operation": "register",
-                           "default_max_age": 10, "response_types": ["code"]}
+        expected_js_obj = {
+            "redirect_uris": ["https://example.com/authz_cb"],
+            "application_type": "web", "default_acr": "foo",
+            "require_auth_time": True, "operation": "register",
+            "default_max_age": 10, "response_types": ["code"]
+        }
         assert js_obj == expected_js_obj
 
         flattened_list_dict = {k: v[0] if isinstance(v, list) else v for k, v in
@@ -486,10 +571,53 @@ class TestRegistrationRequest(object):
                                                                  enc_param):
         registration_params = {
             "redirect_uris": ["https://example.com/authz_cb"],
-            enc_param: "RS25asdasd6"}
+            enc_param: "RS25asdasd6"
+        }
         registration_req = RegistrationRequest(**registration_params)
         with pytest.raises(MissingRequiredAttribute):
             registration_req.verify()
+
+    def test_deser(self):
+        req = RegistrationRequest(operation="register", default_max_age=10,
+                                  require_auth_time=True, default_acr="foo",
+                                  application_type="web",
+                                  redirect_uris=[
+                                      "https://example.com/authz_cb"])
+
+        ser_req = req.serialize('urlencoded')
+        deser_req = registration_request_deser(ser_req)
+        assert set(deser_req.keys()) == {'operation', 'default_max_age',
+                                         'require_auth_time', 'default_acr',
+                                         'application_type', 'redirect_uris',
+                                         'response_types'}
+
+    def test_deser_dict(self):
+        req = {
+            'operation': "register", 'default_max_age': 10,
+            'require_auth_time': True, 'default_acr': "foo",
+            'application_type': "web",
+            'redirect_uris': ["https://example.com/authz_cb"]
+        }
+
+        deser_req = registration_request_deser(req, 'dict')
+        assert set(deser_req.keys()) == {'operation', 'default_max_age',
+                                         'require_auth_time', 'default_acr',
+                                         'application_type', 'redirect_uris',
+                                         'response_types'}
+
+    def test_deser_dict_json(self):
+        req = {
+            'operation': "register", 'default_max_age': 10,
+            'require_auth_time': True, 'default_acr': "foo",
+            'application_type': "web",
+            'redirect_uris': ["https://example.com/authz_cb"]
+        }
+
+        deser_req = registration_request_deser(req, 'json')
+        assert set(deser_req.keys()) == {'operation', 'default_max_age',
+                                         'require_auth_time', 'default_acr',
+                                         'application_type', 'redirect_uris',
+                                         'response_types'}
 
 
 class TestRegistrationResponse(object):
@@ -586,11 +714,37 @@ class TestAuthorizationRequest(object):
         ar3 = AuthorizationRequest().from_json(ar_json)
         assert ar3.verify()
 
+    def test_request(self):
+        args = {
+            "client_id": "foobar",
+            "redirect_uri": "http://foobar.example.com/oaclient",
+            "response_type": "code",
+            "scope": "openid",
+            "nonce": "some value",
+            "extra": 'attribute'
+        }
+        ar = AuthorizationRequest(**args)
+        keyjar = KeyJar()
+        keyjar.add_symmetric('', "SomeTestPassword")
+        _signed_jwt = make_openid_request(ar, keyjar, 'foobar', 'HS256',
+                                          'barfoo')
+        ar['request'] = _signed_jwt
+        del ar['nonce']
+        del ar['extra']
+        ar['scope'] = ['openid', 'email']
+        res = ar.verify(keyjar=keyjar)
+        assert res
+        assert 'extra' in ar
+        assert 'nonce' in ar
+        assert ar['scope'] == ['openid']
+
 
 class TestAccessTokenResponse(object):
     def test_faulty_idtoken(self):
-        idval = {'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
-                 'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'}
+        idval = {
+            'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
+            'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
+        }
         idts = IdToken(**idval)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
@@ -601,24 +755,30 @@ class TestAccessTokenResponse(object):
         p[2] = "aaa"
         _faulty_signed_jwt = ".".join(p)
 
-        _info = {"access_token": "accessTok", "id_token": _faulty_signed_jwt,
-                 "token_type": "Bearer", "expires_in": 3600}
+        _info = {
+            "access_token": "accessTok", "id_token": _faulty_signed_jwt,
+            "token_type": "Bearer", "expires_in": 3600
+        }
 
         at = AccessTokenResponse(**_info)
         with pytest.raises(BadSignature):
             at.verify(keyjar=keyjar)
 
     def test_wrong_alg(self):
-        idval = {'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
-                 'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'}
+        idval = {
+            'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
+            'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
+        }
         idts = IdToken(**idval)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
         _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                                   algorithm="HS256", lifetime=300)
 
-        _info = {"access_token": "accessTok", "id_token": _signed_jwt,
-                 "token_type": "Bearer", "expires_in": 3600}
+        _info = {
+            "access_token": "accessTok", "id_token": _signed_jwt,
+            "token_type": "Bearer", "expires_in": 3600
+        }
 
         at = AccessTokenResponse(**_info)
         with pytest.raises(WrongSigningAlgorithm):
@@ -628,8 +788,10 @@ class TestAccessTokenResponse(object):
 def test_at_hash():
     lifetime = 3600
     _token = {'access_token': 'accessTok'}
-    idval = {'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
-             'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'}
+    idval = {
+        'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
+        'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
+    }
     idval.update(_token)
 
     idts = IdToken(**idval)
@@ -638,8 +800,10 @@ def test_at_hash():
     _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                               algorithm="HS256", lifetime=lifetime)
 
-    _info = {"id_token": _signed_jwt, "token_type": "Bearer",
-             "expires_in": lifetime}
+    _info = {
+        "id_token": _signed_jwt, "token_type": "Bearer",
+        "expires_in": lifetime
+    }
     _info.update(_token)
 
     at = AuthorizationResponse(**_info)
@@ -651,8 +815,10 @@ def test_c_hash():
     lifetime = 3600
     _token = {'code': 'grant'}
 
-    idval = {'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
-             'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'}
+    idval = {
+        'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
+        'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
+    }
     idval.update(_token)
 
     idts = IdToken(**idval)
@@ -662,8 +828,10 @@ def test_c_hash():
     _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                               algorithm="HS256", lifetime=lifetime)
 
-    _info = {"id_token": _signed_jwt, "token_type": "Bearer",
-             "expires_in": lifetime}
+    _info = {
+        "id_token": _signed_jwt, "token_type": "Bearer",
+        "expires_in": lifetime
+    }
     _info.update(_token)
 
     at = AuthorizationResponse(**_info)
@@ -675,8 +843,10 @@ def test_missing_c_hash():
     lifetime = 3600
     _token = {'code': 'grant'}
 
-    idval = {'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
-             'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'}
+    idval = {
+        'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
+        'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
+    }
     # idval.update(_token)
 
     idts = IdToken(**idval)
@@ -686,8 +856,10 @@ def test_missing_c_hash():
     _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                               algorithm="HS256", lifetime=lifetime)
 
-    _info = {"id_token": _signed_jwt, "token_type": "Bearer",
-             "expires_in": lifetime}
+    _info = {
+        "id_token": _signed_jwt, "token_type": "Bearer",
+        "expires_in": lifetime
+    }
     _info.update(_token)
 
     at = AuthorizationResponse(**_info)
@@ -762,7 +934,7 @@ class TestEndSessionRequest(object):
             state="state0")
 
         request = EndSessionRequest().from_urlencoded(esreq.to_urlencoded())
-        keyjar=KeyJar()
+        keyjar = KeyJar()
         for _key in _symkey:
             keyjar.add_symmetric('', _key.key)
         request.verify(keyjar=keyjar)
@@ -772,7 +944,7 @@ class TestEndSessionRequest(object):
                     'redirect_url', 'state'])
         assert request["state"] == "state0"
         assert request[
-            verified_claim_name("id_token_hint")]["aud"] == ["client_1"]
+                   verified_claim_name("id_token_hint")]["aud"] == ["client_1"]
 
 
 class TestCheckSessionRequest(object):
@@ -847,22 +1019,32 @@ def test_scope2claims():
         "phone_number": None, "phone_number_verified": None
     }
 
-# class ClaimsRequest(Message):
-# class ClientRegistrationErrorResponse(oauth2.ErrorResponse):
-# class DiscoveryRequest(Message):
-# class DiscoveryResponse(Message):
-# class IdTMessage(AuthorizationResponse):
-# class IdToken(OpenIDSchema):
-# class JsonWebToken(Message):
-# class OpenIDRequest(AuthorizationRequest):
-# class OpenIDSchema(Message):
-# class ProviderConfigurationResponse(Message):
-# class RefreshAccessTokenRequest(oauth2.RefreshAccessTokenRequest):
-# class RefreshSessionRequest(Message):
-# class RefreshSessionResponse(Message):
-# class RegistrationRequest(Message):
-# class RegistrationResponse(Message):
-# class ResourceRequest(Message):
-# class TokenErrorResponse(oauth2.TokenErrorResponse):
-# class UserInfoErrorResponse(oauth2.ErrorResponse):
-# class UserInfoRequest(Message):
+
+def test_dict_deser():
+    _info = {'foo': 'bar'}
+
+    # supposed to output JSON
+    _jinfo = dict_deser(_info, 'dict')
+    assert _jinfo == json.dumps(_info)
+
+    _jinfo2 = dict_deser(_jinfo, 'dict')
+    assert _jinfo == _jinfo2
+
+    with pytest.raises(ValueError):
+        _ = dict_deser(_info, 'foo')
+
+
+def test_claims_match():
+    assert claims_match(['val'], None)
+    assert claims_match('val', {'value': 'val'})
+    assert claims_match('val', {'value': 'other'}) is False
+    assert claims_match('val', {'values': ['val', 'other']})
+    assert claims_match('val', {'value': 'val', 'essential': True})
+    assert claims_match('val', {'value': 'other', 'essential': True}) is False
+    assert claims_match('val', {'essential': True})
+
+
+def test_factory_2():
+    inst = factory('ROPCAccessTokenRequest', username='me', password='text',
+                   scope='mar')
+    assert isinstance(inst, ROPCAccessTokenRequest)

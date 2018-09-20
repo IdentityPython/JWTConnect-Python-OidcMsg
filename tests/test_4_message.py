@@ -7,7 +7,6 @@ import pytest
 from cryptojwt.jwk.hmac import SYMKey
 from cryptojwt.key_jar import build_keyjar
 from cryptojwt.key_jar import KeyJar
-from cryptojwt.key_jar import public_keys_keyjar
 
 from oidcmsg.message import json_deserializer
 from oidcmsg.message import json_serializer
@@ -39,7 +38,6 @@ keym = [
 ]
 
 KEYJAR = build_keyjar(keys)
-PUBLIC_KEYJAR = public_keys_keyjar(KEYJAR, '')
 
 IKEYJAR = build_keyjar(keys)
 IKEYJAR.issuer_keys['issuer'] = IKEYJAR.issuer_keys['']
@@ -275,7 +273,7 @@ class TestMessage(object):
 def test_to_jwt(keytype, alg):
     msg = Message(a='foo', b='bar', c='tjoho')
     _jwt = msg.to_jwt(KEYJAR.get_signing_key(keytype, ''), alg)
-    msg1 = Message().from_jwt(_jwt, PUBLIC_KEYJAR)
+    msg1 = Message().from_jwt(_jwt, KEYJAR)
     assert msg1 == msg
 
 
@@ -285,8 +283,7 @@ def test_to_jwt(keytype, alg):
 ])
 def test_to_jwe(keytype, alg, enc):
     msg = Message(a='foo', b='bar', c='tjoho')
-    _jwe = msg.to_jwe(PUBLIC_KEYJAR.get_encrypt_key(keytype, ''), alg=alg,
-                      enc=enc)
+    _jwe = msg.to_jwe(KEYJAR.get_encrypt_key(keytype, ''), alg=alg, enc=enc)
     msg1 = Message().from_jwe(_jwe, KEYJAR.get_encrypt_key(keytype, ''))
     assert msg1 == msg
 

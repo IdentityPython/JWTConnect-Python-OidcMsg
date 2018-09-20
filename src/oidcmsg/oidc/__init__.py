@@ -12,6 +12,8 @@ import time
 
 from cryptojwt import as_unicode
 from cryptojwt.jws.utils import left_hash
+from cryptojwt.jwt import JWT
+from cryptojwt.key_jar import KeyJar
 
 from oidcmsg import oauth2
 from oidcmsg import time_util
@@ -183,14 +185,15 @@ def claims_request_deser(val, sformat="json"):
 
 
 def dict_deser(val, sformat="json"):
-    # never 'urlencoded'
+    # never 'urlencoded', silently correct
     if sformat == "urlencoded":
         sformat = "json"
+
     if sformat in ["dict", "json"]:
         if not isinstance(val, str):
             val = json.dumps(val)
-        elif isinstance(val, dict):
-            return val
+
+        return val
     else:
         raise ValueError('sformat can not be "{}"'.format(sformat))
 
@@ -426,11 +429,20 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
                 # Try to decode the JWT, checks the signature
                 oidr = OpenIDRequest().from_jwt(str(self["request"]), **args)
 
-                # verify that nothing is change in the original message
+                # check if something is change in the original message
                 for key, val in oidr.items():
                     if key in self:
                         if self[key] != val:
-                            raise ValueError('{} != {}'.format(self[key], val))
+                            # log but otherwise ignore
+                            logger.warning('{} != {}'.format(self[key], val))
+
+                # remove all claims
+                _keys = list(self.keys())
+                for key in _keys:
+                    if key not in oidr:
+                        del self[key]
+
+                self.update(oidr)
 
                 # replace the JWT with the parsed and verified instance
                 self[verified_claim_name("request")] = oidr
@@ -1178,9 +1190,7 @@ def factory(msgtype, **kwargs):
     return oauth2.factory(msgtype, **kwargs)
 
 
-def make_openid_request(arq, keys=None, userinfo_claims=None,
-                        idtoken_claims=None, request_object_signing_alg=None,
-                        **kwargs):
+def make_openid_request(arq, keys, issuer, request_object_signing_alg, recv):
     """
     Construct the JWT to be passed by value (the request parameter) or by
     reference (request_uri).
@@ -1188,38 +1198,17 @@ def make_openid_request(arq, keys=None, userinfo_claims=None,
 
     :param arq: The Authorization request
     :param keys: Keys to use for signing/encrypting
-    :param userinfo_claims: UserInfo claims
-    :param idtoken_claims: IdToken claims
+    :param issuer: Who is signing this JSON Web Token
     :param request_object_signing_alg: Which signing algorithm to use
+    :param recv: The intended receiver of the request
     :return: JWT encoded OpenID request
     """
 
-    oir_args = {}
-    for prop in OpenIDRequest.c_param.keys():
-        try:
-            oir_args[prop] = arq[prop]
-        except KeyError:
-            pass
+    if isinstance(keys, KeyJar):
+        keys = keys.get_signing_key()
 
-    for attr in ["scope", "response_type"]:
-        if attr in oir_args:
-            oir_args[attr] = " ".join(oir_args[attr])
-
-    c_args = {}
-    if userinfo_claims is not None:
-        # UserInfoClaims
-        c_args["userinfo"] = Claims(**userinfo_claims)
-
-    if idtoken_claims is not None:
-        # IdTokenClaims
-        c_args["id_token"] = Claims(**idtoken_claims)
-
-    if c_args:
-        oir_args["claims"] = ClaimsRequest(**c_args)
-
-    oir = OpenIDRequest(**oir_args)
-
-    return oir.to_jwt(key=keys, algorithm=request_object_signing_alg)
+    _jwt = JWT(own_keys=keys, iss=issuer, sign_alg=request_object_signing_alg)
+    return _jwt.pack(arq.to_dict(), owner=issuer, recv=recv)
 
 
 def claims_match(value, claimspec):
@@ -1230,7 +1219,7 @@ def claims_match(value, claimspec):
     Also the text doesn't prohibit claims specification having both 'value' 
     and 'values'.
 
-    :param value: single value or list of values
+    :param value: single value
     :param claimspec: None or a dictionary with 'essential', 'value' or 'values'
         as keys
     :return: Boolean
@@ -1253,8 +1242,8 @@ def claims_match(value, claimspec):
         if matched:
             break
 
-    if matched is False:
-        if list(claimspec.keys()) == ['essential']:
-            return True
+    # No values to test against so it's just about being there or not
+    if list(claimspec.keys()) == ['essential']:
+        return True
 
     return matched

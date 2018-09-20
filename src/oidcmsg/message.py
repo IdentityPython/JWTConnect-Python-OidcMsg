@@ -10,7 +10,6 @@ from cryptojwt.jws.exception import NoSuitableSigningKeys
 from cryptojwt.jwe.jwe import JWE
 from cryptojwt.jwe.jwe import factory as jwe_factory
 from cryptojwt.jws.jws import JWS
-from cryptojwt.jws.jws import SimpleJWT
 from cryptojwt.jws.jws import factory as jws_factory
 from cryptojwt.key_jar import update_keyjar
 from cryptojwt.utils import as_unicode
