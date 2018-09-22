@@ -13,14 +13,14 @@ from cryptojwt.jwt import JWT
 from cryptojwt.key_bundle import KeyBundle
 from cryptojwt.key_jar import KeyJar
 
-from oidcmsg import time_util
+from oidcmsg import time_util, proper_path
 from oidcmsg.exception import MessageException
 from oidcmsg.exception import MissingRequiredAttribute
 from oidcmsg.exception import NotAllowedValue
 from oidcmsg.exception import OidcMsgError
 from oidcmsg.exception import WrongSigningAlgorithm
 from oidcmsg.oauth2 import ResponseMessage, ROPCAccessTokenRequest
-from oidcmsg.oidc import AccessTokenRequest, make_openid_request
+from oidcmsg.oidc import AccessTokenRequest, make_openid_request, link_deser
 from oidcmsg.oidc import dict_deser
 from oidcmsg.oidc import claims_match
 from oidcmsg.oidc import link_ser
@@ -1048,3 +1048,34 @@ def test_factory_2():
     inst = factory('ROPCAccessTokenRequest', username='me', password='text',
                    scope='mar')
     assert isinstance(inst, ROPCAccessTokenRequest)
+
+
+def test_link_deser():
+    link = Link(href='https://example.com/op',
+                rel="http://openid.net/specs/connect/1.0/issuer")
+
+    jl = link_ser(link, 'json')
+    l2 = link_deser([jl], 'json')
+    assert isinstance(l2[0], Link)
+
+
+def test_link_deser_dict():
+    link = Link(href='https://example.com/op',
+                rel="http://openid.net/specs/connect/1.0/issuer")
+
+    l2 = link_deser([link.to_dict()], 'json')
+    assert isinstance(l2[0], Link)
+
+
+def test_proper_path():
+    p = proper_path('foo/bar')
+    assert p == './foo/bar/'
+
+    p = proper_path('/foo/bar')
+    assert p == './foo/bar/'
+
+    p = proper_path('./foo/bar')
+    assert p == './foo/bar/'
+
+    p = proper_path('../foo/bar')
+    assert p == './foo/bar/'

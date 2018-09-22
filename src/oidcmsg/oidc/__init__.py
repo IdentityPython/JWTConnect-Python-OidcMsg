@@ -714,13 +714,13 @@ class IdToken(OpenIDSchema):
         else:
             self.pack_init()
 
-        if 'jti' in self.c_param:
-            try:
-                _jti = kwargs['jti']
-            except KeyError:
-                _jti = uuid.uuid4().hex
-
-            self['jti'] = _jti
+        # if 'jti' in self.c_param:
+        #     try:
+        #         _jti = kwargs['jti']
+        #     except KeyError:
+        #         _jti = uuid.uuid4().hex
+        #
+        #     self['jti'] = _jti
 
     def to_jwt(self, key=None, algorithm="", lev=0, lifetime=0):
         self.pack(alg=algorithm, lifetime=lifetime)
@@ -1197,17 +1197,14 @@ def make_openid_request(arq, keys, issuer, request_object_signing_alg, recv):
     The request will be signed
 
     :param arq: The Authorization request
-    :param keys: Keys to use for signing/encrypting
+    :param keys: Keys to use for signing/encrypting. A KeyJar instance
     :param issuer: Who is signing this JSON Web Token
     :param request_object_signing_alg: Which signing algorithm to use
     :param recv: The intended receiver of the request
     :return: JWT encoded OpenID request
     """
 
-    if isinstance(keys, KeyJar):
-        keys = keys.get_signing_key()
-
-    _jwt = JWT(own_keys=keys, iss=issuer, sign_alg=request_object_signing_alg)
+    _jwt = JWT(key_jar=keys, iss=issuer, sign_alg=request_object_signing_alg)
     return _jwt.pack(arq.to_dict(), owner=issuer, recv=recv)
 
 

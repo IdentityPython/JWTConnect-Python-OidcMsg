@@ -1,6 +1,7 @@
 __author__ = 'Roland Hedberg'
 __version__ = '0.6.1'
 
+
 def proper_path(path):
     """
     Clean up the path specification so it looks like something I could use.
