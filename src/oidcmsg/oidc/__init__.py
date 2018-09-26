@@ -17,7 +17,7 @@ from cryptojwt.key_jar import KeyJar
 
 from oidcmsg import oauth2
 from oidcmsg import time_util
-from oidcmsg.exception import InvalidRequest
+from oidcmsg.exception import InvalidRequest, FormatError
 from oidcmsg.exception import IssuerMismatch
 from oidcmsg.exception import MessageException
 from oidcmsg.exception import MissingRequiredAttribute
@@ -64,6 +64,22 @@ class IATError(VerificationError):
     pass
 
 
+def deserialize_from_one_of(val, msgtype, sformat):
+    if sformat in ["dict", "json"]:
+        flist = ['json', 'urlencoded']
+        if not isinstance(val, str):
+            val = json.dumps(val)
+    else:
+        flist = ['urlencoded', 'json']
+
+    for _format in flist:
+        try:
+            return msgtype().deserialize(val, _format)
+        except FormatError:
+            pass
+    raise FormatError('Unexpected format')
+
+
 def json_ser(val, sformat=None, lev=0):
     return json.dumps(val)
 
@@ -85,21 +101,11 @@ def idtoken_deser(val, sformat="urlencoded"):
 
 
 def address_deser(val, sformat="urlencoded"):
-    if sformat in ["dict", "json"]:
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-        elif sformat == "dict":
-            sformat = "json"
-    return AddressClaim().deserialize(val, sformat)
+    return deserialize_from_one_of(val, AddressClaim, sformat)
 
 
 def claims_deser(val, sformat="urlencoded"):
-    if sformat in ["dict", "json"]:
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-    return Claims().deserialize(val, sformat)
+    return deserialize_from_one_of(val, Claims, sformat)
 
 
 def msg_ser_json(inst, sformat="json", lev=0):
@@ -161,11 +167,7 @@ def claims_ser(val, sformat="urlencoded", lev=0):
 
 
 def registration_request_deser(val, sformat="urlencoded"):
-    if sformat in ["dict", "json"]:
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-    return RegistrationRequest().deserialize(val, sformat)
+    return deserialize_from_one_of(val, RegistrationRequest, sformat)
 
 
 def claims_request_deser(val, sformat="json"):
