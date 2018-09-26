@@ -195,7 +195,11 @@ class Message(MutableMapping):
 
         _spec = self.c_param
 
-        for key, val in parse_qs(urlencoded).items():
+        _info = parse_qs(urlencoded)
+        if len(urlencoded) and _info == {}:
+            raise FormatError('Wrong format')
+
+        for key, val in _info.items():
             try:
                 (typ, _, _, _deser, null_allowed) = _spec[key]
             except KeyError:
@@ -460,7 +464,10 @@ class Message(MutableMapping):
         try:
             _dict = json.loads(txt)
         except TypeError:
-            _dict = json.loads(as_unicode(txt))
+            try:
+                _dict = json.loads(as_unicode(txt))
+            except TypeError:
+                raise FormatError('Wrong format')
 
         return self.from_dict(_dict)
 
