@@ -13,7 +13,6 @@ import time
 from cryptojwt import as_unicode
 from cryptojwt.jws.utils import left_hash
 from cryptojwt.jwt import JWT
-from cryptojwt.key_jar import KeyJar
 
 from oidcmsg import oauth2
 from oidcmsg import time_util
