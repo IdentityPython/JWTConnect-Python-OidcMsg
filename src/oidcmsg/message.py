@@ -228,10 +228,7 @@ class Message(MutableMapping):
                     elif isinstance(val[0], typ):
                         self._dict[key] = val[0]
                     else:
-                        try:
-                            self._dict[key] = val[0]
-                        except KeyError:
-                            raise ParameterError(key)
+                        self._dict[key] = val[0]
                 else:
                     raise TooManyValues('{}'.format(key))
 
@@ -405,6 +402,18 @@ class Message(MutableMapping):
                         val = _deser(val, sformat="dict")
                     except Exception as exc:
                         raise DecodeError(ERRTXT % (key, exc))
+                    else:
+                        # if isinstance(val, str):
+                        #     self._dict[skey] = val
+                        # elif isinstance(val, list):
+                        #     if len(val) == 1:
+                        #         self._dict[skey] = val[0]
+                        #     elif not len(val):
+                        #         pass
+                        #     else:
+                        #         raise TooManyValues(key)
+                        # else:
+                        self._dict[skey] = val
                 elif vtyp is int:
                     try:
                         self._dict[skey] = int(val)
@@ -412,8 +421,6 @@ class Message(MutableMapping):
                         raise ValueError(
                             '"{}", wrong type of value for "{}"'.format(val,
                                                                         skey))
-                    else:
-                        return
                 elif vtyp is bool:
                     raise ValueError(
                         '"{}", wrong type of value for "{}"'.format(val, skey))
@@ -421,24 +428,14 @@ class Message(MutableMapping):
                     if vtyp == Message:
                         if type(val) == dict or isinstance(val, str):
                             self._dict[skey] = val
-                            return
                         else:
                             raise ValueError(
                                 '"{}", wrong type of value for "{}"'.format(
                                     val, skey))
-                    raise ValueError(
-                        '"{}", wrong type of value for "{}"'.format(val, skey))
-                if isinstance(val, str):
-                    self._dict[skey] = val
-                elif isinstance(val, list):
-                    if len(val) == 1:
-                        self._dict[skey] = val[0]
-                    elif not len(val):
-                        pass
                     else:
-                        raise TooManyValues(key)
-                else:
-                    self._dict[skey] = val
+                        raise ValueError(
+                            '"{}", wrong type of value for "{}"'.format(val,
+                                                                        skey))
 
     def to_json(self, lev=0, indent=None):
         """
@@ -457,18 +454,12 @@ class Message(MutableMapping):
         """
         Convert from a JSON string to an instance of this class.
         
-        :param txt: The JSON string 
+        :param txt: The JSON string (a ``str``, ``bytes`` or ``bytearray``
+            instance containing a JSON document)
         :param kwargs: extra keyword arguments
         :return: The instantiated instance 
         """
-        try:
-            _dict = json.loads(txt)
-        except TypeError:
-            try:
-                _dict = json.loads(as_unicode(txt))
-            except TypeError:
-                raise FormatError('Wrong format')
-
+        _dict = json.loads(txt)
         return self.from_dict(_dict)
 
     def to_jwt(self, key=None, algorithm="", lev=0, lifetime=0):
@@ -499,25 +490,25 @@ class Message(MutableMapping):
         :return: A class instance
         """
 
-        _jw = jwe_factory(txt)
-        if _jw:
-            logger.debug("JWE headers: {}".format(_jw.jwt.headers))
+        _decryptor = jwe_factory(txt)
+        if _decryptor:
+            logger.debug("JWE headers: {}".format(_decryptor.jwt.headers))
 
             if "encalg" in kwargs:
-                if kwargs["encalg"] != _jw["alg"]:
+                if not _decryptor.jwt.verify_header('alg', kwargs["encalg"]):
                     raise WrongEncryptionAlgorithm("%s != %s" % (
-                        _jw["alg"], ["encalg"]))
+                        _decryptor.jwt.headers["alg"], ["encalg"]))
 
-                if kwargs["encenc"] != _jw["enc"]:
+                if not _decryptor.jwt.verify_header('enc', kwargs["encenc"]):
                     raise WrongEncryptionAlgorithm("%s != %s" % (
-                        _jw["enc"], kwargs["encenc"]))
+                        _decryptor.jwt.headers["enc"], kwargs["encenc"]))
 
             dkeys = keyjar.get_decrypt_key(owner="")
             # if "sender" in kwargs:
             #     dkeys.extend(keyjar.get_deccrypt_key(owner=kwargs["sender"]))
 
-            logger.debug('Decrypt class: {}'.format(_jw.__class__))
-            _res = _jw.decrypt(txt, dkeys)
+            logger.debug('Decrypt class: {}'.format(_decryptor.__class__))
+            _res = _decryptor.decrypt(txt, dkeys)
             logger.debug('decrypted message:{}'.format(_res))
             if isinstance(_res, tuple):
                 txt = as_unicode(_res[0])
@@ -525,17 +516,16 @@ class Message(MutableMapping):
                 txt = as_unicode(_res[0])
             else:
                 txt = as_unicode(_res)
-            self.jwe_header = _jw.jwt.headers
+            self.jwe_header = _decryptor.jwt.headers
 
-        _jw = jws_factory(txt)
-        if _jw:
+        _verifier = jws_factory(txt)
+        if _verifier:
             if "sigalg" in kwargs:
-                _alg = _jw.jwt.headers["alg"]
-                if kwargs["sigalg"] != _alg:
+                if not _verifier.jwt.verify_header("alg", kwargs["sigalg"]):
                     raise WrongSigningAlgorithm("%s != %s" % (
-                        _alg, kwargs["sigalg"]))
+                        _verifier.jwt.headers["alg"], kwargs["sigalg"]))
             try:
-                _jwt = _jw.jwt
+                _jwt = _verifier.jwt
                 jso = _jwt.payload()
                 _header = _jwt.headers
 
@@ -559,12 +549,12 @@ class Message(MutableMapping):
 
                     logger.debug("Found signing key.")
                     try:
-                        _jw.verify_compact(txt, key)
+                        _verifier.verify_compact(txt, key)
                     except NoSuitableSigningKeys:
                         if keyjar:
                             update_keyjar(keyjar)
                             key = keyjar.get_jwt_verify_keys(_jwt, **kwargs)
-                            _jw.verify_compact(txt, key)
+                            _verifier.verify_compact(txt, key)
             except Exception:
                 raise
             else:
@@ -586,18 +576,19 @@ class Message(MutableMapping):
     def _type_check(self, typ, _allowed, val, na=False):
         if typ is str:
             if val not in _allowed:
-                raise NotAllowedValue(val)
+                return False
         elif typ is int:
             if val not in _allowed:
-                raise NotAllowedValue(val)
+                return False
         elif isinstance(typ, list):
             if isinstance(val, list):
                 # _typ = typ[0]
                 for item in val:
                     if item not in _allowed:
-                        raise NotAllowedValue(val)
+                        return False
         elif val is None and na is False:
-            raise NotAllowedValue(val)
+            return False
+        return True
 
     def verify(self, **kwargs):
         """
@@ -633,7 +624,8 @@ class Message(MutableMapping):
             except KeyError:
                 pass
             else:
-                self._type_check(typ, _allowed_val, val, na)
+                if not self._type_check(typ, _allowed_val, val, na):
+                    raise NotAllowedValue(val)
 
         return True
 

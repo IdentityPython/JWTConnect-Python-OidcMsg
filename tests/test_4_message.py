@@ -5,10 +5,19 @@ import json
 import pytest
 
 from cryptojwt.jwk.hmac import SYMKey
+from cryptojwt.jwk.rsa import new_rsa_key
+from cryptojwt.jws.exception import NoSuitableSigningKeys
+
+from cryptojwt.key_bundle import KeyBundle
 from cryptojwt.key_jar import build_keyjar
 from cryptojwt.key_jar import KeyJar
 
-from oidcmsg.message import json_deserializer
+from oidcmsg.exception import DecodeError
+from oidcmsg.exception import MessageException
+from oidcmsg.exception import OidcMsgError
+from oidcmsg.exception import WrongEncryptionAlgorithm
+
+from oidcmsg.message import json_deserializer, msg_ser
 from oidcmsg.message import json_serializer
 from oidcmsg.message import OPTIONAL_LIST_OF_MESSAGES
 from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
@@ -29,13 +38,13 @@ keys = [
     {"type": "RSA", "use": ["enc"]},
     {"type": "EC", "crv": "P-256", "use": ["sig"]},
     {"type": "EC", "crv": "P-256", "use": ["enc"]},
-]
+    ]
 
 keym = [
     {"type": "RSA", "use": ["sig"]},
     {"type": "RSA", "use": ["sig"]},
     {"type": "RSA", "use": ["sig"]},
-]
+    ]
 
 KEYJAR = build_keyjar(keys)
 
@@ -109,7 +118,7 @@ class DummyMessage(Message):
         "opt_str_list": OPTIONAL_LIST_OF_STRINGS,
         "req_str_list": REQUIRED_LIST_OF_STRINGS,
         "opt_json": SINGLE_OPTIONAL_JSON
-    }
+        }
 
 
 class TestMessage(object):
@@ -126,22 +135,28 @@ class TestMessage(object):
                     'opt_str_list', 'opt_int'])
 
     def test_from_dict(self):
-        _dict = {"req_str": "Fair", "req_str_list": ["spike", "lee"],
-                 "opt_int": 9}
+        _dict = {
+            "req_str": "Fair", "req_str_list": ["spike", "lee"],
+            "opt_int": 9
+        }
         _msg = DummyMessage()
         _msg.from_dict(_dict)
         assert set(_msg.keys()) == set(_dict.keys())
 
     def test_from_dict_lang_tag_unknown_key(self):
-        _dict = {"req_str": "Fair", "req_str_list": ["spike", "lee"],
-                 "opt_int": 9, 'attribute#se': 'value' }
+        _dict = {
+            "req_str": "Fair", "req_str_list": ["spike", "lee"],
+            "opt_int": 9, 'attribute#se': 'value'
+        }
         _msg = DummyMessage()
         _msg.from_dict(_dict)
         assert set(_msg.keys()) == set(_dict.keys())
 
     def test_from_dict_lang_tag(self):
-        _dict = {"req_str#se": "Fair", "req_str_list": ["spike", "lee"],
-                 "opt_int": 9}
+        _dict = {
+            "req_str#se": "Fair", "req_str_list": ["spike", "lee"],
+            "opt_int": 9
+        }
         _msg = DummyMessage()
         _msg.from_dict(_dict)
         assert set(_msg.keys()) == set(_dict.keys())
@@ -162,6 +177,7 @@ class TestMessage(object):
 
     def test_extra_param(self):
         jso = '{"req_str": "Fair", "req_str_list": ["spike", "lee"], "extra": ' \
+              '' \
               '' \
               '"out"}'
         item = DummyMessage().deserialize(jso, "json")
@@ -213,29 +229,35 @@ class TestMessage(object):
                                   'req_str_list', 'opt_str_list', 'opt_int'])
 
     def test_verify(self):
-        _dict = {"req_str": "Fair", "opt_str": "game", "opt_int": 9,
-                 "opt_str_list": ["one", "two"],
-                 "req_str_list": ["spike", "lee"],
-                 "opt_json": '{"ford": "green"}'}
+        _dict = {
+            "req_str": "Fair", "opt_str": "game", "opt_int": 9,
+            "opt_str_list": ["one", "two"],
+            "req_str_list": ["spike", "lee"],
+            "opt_json": '{"ford": "green"}'
+        }
 
         cls = DummyMessage(**_dict)
         assert cls.verify()
         assert _eq(cls.keys(), ['opt_str', 'req_str', 'opt_json',
                                 'req_str_list', 'opt_str_list', 'opt_int'])
 
-        _dict = {"req_str": "Fair", "opt_str": "game", "opt_int": 9,
-                 "opt_str_list": ["one", "two"],
-                 "req_str_list": ["spike", "lee"],
-                 "opt_json": '{"ford": "green"}', "extra": "internal"}
+        _dict = {
+            "req_str": "Fair", "opt_str": "game", "opt_int": 9,
+            "opt_str_list": ["one", "two"],
+            "req_str_list": ["spike", "lee"],
+            "opt_json": '{"ford": "green"}', "extra": "internal"
+        }
 
         cls = DummyMessage(**_dict)
         assert cls.verify()
         assert _eq(cls.keys(), ['opt_str', 'req_str', 'extra', 'opt_json',
                                 'req_str_list', 'opt_str_list', 'opt_int'])
 
-        _dict = {"req_str": "Fair", "opt_str": "game", "opt_int": 9,
-                 "opt_str_list": ["one", "two"],
-                 "req_str_list": ["spike", "lee"]}
+        _dict = {
+            "req_str": "Fair", "opt_str": "game", "opt_int": 9,
+            "opt_str_list": ["one", "two"],
+            "req_str_list": ["spike", "lee"]
+        }
 
         cls = DummyMessage(**_dict)
         cls.verify()
@@ -249,10 +271,12 @@ class TestMessage(object):
                            "http://example.com?req_str=Fair&req_str_list=game")
 
     def test_get(self):
-        _dict = {"req_str": "Fair", "opt_str": "game", "opt_int": 9,
-                 "opt_str_list": ["one", "two"],
-                 "req_str_list": ["spike", "lee"],
-                 "opt_json": '{"ford": "green"}'}
+        _dict = {
+            "req_str": "Fair", "opt_str": "game", "opt_int": 9,
+            "opt_str_list": ["one", "two"],
+            "req_str_list": ["spike", "lee"],
+            "opt_json": '{"ford": "green"}'
+        }
 
         cls = DummyMessage(**_dict)
 
@@ -269,7 +293,7 @@ class TestMessage(object):
 @pytest.mark.parametrize("keytype,alg", [
     ('RSA', 'RS256'),
     ('EC', 'ES256')
-])
+    ])
 def test_to_jwt(keytype, alg):
     msg = Message(a='foo', b='bar', c='tjoho')
     _jwt = msg.to_jwt(KEYJAR.get_signing_key(keytype, ''), alg)
@@ -280,7 +304,7 @@ def test_to_jwt(keytype, alg):
 @pytest.mark.parametrize("keytype,alg,enc", [
     ('RSA', 'RSA1_5', 'A128CBC-HS256'),
     ('EC', 'ECDH-ES', 'A128GCM'),
-])
+    ])
 def test_to_jwe(keytype, alg, enc):
     msg = Message(a='foo', b='bar', c='tjoho')
     _jwe = msg.to_jwe(KEYJAR.get_encrypt_key(keytype, ''), alg=alg, enc=enc)
@@ -307,10 +331,12 @@ def test_msg_deserializer():
         c_param = {
             "msg": OPTIONAL_MESSAGE,
             "opt_str": SINGLE_OPTIONAL_STRING,
-        }
+            }
 
-    _dict = {"req_str": "Fair", "req_str_list": ["spike", "lee"],
-             "opt_int": 9}
+    _dict = {
+        "req_str": "Fair", "req_str_list": ["spike", "lee"],
+        "opt_int": 9
+    }
     _msg = DummyMessage()
     _msg.from_dict(_dict)
 
@@ -330,10 +356,12 @@ def test_msg_list_deserializer():
         c_param = {
             "msgs": OPTIONAL_LIST_OF_MESSAGES,
             "opt_str": SINGLE_OPTIONAL_STRING,
-        }
+            }
 
-    _dict = {"req_str": "Fair", "req_str_list": ["spike", "lee"],
-             "opt_int": 9}
+    _dict = {
+        "req_str": "Fair", "req_str_list": ["spike", "lee"],
+        "opt_int": 9
+    }
     _msg = DummyMessage()
     _msg.from_dict(_dict)
 
@@ -354,10 +382,12 @@ def test_msg_list_deserializer_dict():
         c_param = {
             "msgs": OPTIONAL_LIST_OF_MESSAGES,
             "opt_str": SINGLE_OPTIONAL_STRING,
-        }
+            }
 
-    _dict = {"req_str": "Fair", "req_str_list": ["spike", "lee"],
-             "opt_int": 9}
+    _dict = {
+        "req_str": "Fair", "req_str_list": ["spike", "lee"],
+        "opt_int": 9
+    }
 
     msg = MsgMessage()
     msg['msgs'] = _dict
@@ -369,3 +399,100 @@ def test_msg_list_deserializer_dict():
     assert mm['opt_str'] == 'string'
     assert len(mm['msgs']) == 1
     assert set(mm['msgs'][0].keys()) == set(_dict.keys())
+
+
+def test_msg_list_deserializer_url():
+    class MsgMessage(Message):
+        c_param = {
+            "msgs": OPTIONAL_LIST_OF_MESSAGES,
+            "opt_str": SINGLE_OPTIONAL_STRING,
+            }
+
+    _dict = {
+        "req_str": "Fair", "req_str_list": ["spike", "lee"],
+        "opt_int": 9
+    }
+
+    _msg = DummyMessage(**_dict)
+
+    msg = MsgMessage()
+    with pytest.raises(DecodeError):
+        msg['msgs'] = [_msg.to_urlencoded()]
+
+
+def test_add_value():
+    with pytest.raises(ValueError):
+        DummyMessage(req_str=['1', '2'])
+
+
+def test_type_check():
+    d = DummyMessage()
+    assert d._type_check(int, [1, 2], 3) == False
+    assert d._type_check([int], [1, 2], [2, 3]) == False
+    assert d._type_check([int], [1, 2], [2, 1])
+    assert d._type_check(bool, True, None, True)
+
+
+def test_json_type_error():
+    val = '{"key":"A byte string"}'
+    m = Message()
+    m.from_json(val)
+    assert 'key' in m
+
+
+@pytest.mark.parametrize("keytype,alg,enc", [
+    ('RSA', 'RSA1_5', 'A128CBC-HS256'),
+    ('EC', 'ECDH-ES', 'A128GCM'),
+    ])
+def test_to_jwe(keytype, alg, enc):
+    msg = Message(a='foo', b='bar', c='tjoho')
+    _jwe = msg.to_jwe(KEYJAR.get_encrypt_key(keytype, ''), alg=alg, enc=enc)
+    with pytest.raises(WrongEncryptionAlgorithm):
+        Message().from_jwt(_jwe, KEYJAR.get_encrypt_key(keytype, ''),
+                           encalg="RSA-OAEP", encenc=enc)
+    with pytest.raises(WrongEncryptionAlgorithm):
+        Message().from_jwt(_jwe, KEYJAR.get_encrypt_key(keytype, ''),
+                           encenc="A256CBC-HS512", encalg=alg)
+
+
+NEW_KEYJAR = KEYJAR.copy()
+kb = KeyBundle()
+k = new_rsa_key()
+NEW_KID = k.kid
+kb.append(k)
+NEW_KEYJAR.add_kb('', kb)
+
+
+def test_no_suitable_keys():
+    keytype = 'RSA'
+    alg = 'RS256'
+    msg = Message(a='foo', b='bar', c='tjoho')
+    _jwt = msg.to_jwt(NEW_KEYJAR.get_signing_key(keytype, '', kid=NEW_KID),
+                      alg)
+    with pytest.raises(NoSuitableSigningKeys):
+        Message().from_jwt(_jwt, KEYJAR)
+
+
+def test_only_extras():
+    m = DummyMessage(foo='bar', extra='value')
+    assert m.only_extras()
+
+    m['req_str'] = 'string'
+    assert m.only_extras() is False
+
+
+def test_weed():
+    m = DummyMessage(foo='bar', extra='value')
+    m['req_str'] = 'string'
+
+    assert set(m.keys()) == {'req_str', 'foo', 'extra'}
+    m.weed()
+    assert set(m.keys()) == {'req_str'}
+
+
+def test_msg_ser():
+    assert msg_ser('a.b.c', 'dict') == 'a.b.c'
+    with pytest.raises(MessageException):
+        msg_ser([1,2], 'dict')
+    with pytest.raises(OidcMsgError):
+        msg_ser([1,2], 'list')

@@ -680,6 +680,23 @@ class TestAuthorizationRequest(object):
         with pytest.raises(MissingRequiredAttribute):
             ar.verify()
 
+    def test_verify_nonce(self):
+        args = {
+            "client_id": "foobar",
+            "redirect_uri": "http://foobar.example.com/oaclient",
+            "response_type": ["code", "id_token"],
+            "scope": "openid"
+        }
+        ar = AuthorizationRequest(**args)
+        with pytest.raises(MissingRequiredAttribute):
+            ar.verify()
+
+        ar['nonce'] = 'abcdefgh'
+        assert ar.verify()
+
+        with pytest.raises(ValueError):
+            assert ar.verify(nonce='12345678')
+
     def test_claims(self):
         args = {
             "client_id": "foobar",
@@ -740,6 +757,25 @@ class TestAuthorizationRequest(object):
 
 
 class TestAccessTokenResponse(object):
+    def test_ok_idtoken(self):
+        idval = {
+            'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
+            'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
+        }
+        idts = IdToken(**idval)
+        keyjar = KeyJar()
+        keyjar.add_symmetric('', "SomeTestPassword")
+        _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
+                                  algorithm="HS256", lifetime=300)
+
+        _info = {
+            "access_token": "accessTok", "id_token": _signed_jwt,
+            "token_type": "Bearer", "expires_in": 3600
+        }
+
+        at = AccessTokenResponse(**_info)
+        assert at.verify(keyjar=keyjar)
+
     def test_faulty_idtoken(self):
         idval = {
             'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
