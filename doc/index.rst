@@ -16,8 +16,6 @@ Contents:
 
    intro
    oidcmsg/index
-   howto/keybundle
-   howto/keyjar
    howto/message
    howto/msg_extend
    howto/jwt

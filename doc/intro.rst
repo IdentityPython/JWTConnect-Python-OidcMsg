@@ -240,7 +240,7 @@ Deserializing is as easy as serializing::
     >>> parsed_json = AccessTokenRequest().from_json(msg_json)
     >>> print(parsed_json)
     {'grant_type': 'authorization_code', 'code': 'SplxlOBeZQQYbYS6WxSbIA', 'redirect_uri': 'https://client.example%2Ecom%2Fcb'}
-    >>> from cryptojwt.jwk import SYMKey
+    >>> from cryptojwt.jwk.hmac import SYMKey
     >>> keys = [SYMKey(key="A1B2C3D4")]
     >>> msg_jws = request.to_jwt(keys, algorithm="HS256")
     >>> parsed_jwt = AccessTokenRequest().from_jwt(msg_jws, keys)
@@ -272,11 +272,11 @@ Nothing beats an example::
     >>> BOB = 'https://bob.example.com'
     >>> kj = KeyJar()
     >>> kj.add_symmetric(owner='', key='client_secret', usage=['sig'])
-    >>> alice = JWT(kj, iss=ALICE, sign_alg="HS256")
+    >>> alice = JWT(kj, iss=ALICE, alg="HS256")
     >>> payload = {'sub': 'subject_id'}
     >>> _jws = alice.pack(payload=payload, recv=BOB)
     >>> kj[ALICE] = kj['']
-    >>> bob = JWT(kj, iss=BOB)
+    >>> bob = JWT(kj, iss=BOB, alg='HS256)
     >>> info = bob.unpack(_jws)
     >>> print(info)
     {'iss': 'https://alice.example.org', 'iat': 1518619782, 'aud': ['https://bob.example.com'], 'sub': 'subject_id'}

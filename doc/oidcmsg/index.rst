@@ -9,8 +9,6 @@ Contents:
    :maxdepth: 2
 
    message
-   keybundle
-   keyjar
    oauth2
    oidc
    time_util
