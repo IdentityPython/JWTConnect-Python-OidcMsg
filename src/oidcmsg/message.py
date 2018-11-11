@@ -490,22 +490,17 @@ class Message(MutableMapping):
         :return: A class instance
         """
 
-        _decryptor = jwe_factory(txt)
+        algarg = {}
+        if 'encalg' in kwargs:
+            algarg['alg'] = kwargs['encalg']
+        if 'encenc' in kwargs:
+            algarg['enc'] = kwargs['encenc']
+        _decryptor = jwe_factory(txt, **algarg)
+
         if _decryptor:
             logger.debug("JWE headers: {}".format(_decryptor.jwt.headers))
 
-            if "encalg" in kwargs:
-                if not _decryptor.jwt.verify_header('alg', kwargs["encalg"]):
-                    raise WrongEncryptionAlgorithm("%s != %s" % (
-                        _decryptor.jwt.headers["alg"], ["encalg"]))
-
-                if not _decryptor.jwt.verify_header('enc', kwargs["encenc"]):
-                    raise WrongEncryptionAlgorithm("%s != %s" % (
-                        _decryptor.jwt.headers["enc"], kwargs["encenc"]))
-
             dkeys = keyjar.get_decrypt_key(owner="")
-            # if "sender" in kwargs:
-            #     dkeys.extend(keyjar.get_deccrypt_key(owner=kwargs["sender"]))
 
             logger.debug('Decrypt class: {}'.format(_decryptor.__class__))
             _res = _decryptor.decrypt(txt, dkeys)
@@ -518,12 +513,12 @@ class Message(MutableMapping):
                 txt = as_unicode(_res)
             self.jwe_header = _decryptor.jwt.headers
 
-        _verifier = jws_factory(txt)
+        try:
+            _verifier = jws_factory(txt, alg=kwargs['sigalg'])
+        except:
+            _verifier = jws_factory(txt)
+
         if _verifier:
-            if "sigalg" in kwargs:
-                if not _verifier.jwt.verify_header("alg", kwargs["sigalg"]):
-                    raise WrongSigningAlgorithm("%s != %s" % (
-                        _verifier.jwt.headers["alg"], kwargs["sigalg"]))
             try:
                 _jwt = _verifier.jwt
                 jso = _jwt.payload()
@@ -962,6 +957,9 @@ OPTIONAL_LIST_OF_SP_SEP_STRINGS = ([str], False, sp_sep_list_serializer,
 REQUIRED_LIST_OF_SP_SEP_STRINGS = ([str], True, sp_sep_list_serializer,
                                    sp_sep_list_deserializer, False)
 SINGLE_OPTIONAL_JSON = (dict, False, json_serializer, json_deserializer,
+                        False)
+
+SINGLE_REQUIRED_JSON = (dict, True, json_serializer, json_deserializer,
                         False)
 
 REQUIRED = [SINGLE_REQUIRED_STRING, REQUIRED_LIST_OF_STRINGS,

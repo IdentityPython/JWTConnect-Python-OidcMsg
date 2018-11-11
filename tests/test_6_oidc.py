@@ -3,13 +3,12 @@ import json
 import os
 import sys
 import time
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs
 from urllib.parse import urlencode
 
 import pytest
 from cryptojwt.exception import BadSignature
-from cryptojwt.jws.utils import alg2keytype
-from cryptojwt.jwt import JWT
+from cryptojwt.jws.exception import SignerAlgError
 from cryptojwt.key_bundle import KeyBundle
 from cryptojwt.key_jar import KeyJar
 
@@ -18,25 +17,23 @@ from oidcmsg.exception import MessageException
 from oidcmsg.exception import MissingRequiredAttribute
 from oidcmsg.exception import NotAllowedValue
 from oidcmsg.exception import OidcMsgError
-from oidcmsg.exception import WrongSigningAlgorithm
-from oidcmsg.oauth2 import ResponseMessage, ROPCAccessTokenRequest
-from oidcmsg.oidc import AccessTokenRequest, make_openid_request, link_deser
+from oidcmsg.oauth2 import ResponseMessage
+from oidcmsg.oauth2 import ROPCAccessTokenRequest
 from oidcmsg.oidc import dict_deser
 from oidcmsg.oidc import claims_match
+from oidcmsg.oidc import link_deser
 from oidcmsg.oidc import link_ser
+from oidcmsg.oidc import make_openid_request
 from oidcmsg.oidc import registration_request_deser
 from oidcmsg.oidc import AccessTokenResponse
+from oidcmsg.oidc import AccessTokenRequest
 from oidcmsg.oidc import AddressClaim
 from oidcmsg.oidc import AuthnToken
 from oidcmsg.oidc import AuthorizationErrorResponse
 from oidcmsg.oidc import AuthorizationRequest
 from oidcmsg.oidc import AuthorizationResponse
-from oidcmsg.oidc import CheckSessionRequest
 from oidcmsg.oidc import Claims
-from oidcmsg.oidc import ClaimsRequest
 from oidcmsg.oidc import DiscoveryRequest
-from oidcmsg.oidc import EndSessionRequest
-from oidcmsg.oidc import EndSessionResponse
 from oidcmsg.oidc import IdToken
 from oidcmsg.oidc import JRD
 from oidcmsg.oidc import Link
@@ -67,7 +64,7 @@ KC_SYM_S = KeyBundle(
     {
         "kty": "oct", "key": "abcdefghijklmnop".encode("utf-8"), "use": "sig",
         "alg": "HS256"
-    })
+        })
 
 
 def query_string_compare(query_str1, query_str2):
@@ -89,7 +86,7 @@ def test_openidschema():
     '{"middle_name":true, "updated_at":"20170328081544", "sub":"abc"}',
     '{"middle_name":"fo", "updated_at":false, "sub":"abc"}',
     '{"middle_name":"fo", "updated_at":"20170328081544Z", "sub":true}'
-])
+    ])
 def test_openidschema_from_json(json_param):
     with pytest.raises(ValueError):
         OpenIDSchema().from_json(json_param)
@@ -102,7 +99,7 @@ def test_openidschema_from_json(json_param):
     '"sub":"abc"}',
     '{"phone_number_verified":true, "phone_number":"+1 555 20000", '
     '"sub":"abc"}',
-])
+    ])
 def test_claim_booleans(json_param):
     assert OpenIDSchema().from_json(json_param)
 
@@ -114,7 +111,7 @@ def test_claim_booleans(json_param):
     '"sub":"abc"}',
     '{"phone_number_verified":"Sure", "phone_number":"+1 555 20000", '
     '"sub":"abc"}',
-])
+    ])
 def test_claim_not_booleans(json_param):
     with pytest.raises(ValueError):
         OpenIDSchema().from_json(json_param)
@@ -129,12 +126,12 @@ def test_claims_deser():
             "email_verified": {"essential": True},
             "picture": None,
             "http://example.info/claims/groups": None
-        },
+            },
         "id_token": {
             "auth_time": {"essential": True},
             "acr": {"values": ["urn:mace:incommon:iap:silver"]}
+            }
         }
-    }
 
     claims = claims_deser(json.dumps(_dic), sformat="json")
     assert _eq(claims.keys(), ["userinfo", "id_token"])
@@ -179,7 +176,7 @@ def test_msg_ser_json_from_dict():
     ser = msg_ser_json({
         'street_address': "Kasamark 114", 'locality': "Umea",
         'country': "Sweden"
-    }, "json")
+        }, "json")
 
     adc = address_deser(ser, "json")
     assert _eq(adc.keys(), ['street_address', 'locality', 'country'])
@@ -199,7 +196,7 @@ def test_msg_ser_dict_to_dict():
     pre = {
         'street_address': "Kasamark 114", 'locality': "Umea",
         'country': "Sweden"
-    }
+        }
 
     ser = msg_ser_json(pre, "dict")
     adc = address_deser(ser, "dict")
@@ -230,7 +227,7 @@ def test_msg_ser_from_dict():
     pre = {
         "street_address": "Kasamark 114", "locality": "Umea",
         "country": "Sweden"
-    }
+        }
 
     ser = msg_ser(pre, "dict")
 
@@ -254,7 +251,7 @@ def test_claims_ser_from_dict_to_json():
         "email": {"essential": True},
         "email_verified": {"essential": True},
         "picture": None
-    }, sformat="json")
+        }, sformat="json")
     cl = Claims().from_json(claims)
     assert _eq(cl.keys(), ['name', 'nickname', 'email', 'email_verified',
                            'picture'])
@@ -267,7 +264,7 @@ def test_claims_ser_from_dict_to_urlencoded():
         "email": {"essential": True},
         "email_verified": {"essential": True},
         "picture": None
-    }, sformat="urlencoded")
+        }, sformat="urlencoded")
     cl = Claims().from_urlencoded(claims)
     assert _eq(cl.keys(), ['name', 'nickname', 'email', 'email_verified',
                            'picture'])
@@ -280,7 +277,7 @@ def test_claims_ser_from_dict_to_dict():
         "email": {"essential": True},
         "email_verified": {"essential": True},
         "picture": None
-    }, sformat="dict")
+        }, sformat="dict")
     cl = Claims(**claims)
     assert _eq(cl.keys(), ['name', 'nickname', 'email', 'email_verified',
                            'picture'])
@@ -294,7 +291,7 @@ def test_claims_ser_from_dict_to_foo():
             "email": {"essential": True},
             "email_verified": {"essential": True},
             "picture": None
-        }, sformat="foo")
+            }, sformat="foo")
 
 
 def test_claims_ser_wrong_type():
@@ -305,14 +302,14 @@ def test_claims_ser_wrong_type():
             "email": {"essential": True},
             "email_verified": {"essential": True},
             "picture": None
-        }), sformat="dict")
+            }), sformat="dict")
 
 
 def test_discovery_request():
     request = {
         'rel': "http://openid.net/specs/connect/1.0/issuer",
         'resource': 'diana@localhost'
-    }
+        }
 
     req = DiscoveryRequest().from_json(json.dumps(request))
     assert set(req.keys()) == {'rel', 'resource'}
@@ -339,7 +336,7 @@ def test_link_ser_dict():
     info = {
         'href': 'https://example.com/op',
         'rel': "http://openid.net/specs/connect/1.0/issuer"
-    }
+        }
     _js = link_ser(info, 'json')
     _lnk = json.loads(_js)
     assert set(_lnk.keys()) == {'href', 'rel'}
@@ -382,7 +379,7 @@ class TestProviderConfigurationResponse(object):
             "request_object_algs_supported": ["HS256", "RS256", "A128CBC",
                                               "A128KW",
                                               "RSA1_5"]
-        }
+            }
 
         pcr = ProviderConfigurationResponse().deserialize(json.dumps(resp),
                                                           "json")
@@ -445,7 +442,7 @@ class TestProviderConfigurationResponse(object):
                 "http://server.example.com/connect/service_documentation.html",
             "ui_locales_supported": ["en-US", "en-GB", "en-CA", "fr-FR",
                                      "fr-CA"]
-        }
+            }
 
         pcr = ProviderConfigurationResponse().deserialize(json.dumps(resp),
                                                           "json")
@@ -464,7 +461,7 @@ class TestProviderConfigurationResponse(object):
         "response_types_supported",
         "subject_types_supported",
         "id_token_signing_alg_values_supported"
-    ])
+        ])
     def test_required_parameters(self, required_param):
         provider_config = {
             "issuer": "https://server.example.com",
@@ -476,7 +473,7 @@ class TestProviderConfigurationResponse(object):
             "subject_types_supported": ["public", "pairwise"],
             "id_token_signing_alg_values_supported": ["RS256", "ES256",
                                                       "HS256"],
-        }
+            }
 
         del provider_config[required_param]
         with pytest.raises(MissingRequiredAttribute):
@@ -492,7 +489,7 @@ class TestProviderConfigurationResponse(object):
             "subject_types_supported": ["public", "pairwise"],
             "id_token_signing_alg_values_supported": ["RS256", "ES256",
                                                       "HS256"],
-        }
+            }
 
         # should not raise an exception
         assert ProviderConfigurationResponse(**provider_config).verify()
@@ -507,7 +504,7 @@ class TestProviderConfigurationResponse(object):
             "subject_types_supported": ["public", "pairwise"],
             "id_token_signing_alg_values_supported": ["RS256", "ES256",
                                                       "HS256"],
-        }
+            }
 
         with pytest.raises(MissingRequiredAttribute):
             ProviderConfigurationResponse(**provider_config).verify()
@@ -533,7 +530,7 @@ class TestRegistrationRequest(object):
             "request_uris": [
                 "https://client.example.org/rf.txt"
                 "#qpXaRLh_n93TTR9F252ValdatUQvQiJi5BDub2BeznA"]
-        }
+            }
 
         reg = RegistrationRequest().deserialize(json.dumps(msg), "json")
         assert reg.verify()
@@ -554,7 +551,7 @@ class TestRegistrationRequest(object):
             "application_type": "web", "default_acr": "foo",
             "require_auth_time": True, "operation": "register",
             "default_max_age": 10, "response_types": ["code"]
-        }
+            }
         assert js_obj == expected_js_obj
 
         flattened_list_dict = {k: v[0] if isinstance(v, list) else v for k, v in
@@ -566,13 +563,13 @@ class TestRegistrationRequest(object):
         "request_object_encryption_enc",
         "id_token_encrypted_response_enc",
         "userinfo_encrypted_response_enc",
-    ])
+        ])
     def test_registration_request_with_coupled_encryption_params(self,
                                                                  enc_param):
         registration_params = {
             "redirect_uris": ["https://example.com/authz_cb"],
             enc_param: "RS25asdasd6"
-        }
+            }
         registration_req = RegistrationRequest(**registration_params)
         with pytest.raises(MissingRequiredAttribute):
             registration_req.verify()
@@ -597,7 +594,7 @@ class TestRegistrationRequest(object):
             'require_auth_time': True, 'default_acr': "foo",
             'application_type': "web",
             'redirect_uris': ["https://example.com/authz_cb"]
-        }
+            }
 
         deser_req = registration_request_deser(req, 'dict')
         assert set(deser_req.keys()) == {'operation', 'default_max_age',
@@ -611,7 +608,7 @@ class TestRegistrationRequest(object):
             'require_auth_time': True, 'default_acr': "foo",
             'application_type': "web",
             'redirect_uris': ["https://example.com/authz_cb"]
-        }
+            }
 
         deser_req = registration_request_deser(req, 'json')
         assert set(deser_req.keys()) == {'operation', 'default_max_age',
@@ -647,7 +644,7 @@ class TestRegistrationResponse(object):
             "request_uris": [
                 "https://client.example.org/rf.txt"
                 "#qpXaRLh_n93TTR9F252ValdatUQvQiJi5BDub2BeznA"]
-        }
+            }
 
         resp = RegistrationResponse().deserialize(json.dumps(msg), "json")
         assert resp.verify()
@@ -675,7 +672,7 @@ class TestAuthorizationRequest(object):
             "client_id": "foobar",
             "redirect_uri": "http://foobar.example.com/oaclient",
             "response_type": "code",
-        }
+            }
         ar = AuthorizationRequest(**args)
         with pytest.raises(MissingRequiredAttribute):
             ar.verify()
@@ -686,7 +683,7 @@ class TestAuthorizationRequest(object):
             "redirect_uri": "http://foobar.example.com/oaclient",
             "response_type": ["code", "id_token"],
             "scope": "openid"
-        }
+            }
         ar = AuthorizationRequest(**args)
         with pytest.raises(MissingRequiredAttribute):
             ar.verify()
@@ -712,14 +709,14 @@ class TestAuthorizationRequest(object):
                         "email_verified": {"essential": True},
                         "picture": None,
                         "http://example.info/claims/groups": None
-                    },
+                        },
                 "id_token":
                     {
                         "auth_time": {"essential": True},
                         "acr": {"values": ["urn:mace:incommon:iap:silver"]}
-                    }
+                        }
+                }
             }
-        }
         ar = AuthorizationRequest(**args)
         assert ar.verify()
 
@@ -739,7 +736,7 @@ class TestAuthorizationRequest(object):
             "scope": "openid",
             "nonce": "some value",
             "extra": 'attribute'
-        }
+            }
         ar = AuthorizationRequest(**args)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
@@ -761,7 +758,7 @@ class TestAccessTokenResponse(object):
         idval = {
             'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
             'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
-        }
+            }
         idts = IdToken(**idval)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
@@ -771,7 +768,7 @@ class TestAccessTokenResponse(object):
         _info = {
             "access_token": "accessTok", "id_token": _signed_jwt,
             "token_type": "Bearer", "expires_in": 3600
-        }
+            }
 
         at = AccessTokenResponse(**_info)
         assert at.verify(keyjar=keyjar)
@@ -780,7 +777,7 @@ class TestAccessTokenResponse(object):
         idval = {
             'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
             'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
-        }
+            }
         idts = IdToken(**idval)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
@@ -794,7 +791,7 @@ class TestAccessTokenResponse(object):
         _info = {
             "access_token": "accessTok", "id_token": _faulty_signed_jwt,
             "token_type": "Bearer", "expires_in": 3600
-        }
+            }
 
         at = AccessTokenResponse(**_info)
         with pytest.raises(BadSignature):
@@ -804,7 +801,7 @@ class TestAccessTokenResponse(object):
         idval = {
             'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
             'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
-        }
+            }
         idts = IdToken(**idval)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
@@ -814,10 +811,10 @@ class TestAccessTokenResponse(object):
         _info = {
             "access_token": "accessTok", "id_token": _signed_jwt,
             "token_type": "Bearer", "expires_in": 3600
-        }
+            }
 
         at = AccessTokenResponse(**_info)
-        with pytest.raises(WrongSigningAlgorithm):
+        with pytest.raises(SignerAlgError):
             at.verify(keyjar=keyjar, sigalg="HS512")
 
 
@@ -827,7 +824,7 @@ def test_at_hash():
     idval = {
         'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
         'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
-    }
+        }
     idval.update(_token)
 
     idts = IdToken(**idval)
@@ -839,7 +836,7 @@ def test_at_hash():
     _info = {
         "id_token": _signed_jwt, "token_type": "Bearer",
         "expires_in": lifetime
-    }
+        }
     _info.update(_token)
 
     at = AuthorizationResponse(**_info)
@@ -854,7 +851,7 @@ def test_c_hash():
     idval = {
         'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
         'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
-    }
+        }
     idval.update(_token)
 
     idts = IdToken(**idval)
@@ -867,7 +864,7 @@ def test_c_hash():
     _info = {
         "id_token": _signed_jwt, "token_type": "Bearer",
         "expires_in": lifetime
-    }
+        }
     _info.update(_token)
 
     at = AuthorizationResponse(**_info)
@@ -882,7 +879,7 @@ def test_missing_c_hash():
     idval = {
         'nonce': 'KUEYfRM2VzKDaaKD', 'sub': 'EndUserSubject',
         'iss': 'https://alpha.cloud.nds.rub.de', 'aud': 'TestClient'
-    }
+        }
     # idval.update(_token)
 
     idts = IdToken(**idval)
@@ -895,7 +892,7 @@ def test_missing_c_hash():
     _info = {
         "id_token": _signed_jwt, "token_type": "Bearer",
         "expires_in": lifetime
-    }
+        }
     _info.update(_token)
 
     at = AuthorizationResponse(**_info)
@@ -911,14 +908,14 @@ def test_id_token():
         "aud": [
             "5542958437706128204e0000",
             "554295ce3770612820620000"
-        ],
+            ],
         "auth_time": 1441364872,
         "azp": "554295ce3770612820620000",
         "at_hash": "L4Ign7TCAD_EppRbHAuCyw",
         "iat": _now,
         "exp": _now + 3600,
         "iss": "https://sso.qa.7pass.ctf.prosiebensat1.com"
-    })
+        })
 
     idt.verify()
 
@@ -939,7 +936,7 @@ class TestAuthnToken(object):
             aud=['https://example.org/token'],  # Array of strings or string
             jti='abcdefghijkl',
             exp=utc_time_sans_frac() + 3600,
-        )
+            )
         assert at.verify()
 
 
@@ -954,72 +951,9 @@ class TestAuthorizationErrorResponse(object):
             assert aer.verify()
 
 
-class TestEndSessionResponse(object):
-    def test_example(self):
-        esr = EndSessionResponse()
-        pass
-
-
-class TestEndSessionRequest(object):
-    def test_example(self):
-        _symkey = KC_SYM_S.get(alg2keytype("HS256"))
-        esreq = EndSessionRequest(
-            id_token_hint=IDTOKEN.to_jwt(key=_symkey, algorithm="HS256",
-                                         lifetime=300),
-            redirect_url="http://example.org/jqauthz",
-            state="state0")
-
-        request = EndSessionRequest().from_urlencoded(esreq.to_urlencoded())
-        keyjar = KeyJar()
-        for _key in _symkey:
-            keyjar.add_symmetric('', _key.key)
-        request.verify(keyjar=keyjar)
-        assert isinstance(request, EndSessionRequest)
-        assert _eq(request.keys(),
-                   [verified_claim_name('id_token_hint'), 'id_token_hint',
-                    'redirect_url', 'state'])
-        assert request["state"] == "state0"
-        assert request[
-                   verified_claim_name("id_token_hint")]["aud"] == ["client_1"]
-
-
-class TestCheckSessionRequest(object):
-    def test_example(self):
-        _symkey = KC_SYM_S.get(alg2keytype("HS256"))
-        csr = CheckSessionRequest(
-            id_token=IDTOKEN.to_jwt(key=_symkey, algorithm="HS256",
-                                    lifetime=300))
-        keyjar = KeyJar()
-        keyjar.add_kb('', KC_SYM_S)
-        assert csr.verify(keyjar=keyjar)
-
-
-class TestClaimsRequest(object):
-    def test_example(self):
-        claims = {
-            "name": {"essential": True},
-            "nickname": None,
-            "email": {"essential": True},
-            "verified": {"essential": True},
-            "picture": None
-        }
-
-        cr = ClaimsRequest(userinfo=Claims(**claims),
-                           id_token=Claims(auth_time=None,
-                                           acr={"values": ["2"]}))
-        cr.verify()
-        _url = cr.to_urlencoded()
-        cr1 = ClaimsRequest().from_urlencoded(_url)
-        cr1.verify()
-
-        _js = cr.to_json()
-        cr1 = ClaimsRequest().from_json(_js)
-        cr1.verify()
-
-
 @pytest.mark.parametrize("bdate", [
     "1971-11-23", "0000-11-23", "1971"
-])
+    ])
 def test_birthdate(bdate):
     uinfo = OpenIDSchema(birthdate=bdate, sub='jarvis')
     uinfo.verify()
@@ -1053,7 +987,7 @@ def test_scope2claims():
     assert scope2claims(['openid', 'email', 'phone']) == {
         'sub': None, "email": None, "email_verified": None,
         "phone_number": None, "phone_number_verified": None
-    }
+        }
 
 
 def test_dict_deser():

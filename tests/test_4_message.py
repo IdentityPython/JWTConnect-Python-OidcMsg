@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 
 import json
 import pytest
+from cryptojwt.exception import HeaderError
 
 from cryptojwt.jwk.hmac import SYMKey
 from cryptojwt.jwk.rsa import new_rsa_key
@@ -446,13 +447,12 @@ def test_json_type_error():
     ])
 def test_to_jwe(keytype, alg, enc):
     msg = Message(a='foo', b='bar', c='tjoho')
-    _jwe = msg.to_jwe(KEYJAR.get_encrypt_key(keytype, ''), alg=alg, enc=enc)
-    with pytest.raises(WrongEncryptionAlgorithm):
-        Message().from_jwt(_jwe, KEYJAR.get_encrypt_key(keytype, ''),
-                           encalg="RSA-OAEP", encenc=enc)
-    with pytest.raises(WrongEncryptionAlgorithm):
-        Message().from_jwt(_jwe, KEYJAR.get_encrypt_key(keytype, ''),
-                           encenc="A256CBC-HS512", encalg=alg)
+    _jwe = msg.to_jwe(KEYJAR.get_encrypt_key(keytype, ''), alg=alg,
+                      enc=enc)
+    with pytest.raises(HeaderError):
+        Message().from_jwt(_jwe, KEYJAR, encalg="RSA-OAEP", encenc=enc)
+    with pytest.raises(HeaderError):
+        Message().from_jwt(_jwe, KEYJAR, encenc="A256CBC-HS512", encalg=alg)
 
 
 NEW_KEYJAR = KEYJAR.copy()

@@ -1,6 +1,4 @@
 # encoding: utf-8
-import uuid
-
 from urllib.parse import urlencode
 from urllib.parse import urlparse
 
@@ -16,7 +14,8 @@ from cryptojwt.jwt import JWT
 
 from oidcmsg import oauth2
 from oidcmsg import time_util
-from oidcmsg.exception import InvalidRequest, FormatError
+from oidcmsg.exception import FormatError
+from oidcmsg.exception import InvalidRequest
 from oidcmsg.exception import IssuerMismatch
 from oidcmsg.exception import MessageException
 from oidcmsg.exception import MissingRequiredAttribute
@@ -267,6 +266,44 @@ class TokenErrorResponse(oauth2.TokenErrorResponse):
     pass
 
 
+def verify_id_token(msg, check_hash=False, **kwargs):
+    # Try to decode the JWT, checks the signature
+    args = {}
+    for arg in ID_TOKEN_VERIFY_ARGS:
+        try:
+            args[arg] = kwargs[arg]
+        except KeyError:
+            pass
+    idt = IdToken().from_jwt(str(msg["id_token"]), **args)
+    if not idt.verify(**kwargs):
+        return False
+
+    if check_hash:
+        _alg = idt.jws_header["alg"]
+        hfunc = "HS" + _alg[-3:]
+
+        if "access_token" in msg:
+            if "at_hash" not in idt:
+                raise MissingRequiredAttribute("Missing at_hash property",
+                                               idt)
+            if idt["at_hash"] != left_hash(msg["access_token"],
+                                           hfunc):
+                raise AtHashError(
+                    "Failed to verify access_token hash", idt)
+
+        if "code" in msg:
+            if "c_hash" not in idt:
+                raise MissingRequiredAttribute("Missing c_hash property",
+                                               idt)
+            if idt["c_hash"] != left_hash(msg["code"], hfunc):
+                raise CHashError("Failed to verify code hash", idt)
+
+    msg[verified_claim_name("id_token")] = idt
+    logger.info('Verified ID Token: {}'.format(idt.to_dict()))
+
+    return True
+
+
 class AccessTokenResponse(oauth2.AccessTokenResponse):
     c_param = oauth2.AccessTokenResponse.c_param.copy()
     c_param.update({"id_token": SINGLE_OPTIONAL_STRING})
@@ -277,19 +314,8 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
         clear_verified_claims(self)
 
         if "id_token" in self:
-            # Try to decode the JWT, checks the signature
-            args = {}
-            for arg in ID_TOKEN_VERIFY_ARGS:
-                try:
-                    args[arg] = kwargs[arg]
-                except KeyError:
-                    pass
-            idt = IdToken().from_jwt(str(self["id_token"]), **args)
-            if not idt.verify(**kwargs):
+            if not verify_id_token(self, **kwargs):
                 return False
-
-            self[verified_claim_name("id_token")] = idt
-            logger.info('Verified ID Token: {}'.format(idt.to_dict()))
 
         return True
 
@@ -323,39 +349,9 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
                     return False
 
         if "id_token" in self:
-            # Try to decode the JWT, checks the signature
-            args = {}
-            for arg in ID_TOKEN_VERIFY_ARGS:
-                try:
-                    args[arg] = kwargs[arg]
-                except KeyError:
-                    pass
-            idt = IdToken().from_jwt(str(self["id_token"]), **args)
-            if not idt.verify(**kwargs):
-                raise VerificationError("Could not verify id_token", idt)
+            if not verify_id_token(self, check_hash=True, **kwargs):
+                return False
 
-            _alg = idt.jws_header["alg"]
-            # What if _alg == 'none'
-
-            hfunc = "HS" + _alg[-3:]
-
-            if "access_token" in self:
-                if "at_hash" not in idt:
-                    raise MissingRequiredAttribute("Missing at_hash property",
-                                                   idt)
-                if idt["at_hash"] != left_hash(self["access_token"],
-                                               hfunc):
-                    raise AtHashError(
-                        "Failed to verify access_token hash", idt)
-
-            if "code" in self:
-                if "c_hash" not in idt:
-                    raise MissingRequiredAttribute("Missing c_hash property",
-                                                   idt)
-                if idt["c_hash"] != left_hash(self["code"], hfunc):
-                    raise CHashError("Failed to verify code hash", idt)
-
-            self[verified_claim_name("id_token")] = idt
         return True
 
 
@@ -416,7 +412,8 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
         clear_verified_claims(self)
 
         args = {}
-        for arg in ["keyjar", "opponent_id", "sender"]:
+        for arg in ["keyjar", "opponent_id", "sender", "alg", "encalg",
+                    "encenc"]:
             try:
                 args[arg] = kwargs[arg]
             except KeyError:
@@ -487,9 +484,9 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
 class AccessTokenRequest(oauth2.AccessTokenRequest):
     c_param = oauth2.AccessTokenRequest.c_param.copy()
     c_param.update({
-                       "client_assertion_type": SINGLE_OPTIONAL_STRING,
-                       "client_assertion": SINGLE_OPTIONAL_STRING
-                   })
+        "client_assertion_type": SINGLE_OPTIONAL_STRING,
+        "client_assertion": SINGLE_OPTIONAL_STRING
+        })
     c_default = {"grant_type": "authorization_code"}
     c_allowed_values = {
         "client_assertion_type": [
@@ -505,7 +502,7 @@ class AddressClaim(Message):
         "region": SINGLE_OPTIONAL_STRING,
         "postal_code": SINGLE_OPTIONAL_STRING,
         "country": SINGLE_OPTIONAL_STRING
-    }
+        }
 
 
 class OpenIDSchema(ResponseMessage):
@@ -595,15 +592,15 @@ class RegistrationRequest(Message):
         # "access_token": SINGLE_OPTIONAL_STRING,
         "post_logout_redirect_uris": OPTIONAL_LIST_OF_STRINGS,
         "frontchannel_logout_uri": SINGLE_OPTIONAL_STRING,
-        "frontchannel_logout_session_required": SINGLE_OPTIONAL_STRING,
-        "backchannel_logout_supported": SINGLE_OPTIONAL_STRING,
-        "backchannel_logout_session_supported": SINGLE_OPTIONAL_STRING
+        "frontchannel_logout_session_required": SINGLE_OPTIONAL_BOOLEAN,
+        "backchannel_logout_supported": SINGLE_OPTIONAL_BOOLEAN,
+        "backchannel_logout_session_supported": SINGLE_OPTIONAL_BOOLEAN
         }
     c_default = {"application_type": "web", "response_types": ["code"]}
     c_allowed_values = {
         "application_type": ["native", "web"],
         "subject_type": ["public", "pairwise"]
-    }
+        }
 
     def verify(self, **kwargs):
         super(RegistrationRequest, self).verify(**kwargs)
@@ -673,7 +670,7 @@ class ClientRegistrationErrorResponse(oauth2.ResponseMessage):
         "error": ["invalid_redirect_uri",
                   "invalid_client_metadata",
                   "invalid_configuration_parameter"]
-    }
+        }
 
 
 class IdToken(OpenIDSchema):
@@ -691,7 +688,8 @@ class IdToken(OpenIDSchema):
         "acr": SINGLE_OPTIONAL_STRING,
         "amr": OPTIONAL_LIST_OF_STRINGS,
         "azp": SINGLE_OPTIONAL_STRING,
-        "sub_jwk": SINGLE_OPTIONAL_STRING
+        "sub_jwk": SINGLE_OPTIONAL_STRING,
+        "sid": SINGLE_OPTIONAL_STRING
         })
     hashable = {'access_token': 'at_hash', 'code': 'c_hash'}
 
@@ -806,89 +804,10 @@ class MessageWithIdToken(Message):
     def verify(self, **kwargs):
         super(MessageWithIdToken, self).verify(**kwargs)
         if "id_token" in self:
-            # Try to decode the JWT, checks the signature
-            args = {}
-            for arg in ID_TOKEN_VERIFY_ARGS:
-                try:
-                    args[arg] = kwargs[arg]
-                except KeyError:
-                    pass
-            idt = IdToken().from_jwt(str(self["id_token"]), **args)
-            if not idt.verify(**kwargs):
+            if not verify_id_token(self, **kwargs):
                 return False
 
-            # replace the JWT with the IdToken instance
-            self["id_token"] = idt
-
         return True
-
-
-class RefreshSessionRequest(MessageWithIdToken):
-    c_param = MessageWithIdToken.c_param.copy()
-    c_param.update({
-                       "redirect_url": SINGLE_REQUIRED_STRING,
-                       "state": SINGLE_REQUIRED_STRING
-                   })
-
-
-class RefreshSessionResponse(MessageWithIdToken, ResponseMessage):
-    c_param = MessageWithIdToken.c_param.copy()
-    c_param.update(ResponseMessage.c_param.copy())
-    c_param.update({"state": SINGLE_REQUIRED_STRING})
-
-
-class CheckSessionRequest(MessageWithIdToken):
-    pass
-
-
-class CheckIDRequest(Message):
-    c_param = {"access_token": SINGLE_REQUIRED_STRING}
-
-
-class EndSessionRequest(Message):
-    c_param = {
-        "id_token_hint": SINGLE_OPTIONAL_IDTOKEN,
-        "post_logout_redirect_uri": SINGLE_OPTIONAL_STRING,
-        "state": SINGLE_OPTIONAL_STRING
-        }
-
-    def verify(self, **kwargs):
-        super(EndSessionRequest, self).verify(**kwargs)
-        clear_verified_claims(self)
-
-        if "id_token_hint" in self:
-            # Try to decode the JWT, checks the signature
-            args = {}
-            for arg in ID_TOKEN_VERIFY_ARGS:
-                try:
-                    args[arg] = kwargs[arg]
-                except KeyError:
-                    pass
-            idt = IdToken().from_jwt(str(self["id_token_hint"]), **args)
-            if not idt.verify(**kwargs):
-                return False
-
-            # replace the JWT with the IdToken instance
-            self[verified_claim_name("id_token_hint")] = idt
-
-        return True
-
-
-class EndSessionResponse(ResponseMessage):
-    c_param = ResponseMessage.c_param.copy()
-    c_param.update({"state": SINGLE_OPTIONAL_STRING})
-
-
-class Claims(Message):
-    # c_param = {"*": SINGLE_OPTIONAL_JSON_CONV}
-    pass
-
-
-class ClaimsRequest(Message):
-    c_param = {
-        "userinfo": OPTIONAL_MULTIPLE_Claims,
-        "id_token": OPTIONAL_MULTIPLE_Claims
-        }
 
 
 class OpenIDRequest(AuthorizationRequest):
@@ -955,7 +874,7 @@ class ProviderConfigurationResponse(ResponseMessage):
         "request_uri_parameter_supported": True,
         "require_request_uri_registration": True,
         "grant_types_supported": ["authorization_code", "implicit"]
-    }
+        }
 
     def verify(self, **kwargs):
         super(ProviderConfigurationResponse, self).verify(**kwargs)
@@ -1013,6 +932,14 @@ class JsonWebToken(Message):
                 raise EXPError('Invalid expiration time')
 
         try:
+            _iat = self['iat']
+        except KeyError:
+            pass
+        else:
+            if _iat > (_now + _skew):
+                raise EXPError('Invalid issued-at time')
+
+        try:
             _nbf = self['nbf']
         except KeyError:
             pass
@@ -1030,6 +957,10 @@ class JsonWebToken(Message):
                     raise NotForMe('Not among intended audience')
             except KeyError:
                 pass
+
+        if 'iss' in kwargs and 'iss' in self:
+            if kwargs['iss'] != self['iss']:
+                raise ValueError('Wrong issuer')
 
         return True
 
@@ -1062,14 +993,14 @@ class UserInfoErrorResponse(oauth2.ResponseMessage):
     c_allowed_values = {
         "error": ["invalid_schema", "invalid_request",
                   "invalid_token", "insufficient_scope"]
-    }
+        }
 
 
 class DiscoveryRequest(Message):
     c_param = {
         "resource": SINGLE_REQUIRED_STRING,
         "rel": SINGLE_REQUIRED_STRING
-    }
+        }
 
 
 class Link(Message):
@@ -1160,6 +1091,18 @@ class WebFingerRequest(Message):
 
 class ResourceRequest(Message):
     c_param = {"access_token": SINGLE_OPTIONAL_STRING}
+
+
+class Claims(Message):
+    # c_param = {"*": SINGLE_OPTIONAL_JSON_CONV}
+    pass
+
+
+class ClaimsRequest(Message):
+    c_param = {
+        "userinfo": OPTIONAL_MULTIPLE_Claims,
+        "id_token": OPTIONAL_MULTIPLE_Claims
+        }
 
 
 SCOPE2CLAIMS = {
