@@ -21,10 +21,7 @@ from oidcmsg.exception import MissingRequiredAttribute
 from oidcmsg.exception import MissingSigningKey
 from oidcmsg.exception import NotAllowedValue
 from oidcmsg.exception import OidcMsgError
-from oidcmsg.exception import ParameterError
 from oidcmsg.exception import TooManyValues
-from oidcmsg.exception import WrongEncryptionAlgorithm
-from oidcmsg.exception import WrongSigningAlgorithm
 
 logger = logging.getLogger(__name__)
 
