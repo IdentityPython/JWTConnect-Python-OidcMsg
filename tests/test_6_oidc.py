@@ -9,6 +9,8 @@ from urllib.parse import urlencode
 import pytest
 from cryptojwt.exception import BadSignature
 from cryptojwt.jws.exception import SignerAlgError
+from cryptojwt.jws.utils import left_hash
+from cryptojwt.jwt import JWT
 from cryptojwt.key_bundle import KeyBundle
 from cryptojwt.key_jar import KeyJar
 
@@ -19,7 +21,7 @@ from oidcmsg.exception import NotAllowedValue
 from oidcmsg.exception import OidcMsgError
 from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.oauth2 import ROPCAccessTokenRequest
-from oidcmsg.oidc import dict_deser
+from oidcmsg.oidc import dict_deser, verify_id_token, CHashError, AtHashError
 from oidcmsg.oidc import claims_match
 from oidcmsg.oidc import link_deser
 from oidcmsg.oidc import link_ser
@@ -762,6 +764,8 @@ class TestAccessTokenResponse(object):
         idts = IdToken(**idval)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
+        keyjar.add_symmetric('https://alpha.cloud.nds.rub.de',
+                             "SomeTestPassword")
         _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                                   algorithm="HS256", lifetime=300)
 
@@ -781,6 +785,8 @@ class TestAccessTokenResponse(object):
         idts = IdToken(**idval)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
+        keyjar.add_symmetric('https://alpha.cloud.nds.rub.de',
+                             "SomeTestPassword")
         _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                                   algorithm="HS256", lifetime=300)
         # Mess with the signed id_token
@@ -805,6 +811,8 @@ class TestAccessTokenResponse(object):
         idts = IdToken(**idval)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
+        keyjar.add_symmetric('https://alpha.cloud.nds.rub.de',
+                             "SomeTestPassword")
         _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                                   algorithm="HS256", lifetime=300)
 
@@ -830,6 +838,8 @@ def test_at_hash():
     idts = IdToken(**idval)
     keyjar = KeyJar()
     keyjar.add_symmetric('', "SomeTestPassword")
+    keyjar.add_symmetric('https://alpha.cloud.nds.rub.de',
+                         "SomeTestPassword")
     _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                               algorithm="HS256", lifetime=lifetime)
 
@@ -857,7 +867,8 @@ def test_c_hash():
     idts = IdToken(**idval)
     keyjar = KeyJar()
     keyjar.add_symmetric('', "SomeTestPassword")
-
+    keyjar.add_symmetric('https://alpha.cloud.nds.rub.de',
+                         "SomeTestPassword")
     _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                               algorithm="HS256", lifetime=lifetime)
 
@@ -885,6 +896,8 @@ def test_missing_c_hash():
     idts = IdToken(**idval)
     keyjar = KeyJar()
     keyjar.add_symmetric('', "SomeTestPassword")
+    keyjar.add_symmetric('https://alpha.cloud.nds.rub.de',
+                         "SomeTestPassword")
 
     _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
                               algorithm="HS256", lifetime=lifetime)
@@ -1049,3 +1062,361 @@ def test_proper_path():
 
     p = proper_path('../foo/bar')
     assert p == './foo/bar/'
+
+
+def test_verify_id_token():
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256',
+                 iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(id_token=_jws)
+    vidt = verify_id_token(msg, keyjar=kj,
+                           iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                           client_id="554295ce3770612820620000")
+    assert vidt
+
+
+def test_verify_id_token_wrong_issuer():
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256', iss="https://example.com/as",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(id_token=_jws)
+    with pytest.raises(ValueError):
+        verify_id_token(msg, keyjar=kj,
+                        iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                        client_id="554295ce3770612820620000")
+
+
+def test_verify_id_token_wrong_aud():
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256', iss="https://example.com/as",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(id_token=_jws)
+    with pytest.raises(ValueError):
+        verify_id_token(msg, keyjar=kj,
+                        iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                        client_id="aaaaaaaaaaaaaaaaaaaa")
+
+
+def test_verify_id_token_mismatch_aud_azp():
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "aaaaaaaaaaaaaaaaaaaa",
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256', iss="https://example.com/as",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(id_token=_jws)
+    with pytest.raises(ValueError):
+        verify_id_token(msg, keyjar=kj,
+                        iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                        client_id="aaaaaaaaaaaaaaaaaaaa")
+
+
+def test_verify_id_token_c_hash():
+    code = 'AccessCode1'
+    lhsh = left_hash(code)
+
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        "c_hash": lhsh
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256',
+                 iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(code=code, id_token=_jws)
+    verify_id_token(msg, check_hash=True, keyjar=kj,
+                    iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                    client_id="554295ce3770612820620000")
+
+
+def test_verify_id_token_c_hash_fail():
+    code = 'AccessCode1'
+    lhsh = left_hash(code)
+
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        "c_hash": lhsh
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256',
+                 iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(code="AccessCode289", id_token=_jws)
+    with pytest.raises(CHashError):
+        verify_id_token(msg, check_hash=True, keyjar=kj,
+                        iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                        client_id="554295ce3770612820620000")
+
+
+def test_verify_id_token_at_hash():
+    token = 'AccessTokenWhichCouldBeASignedJWT'
+    lhsh = left_hash(token)
+
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        "at_hash": lhsh
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256',
+                 iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(access_token=token, id_token=_jws)
+    verify_id_token(msg, check_hash=True, keyjar=kj,
+                    iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                    client_id="554295ce3770612820620000")
+
+
+def test_verify_id_token_at_hash_fail():
+    token = 'AccessTokenWhichCouldBeASignedJWT'
+    token2 = 'ACompletelyOtherAccessToken'
+    lhsh = left_hash(token)
+
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        "at_hash": lhsh
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256',
+                 iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(access_token=token2, id_token=_jws)
+    with pytest.raises(AtHashError):
+        verify_id_token(msg, check_hash=True, keyjar=kj,
+                        iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                        client_id="554295ce3770612820620000")
+
+
+def test_verify_id_token_missing_at_hash():
+    token = 'AccessTokenWhichCouldBeASignedJWT'
+
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256',
+                 iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(access_token=token, id_token=_jws)
+    with pytest.raises(MissingRequiredAttribute):
+        verify_id_token(msg, check_hash=True, keyjar=kj,
+                        iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                        client_id="554295ce3770612820620000")
+
+
+def test_verify_id_token_missing_c_hash():
+    code = 'AccessCode1'
+
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256',
+                 iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(code=code, id_token=_jws)
+    with pytest.raises(MissingRequiredAttribute):
+        verify_id_token(msg, check_hash=True, keyjar=kj,
+                        iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                        client_id="554295ce3770612820620000")
+
+
+def test_verify_id_token_at_hash_and_chash():
+    token = 'AccessTokenWhichCouldBeASignedJWT'
+    at_hash = left_hash(token)
+    code = 'AccessCode1'
+    c_hash = left_hash(code)
+
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        "at_hash": at_hash,
+        'c_hash': c_hash
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256',
+                 iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                 lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(access_token=token, id_token=_jws, code=code)
+    verify_id_token(msg, check_hash=True, keyjar=kj,
+                    iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                    client_id="554295ce3770612820620000")
+
+
+def test_verify_id_token_missing_iss():
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256', lifetime=3600)
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(id_token=_jws)
+    with pytest.raises(MissingRequiredAttribute):
+        verify_id_token(msg, check_hash=True, keyjar=kj,
+                        iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                        client_id="554295ce3770612820620000")
+
+
+def test_verify_id_token_iss_not_in_keyjar():
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+            ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        })
+
+    kj = KeyJar()
+    kj.add_symmetric("", 'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    kj.add_symmetric("https://sso.qa.7pass.ctf.prosiebensat1.com",
+                     'dYMmrcQksKaPkhdgRNYk3zzh5l7ewdDJ', ['sig'])
+    packer = JWT(kj, sign_alg='HS256', lifetime=3600,
+                 iss='https://example.com/op')
+    _jws = packer.pack(payload=idt.to_dict())
+    msg = AuthorizationResponse(id_token=_jws)
+    with pytest.raises(ValueError):
+        verify_id_token(msg, check_hash=True, keyjar=kj,
+                        iss="https://sso.qa.7pass.ctf.prosiebensat1.com",
+                        client_id="554295ce3770612820620000")
+

@@ -9,6 +9,7 @@ import sys
 import time
 
 from cryptojwt import as_unicode
+from cryptojwt.jws.jws import factory as jws_factory
 from cryptojwt.jws.utils import left_hash
 from cryptojwt.jwt import JWT
 
@@ -274,6 +275,19 @@ def verify_id_token(msg, check_hash=False, **kwargs):
             args[arg] = kwargs[arg]
         except KeyError:
             pass
+
+    _jws = jws_factory(msg["id_token"])
+    if not _jws:
+        raise ValueError('id_token not a signed JWT')
+
+    _body = _jws.jwt.payload()
+    if 'keyjar' in kwargs:
+        try:
+            if _body['iss'] not in kwargs['keyjar']:
+                raise ValueError('Unknown issuer')
+        except KeyError:
+            raise MissingRequiredAttribute('iss')
+
     idt = IdToken().from_jwt(str(msg["id_token"]), **args)
     if not idt.verify(**kwargs):
         return False
