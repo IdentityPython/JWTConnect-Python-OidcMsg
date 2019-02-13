@@ -6,7 +6,7 @@ from cryptojwt.jws.jws import JWS
 from cryptojwt.key_bundle import KeyBundle
 from cryptojwt.key_jar import init_key_jar
 from cryptojwt.key_jar import KeyJar
-from jwkest.jws import alg2keytype
+from cryptojwt.jws.utils import alg2keytype
 
 from oidcmsg.exception import MessageException
 from oidcmsg.exception import NotForMe
