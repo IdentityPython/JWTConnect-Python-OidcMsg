@@ -96,6 +96,17 @@ class TestCheckSessionRequest(object):
                                     lifetime=300))
         keyjar = KeyJar()
         keyjar.add_kb('', KC_SYM_S)
+        with pytest.raises(ValueError):
+            assert csr.verify(keyjar=keyjar)
+
+
+    def test_example_1(self):
+        _symkey = KC_SYM_S.get(alg2keytype("HS256"))
+        csr = CheckSessionRequest(
+            id_token=IDTOKEN.to_jwt(key=_symkey, algorithm="HS256",
+                                    lifetime=300))
+        keyjar = KeyJar()
+        keyjar.add_kb(ISS, KC_SYM_S)
         assert csr.verify(keyjar=keyjar)
 
 

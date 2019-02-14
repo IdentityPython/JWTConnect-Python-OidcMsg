@@ -20,7 +20,6 @@ from ..oidc import SINGLE_OPTIONAL_IDTOKEN
 logger = logging.getLogger(__name__)
 
 
-
 class RefreshSessionRequest(MessageWithIdToken):
     c_param = MessageWithIdToken.c_param.copy()
     c_param.update({

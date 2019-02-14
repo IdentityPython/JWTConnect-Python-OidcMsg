@@ -349,7 +349,9 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
         # "nonce": SINGLE_OPTIONAL_STRING,
         "access_token": SINGLE_OPTIONAL_STRING,
         "token_type": SINGLE_OPTIONAL_STRING,
-        "id_token": SINGLE_OPTIONAL_IDTOKEN
+        "id_token": SINGLE_OPTIONAL_IDTOKEN,
+        # Below is REQUIRED if doing session management
+        "session_state": SINGLE_OPTIONAL_STRING
         })
 
     def verify(self, **kwargs):
@@ -607,7 +609,7 @@ class RegistrationRequest(Message):
         "post_logout_redirect_uris": OPTIONAL_LIST_OF_STRINGS,
         "frontchannel_logout_uri": SINGLE_OPTIONAL_STRING,
         "frontchannel_logout_session_required": SINGLE_OPTIONAL_BOOLEAN,
-        "backchannel_logout_supported": SINGLE_OPTIONAL_BOOLEAN,
+        "backchannel_logout_uri": SINGLE_OPTIONAL_STRING,
         "backchannel_logout_session_supported": SINGLE_OPTIONAL_BOOLEAN
         }
     c_default = {"application_type": "web", "response_types": ["code"]}
@@ -900,7 +902,9 @@ class ProviderConfigurationResponse(ResponseMessage):
                 check_char_set(scope, SCOPE_CHARSET)
 
         parts = urlparse(self["issuer"])
-        if parts.scheme != "https":
+        if 'allow_http' in kwargs:
+            pass
+        elif parts.scheme != "https":
             raise SchemeError("Not HTTPS")
 
         if not parts.query and not parts.fragment:
@@ -909,7 +913,7 @@ class ProviderConfigurationResponse(ResponseMessage):
             raise ValueError('Issuer ID invalid')
 
         if any("code" in rt for rt in self[
-            "response_types_supported"]) and "token_endpoint" not in self:
+                "response_types_supported"]) and "token_endpoint" not in self:
             raise MissingRequiredAttribute("token_endpoint")
 
         return True
