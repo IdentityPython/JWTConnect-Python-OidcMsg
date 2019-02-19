@@ -50,6 +50,7 @@ from oidcmsg.oidc import factory
 from oidcmsg.oidc import msg_ser
 from oidcmsg.oidc import msg_ser_json
 from oidcmsg.oidc import scope2claims
+from oidcmsg.oidc import verified_claim_name
 from oidcmsg.time_util import utc_time_sans_frac
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
@@ -850,7 +851,7 @@ def test_at_hash():
 
     at = AuthorizationResponse(**_info)
     assert at.verify(keyjar=keyjar, sigalg="HS256")
-    assert 'at_hash' in at['id_token']
+    assert 'at_hash' in at[verified_claim_name('id_token')]
 
 
 def test_c_hash():
@@ -879,7 +880,7 @@ def test_c_hash():
 
     at = AuthorizationResponse(**_info)
     r = at.verify(keyjar=keyjar, sigalg="HS256")
-    assert 'c_hash' in at['id_token']
+    assert 'c_hash' in at[verified_claim_name('id_token')]
 
 
 def test_missing_c_hash():
