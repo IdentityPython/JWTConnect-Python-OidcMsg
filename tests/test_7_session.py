@@ -10,12 +10,11 @@ from cryptojwt.jws.utils import alg2keytype
 
 from oidcmsg.exception import MessageException
 from oidcmsg.exception import NotForMe
-from oidcmsg.oidc import verified_claim_name
 from oidcmsg.oidc import Claims
 from oidcmsg.oidc import ClaimsRequest
 from oidcmsg.oidc import IdToken
-from oidcmsg.oidc.session import BACK_CHANNEL_LOGOUT_EVENT, \
-    BackChannelLogoutRequest
+from oidcmsg.oidc.session import BACK_CHANNEL_LOGOUT_EVENT
+from oidcmsg.oidc.session import BackChannelLogoutRequest
 from oidcmsg.oidc.session import LogoutToken
 from oidcmsg.oidc.session import CheckSessionRequest
 from oidcmsg.oidc.session import EndSessionRequest
@@ -81,11 +80,9 @@ class TestEndSessionRequest(object):
             keyjar.add_symmetric(CLIENT_ID, _key.key)
         request.verify(keyjar=keyjar)
         assert isinstance(request, EndSessionRequest)
-        assert set(request.keys()) == {verified_claim_name('id_token_hint'),
-                                       'id_token_hint', 'redirect_url', 'state'}
+        assert set(request.keys()) == {'id_token_hint', 'redirect_url', 'state'}
         assert request["state"] == "state0"
-        assert request[
-                   verified_claim_name("id_token_hint")]["aud"] == ["client_1"]
+        assert request["id_token_hint"]["aud"] == ["client_1"]
 
 
 class TestCheckSessionRequest(object):

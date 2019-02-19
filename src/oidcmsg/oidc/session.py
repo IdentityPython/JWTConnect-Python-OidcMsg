@@ -10,7 +10,6 @@ from ..message import SINGLE_REQUIRED_JSON
 from ..message import SINGLE_REQUIRED_STRING
 from ..oauth2 import ResponseMessage
 from ..oidc import clear_verified_claims
-from ..oidc import verified_claim_name
 from ..oidc import IdToken
 from ..oidc import ID_TOKEN_VERIFY_ARGS
 from ..oidc import MessageWithIdToken
@@ -66,7 +65,7 @@ class EndSessionRequest(Message):
                 return False
 
             # Add the verified ID Token to the message instance
-            self[verified_claim_name("id_token_hint")] = idt
+            self["id_token_hint"] = idt
 
         return True
 
@@ -167,7 +166,7 @@ class BackChannelLogoutRequest(Message):
         if not idt.verify(**kwargs):
             return False
 
-        self[verified_claim_name("logout_token")] = idt
+        self["logout_token"] = idt
         logger.info('Verified ID Token: {}'.format(idt.to_dict()))
 
         return True

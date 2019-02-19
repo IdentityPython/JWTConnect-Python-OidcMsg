@@ -312,7 +312,7 @@ def verify_id_token(msg, check_hash=False, **kwargs):
             if idt["c_hash"] != left_hash(msg["code"], hfunc):
                 raise CHashError("Failed to verify code hash", idt)
 
-    msg[verified_claim_name("id_token")] = idt
+    msg["id_token"] = idt
     logger.info('Verified ID Token: {}'.format(idt.to_dict()))
 
     return True
@@ -459,7 +459,7 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
                 self.update(oidr)
 
                 # replace the JWT with the parsed and verified instance
-                self[verified_claim_name("request")] = oidr
+                self["request"] = oidr
 
         if "id_token_hint" in self:
             if isinstance(self["id_token_hint"], str):
