@@ -2,7 +2,7 @@
 import copy
 import json
 import logging
-from collections import MutableMapping
+from collections.abc import MutableMapping
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
 
