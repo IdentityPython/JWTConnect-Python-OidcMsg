@@ -9,7 +9,7 @@ from ..message import SINGLE_REQUIRED_INT
 from ..message import SINGLE_REQUIRED_JSON
 from ..message import SINGLE_REQUIRED_STRING
 from ..oauth2 import ResponseMessage
-from ..oidc import clear_verified_claims
+from ..oidc import clear_verified_claims, verify_id_token
 from ..oidc import verified_claim_name
 from ..oidc import IdToken
 from ..oidc import ID_TOKEN_VERIFY_ARGS
@@ -62,9 +62,8 @@ class EndSessionRequest(Message):
                 except KeyError:
                     pass
             idt = IdToken().from_jwt(str(self["id_token_hint"]), **args)
-            if not idt.verify(**kwargs):
+            if not verify_id_token(self, claim='id_token_hint', **kwargs):
                 return False
-
             # Add the verified ID Token to the message instance
             self[verified_claim_name("id_token_hint")] = idt
 
