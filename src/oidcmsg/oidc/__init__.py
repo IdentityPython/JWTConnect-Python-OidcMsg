@@ -239,7 +239,8 @@ def check_char_set(string, allowed):
 
 ID_TOKEN_VERIFY_ARGS = ['keyjar', 'verify', 'encalg', 'encenc', 'sigalg',
                         'issuer', 'allow_missing_kid', 'no_kid_issuer',
-                        'trusting', 'skew', 'nonce_storage_time', 'client_id']
+                        'trusting', 'skew', 'nonce_storage_time', 'client_id',
+                        'allow_sign_alg_none']
 
 CLAIMS_WITH_VERIFIED = ['id_token', 'id_token_hint', 'request']
 VERIFIED_CLAIM_PREFIX = '__verified'
@@ -267,7 +268,7 @@ class TokenErrorResponse(oauth2.TokenErrorResponse):
     pass
 
 
-def verify_id_token(msg, check_hash=False, **kwargs):
+def verify_id_token(msg, check_hash=False, claim='id_token', **kwargs):
     # Try to decode the JWT, checks the signature
     args = {}
     for arg in ID_TOKEN_VERIFY_ARGS:
@@ -276,9 +277,20 @@ def verify_id_token(msg, check_hash=False, **kwargs):
         except KeyError:
             pass
 
-    _jws = jws_factory(msg["id_token"])
+    _jws = jws_factory(msg[claim])
     if not _jws:
-        raise ValueError('id_token not a signed JWT')
+        raise ValueError('{} not a signed JWT'.format(claim))
+
+    if _jws.jwt.headers['alg'] == 'none':
+        try:
+            _allow_none = kwargs['allow_sign_alg_none']
+        except KeyError:
+            logger.info('Signing algorithm None not allowed')
+            return False
+        else:
+            if not _allow_none:
+                logger.info('Signing algorithm None not allowed')
+                return False
 
     _body = _jws.jwt.payload()
     if 'keyjar' in kwargs:
@@ -288,7 +300,7 @@ def verify_id_token(msg, check_hash=False, **kwargs):
         except KeyError:
             raise MissingRequiredAttribute('iss')
 
-    idt = IdToken().from_jwt(str(msg["id_token"]), **args)
+    idt = IdToken().from_jwt(str(msg[claim]), **args)
     if not idt.verify(**kwargs):
         return False
 
@@ -312,8 +324,8 @@ def verify_id_token(msg, check_hash=False, **kwargs):
             if idt["c_hash"] != left_hash(msg["code"], hfunc):
                 raise CHashError("Failed to verify code hash", idt)
 
-    msg[verified_claim_name("id_token")] = idt
-    logger.info('Verified ID Token: {}'.format(idt.to_dict()))
+    msg[verified_claim_name(claim)] = idt
+    logger.info('Verified {}: {}'.format(claim, idt.to_dict()))
 
     return True
 
