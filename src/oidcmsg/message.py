@@ -1,4 +1,3 @@
-
 import copy
 import json
 import logging
@@ -6,9 +5,9 @@ from collections.abc import MutableMapping
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
 
-from cryptojwt.jws.exception import NoSuitableSigningKeys
 from cryptojwt.jwe.jwe import JWE
 from cryptojwt.jwe.jwe import factory as jwe_factory
+from cryptojwt.jws.exception import NoSuitableSigningKeys
 from cryptojwt.jws.jws import JWS
 from cryptojwt.jws.jws import factory as jws_factory
 from cryptojwt.key_jar import update_keyjar
@@ -30,7 +29,7 @@ ERRTXT = "On '%s': %s"
 
 class Message(MutableMapping):
     """
-    Represents a basic protocol nessage/item in OAuth2/OIDC 
+    Represents a basic protocol nessage/item in OAuth2/OIDC
     """
     c_param = {}
     c_default = {}
@@ -48,7 +47,7 @@ class Message(MutableMapping):
     def __iter__(self):
         """
         Returns an iterator over all the key, value pairs in this class instance
-        
+
         :return: iterator
         """
         return iter(self._dict)
@@ -56,16 +55,16 @@ class Message(MutableMapping):
     def type(self):
         """
         Return the type of protocol message this is
-        
-        :return: The name of the message 
+
+        :return: The name of the message
         """
         return self.__class__.__name__
 
     def parameters(self):
         """
         Returns a list of all known parameters for this message type.
-        
-        :return: list of parameter names 
+
+        :return: list of parameter names
         """
         return list(self.c_param.keys())
 
@@ -85,7 +84,7 @@ class Message(MutableMapping):
 
         _spec = self.c_param
         if not self.lax:
-            for attribute, (_, req, _ser, _, na) in _spec.items():
+            for attribute, (_, req, _ser, _, _) in _spec.items():
                 if req and attribute not in self._dict:
                     raise MissingRequiredAttribute("%s" % attribute,
                                                    "%s" % self)
@@ -97,7 +96,7 @@ class Message(MutableMapping):
                 (_, req, _ser, _, null_allowed) = _spec[key]
             except KeyError:  # extra attribute
                 try:
-                    _key, lang = key.split("#")
+                    _key = key.split("#")[0]
                     (_, req, _ser, _deser, null_allowed) = _spec[_key]
                 except (ValueError, KeyError):
                     try:
@@ -108,7 +107,8 @@ class Message(MutableMapping):
 
             if val is None and null_allowed is False:
                 continue
-            elif isinstance(val, str):
+
+            if isinstance(val, str):
                 # Should I allow parameters with "" as value ???
                 params.append((key, val.encode("utf-8")))
             elif isinstance(val, list):
@@ -145,12 +145,12 @@ class Message(MutableMapping):
 
     def serialize(self, method="urlencoded", lev=0, **kwargs):
         """
-        Convert this instance to another representation. Which representation 
+        Convert this instance to another representation. Which representation
         is given by the choice of serialization method.
-        
+
         :param method: A serialization method. Presently 'urlencoded', 'json',
             'jwt' and 'dict' is supported.
-        :param lev: 
+        :param lev:
         :param kwargs: Extra key word arguments
         :return: THe content of this message serialized using a chosen method
         """
@@ -159,8 +159,8 @@ class Message(MutableMapping):
     def deserialize(self, info, method="urlencoded", **kwargs):
         """
         Convert from an external representation to an internal.
-        
-        :param info: The input  
+
+        :param info: The input
         :param method: The method used to deserialize the info
         :param kwargs: extra Keyword arguments
         :return: In the normal case the Message instance
@@ -174,7 +174,7 @@ class Message(MutableMapping):
 
     def from_urlencoded(self, urlencoded, **kwargs):
         """
-        Starting with a string of the application/x-www-form-urlencoded format 
+        Starting with a string of the application/x-www-form-urlencoded format
         this method creates a class instance
 
         :param urlencoded: The string
@@ -198,14 +198,14 @@ class Message(MutableMapping):
 
         for key, val in _info.items():
             try:
-                (typ, _, _, _deser, null_allowed) = _spec[key]
+                (typ, _, _, _deser, _) = _spec[key]
             except KeyError:
                 try:
-                    _key, lang = key.split("#")
-                    (typ, _, _, _deser, null_allowed) = _spec[_key]
+                    _key = key.split("#")[0]
+                    (typ, _, _, _deser, _) = _spec[_key]
                 except (ValueError, KeyError):
                     try:
-                        (typ, _, _, _deser, null_allowed) = _spec['*']
+                        (typ, _, _, _deser, _) = _spec['*']
                     except KeyError:
                         if len(val) == 1:
                             val = val[0]
@@ -244,14 +244,14 @@ class Message(MutableMapping):
         lev += 1
         for key, val in self._dict.items():
             try:
-                (_, req, _ser, _, null_allowed) = _spec[str(key)]
+                _ser = _spec[str(key)][2]
             except KeyError:
                 try:
-                    _key, lang = key.split("#")
-                    (_, req, _ser, _, null_allowed) = _spec[_key]
+                    _key = key.split("#")[0]
+                    _ser = _spec[_key][2]
                 except (ValueError, KeyError):
                     try:
-                        (_, req, _ser, _, null_allowed) = _spec['*']
+                        _ser = _spec['*'][2]
                     except KeyError:
                         _ser = None
 
@@ -282,16 +282,16 @@ class Message(MutableMapping):
         for key, val in dictionary.items():
             # Earlier versions of python don't like unicode strings as
             # variable names
-            if val == "" or val == [""]:
+            if val in ["", [""]]:
                 continue
 
             skey = str(key)
             try:
-                (vtyp, req, _, _deser, null_allowed) = _spec[key]
+                (vtyp, _, _, _deser, null_allowed) = _spec[key]
             except KeyError:
                 # might be a parameter with a lang tag
                 try:
-                    _key, lang = skey.split("#")
+                    _key = skey.split("#")[0]
                 except ValueError:
                     try:
                         (vtyp, _, _, _deser, null_allowed) = _spec['*']
@@ -303,7 +303,7 @@ class Message(MutableMapping):
                         continue
                 else:
                     try:
-                        (vtyp, req, _, _deser, null_allowed) = _spec[_key]
+                        (vtyp, _, _, _deser, null_allowed) = _spec[_key]
                     except KeyError:
                         try:
                             (vtyp, _, _, _deser, null_allowed) = _spec['*']
@@ -321,8 +321,8 @@ class Message(MutableMapping):
         """
         Main method for adding a value to the instance. Does all the
         checking on type of value and if among allowed values.
-        
-        :param skey: string version of the key 
+
+        :param skey: string version of the key
         :param vtyp: Type of value
         :param key: original representation of the key
         :param val: The value to add
@@ -360,8 +360,7 @@ class Message(MutableMapping):
                     try:
                         _val = []
                         for v in val:
-                            _val.append(vtype(**dict([(str(x), y) for x, y
-                                                      in v.items()])))
+                            _val.append(vtype(**{str(x): y for x, y in v.items()}))
                         val = _val
                     except Exception as exc:
                         raise DecodeError(ERRTXT % (key, exc))
@@ -369,8 +368,7 @@ class Message(MutableMapping):
                     for v in val:
                         if not isinstance(v, vtype):
                             raise DecodeError(
-                                ERRTXT % (key, "type != %s (%s)" % (
-                                    vtype, type(v))))
+                                ERRTXT % (key, "type != %s (%s)" % (vtype, type(v))))
 
                 self._dict[skey] = val
             elif isinstance(val, dict):
@@ -423,7 +421,7 @@ class Message(MutableMapping):
                         '"{}", wrong type of value for "{}"'.format(val, skey))
                 elif vtyp != type(val):
                     if vtyp == Message:
-                        if type(val) == dict or isinstance(val, str):
+                        if isinstance(val, (dict, str)):
                             self._dict[skey] = val
                         else:
                             raise ValueError(
@@ -437,10 +435,10 @@ class Message(MutableMapping):
     def to_json(self, lev=0, indent=None):
         """
         Serialize the content of this instance into a JSON string.
-        
-        :param lev: 
-        :param indent: Number of spaces that should be used for indentation 
-        :return: 
+
+        :param lev:
+        :param indent: Number of spaces that should be used for indentation
+        :return:
         """
         if lev:
             return self.to_dict(lev + 1)
@@ -450,11 +448,11 @@ class Message(MutableMapping):
     def from_json(self, txt, **kwargs):
         """
         Convert from a JSON string to an instance of this class.
-        
+
         :param txt: The JSON string (a ``str``, ``bytes`` or ``bytearray``
             instance containing a JSON document)
         :param kwargs: extra keyword arguments
-        :return: The instantiated instance 
+        :return: The instantiated instance
         """
         _dict = json.loads(txt)
         return self.from_dict(_dict)
@@ -495,13 +493,13 @@ class Message(MutableMapping):
         _decryptor = jwe_factory(txt, **algarg)
 
         if _decryptor:
-            logger.debug("JWE headers: {}".format(_decryptor.jwt.headers))
+            logger.debug("JWE headers: %s", _decryptor.jwt.headers)
 
             dkeys = keyjar.get_decrypt_key(owner="")
 
-            logger.debug('Decrypt class: {}'.format(_decryptor.__class__))
+            logger.debug('Decrypt class: %s', _decryptor.__class__)
             _res = _decryptor.decrypt(txt, dkeys)
-            logger.debug('decrypted message:{}'.format(_res))
+            logger.debug('decrypted message: %s', _res)
             if isinstance(_res, tuple):
                 txt = as_unicode(_res[0])
             elif isinstance(_res, list) and len(_res) == 2:
@@ -512,45 +510,42 @@ class Message(MutableMapping):
 
         try:
             _verifier = jws_factory(txt, alg=kwargs['sigalg'])
-        except:
+        except :
             _verifier = jws_factory(txt)
 
         if _verifier:
-            try:
-                _jwt = _verifier.jwt
-                jso = _jwt.payload()
-                _header = _jwt.headers
+            _jwt = _verifier.jwt
+            jso = _jwt.payload()
+            _header = _jwt.headers
 
-                key = []
+            key = []
 
-                # if "sender" in kwargs:
-                #     key.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
+            # if "sender" in kwargs:
+            #     key.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
 
-                logger.debug("Raw JSON: {}".format(jso))
-                logger.debug("JWS header: {}".format(_header))
-                if _header["alg"] == "none":
-                    pass
-                elif verify:
+            logger.debug("Raw JSON: %s", jso)
+            logger.debug("JWS header: %s", _header)
+            if _header["alg"] == "none":
+                pass
+            elif verify:
+                if keyjar:
+                    key.extend(keyjar.get_jwt_verify_keys(_jwt, **kwargs))
+
+                if "alg" in _header and _header["alg"] != "none":
+                    if not key:
+                        raise MissingSigningKey(
+                            "alg=%s" % _header["alg"])
+
+                logger.debug("Found signing key.")
+                try:
+                    _verifier.verify_compact(txt, key)
+                except NoSuitableSigningKeys:
                     if keyjar:
-                        key.extend(keyjar.get_jwt_verify_keys(_jwt, **kwargs))
-
-                    if "alg" in _header and _header["alg"] != "none":
-                        if not key:
-                            raise MissingSigningKey(
-                                "alg=%s" % _header["alg"])
-
-                    logger.debug("Found signing key.")
-                    try:
+                        update_keyjar(keyjar)
+                        key = keyjar.get_jwt_verify_keys(_jwt, **kwargs)
                         _verifier.verify_compact(txt, key)
-                    except NoSuitableSigningKeys:
-                        if keyjar:
-                            update_keyjar(keyjar)
-                            key = keyjar.get_jwt_verify_keys(_jwt, **kwargs)
-                            _verifier.verify_compact(txt, key)
-            except Exception:
-                raise
-            else:
-                self.jws_header = _jwt.headers
+
+            self.jws_header = _jwt.headers
         else:
             jso = json.loads(txt)
 
@@ -560,12 +555,13 @@ class Message(MutableMapping):
     def __str__(self):
         """
         Return a string representation of this class
-        
-        :return: A string representation of this class 
+
+        :return: A string representation of this class
         """
         return '{}'.format(self.to_dict())
 
-    def _type_check(self, typ, _allowed, val, na=False):
+    @staticmethod
+    def _type_check(typ, _allowed, val, na=False):
         if typ is str:
             if val not in _allowed:
                 return False
@@ -633,9 +629,9 @@ class Message(MutableMapping):
     def __getitem__(self, item):
         """
         Return the value of a specified parameter.
-        
-        :param item: 
-        :return: 
+
+        :param item:
+        :return:
         """
         return self._dict[item]
 
@@ -643,11 +639,11 @@ class Message(MutableMapping):
         """
         Return the value of a specific parameter. If the parameter does not
         have a value return the default value.
-        
-        :param item: The name of the parameter 
+
+        :param item: The name of the parameter
         :param default: Default value
-        :return: The value of the parameter or, if that doesn't exist, 
-            the default value 
+        :return: The value of the parameter or, if that doesn't exist,
+            the default value
         """
         try:
             return self[item]
@@ -658,8 +654,8 @@ class Message(MutableMapping):
         """
         Return a list of tuples (key, value) representing all parameters
         of this class instance that has a value.
-        
-        :return: iterator 
+
+        :return: iterator
         """
         return self._dict.items()
 
@@ -669,8 +665,8 @@ class Message(MutableMapping):
     def __contains__(self, item):
         """
         Answers the question: does this parameter have a value?
-        
-        :param item: The name of the parameter 
+
+        :param item: The name of the parameter
         :return: True/False
         """
         return item in self._dict
@@ -679,11 +675,11 @@ class Message(MutableMapping):
         """
         Given a URL this method will add a fragment, a query part or extend
         a query part if it already exists with the information in this instance.
-        
-        :param location: A URL 
+
+        :param location: A URL
         :param fragment_enc: Whether the information should be placed in a
             fragment (True) or in a query part (False)
-        :return: The extended URL 
+        :return: The extended URL
         """
         _l = as_unicode(location)
         _qp = as_unicode(self.to_urlencoded())
@@ -705,7 +701,7 @@ class Message(MutableMapping):
     def __eq__(self, other):
         """
         Compare two message instances. This with another instance.
-        
+
         :param other:  The other instance
         :return: True/False
         """
@@ -728,8 +724,8 @@ class Message(MutableMapping):
     def __len__(self):
         """
         Return the number of parameters that has a value.
-        
-        :return: Number of parameters with a value. 
+
+        :return: Number of parameters with a value.
         """
         return len(self._dict)
 
@@ -737,7 +733,7 @@ class Message(MutableMapping):
         """
         Return the extra parameters that this instance. Extra meaning those
         that are not listed in the c_params specification.
-        
+
         :return: The key,value pairs for keys that are not in the c_params
             specification,
         """
@@ -748,8 +744,8 @@ class Message(MutableMapping):
         """
         Return True if this instance only has key,value pairs for keys
         that are not defined in c_params.
-        
-        :return: True/False 
+
+        :return: True/False
         """
         known = [key for key in self._dict.keys() if key in self.c_param]
         if not known:
@@ -760,8 +756,8 @@ class Message(MutableMapping):
     def update(self, item, **kwargs):
         """
         Update the information in this instance.
-        
-        :param item: a dictionary or a Message instance 
+
+        :param item: a dictionary or a Message instance
         """
         if isinstance(item, dict):
             self._dict.update(item)
@@ -945,6 +941,8 @@ SINGLE_REQUIRED_STRING = (str, True, None, None, False)
 SINGLE_OPTIONAL_STRING = (str, False, None, None, False)
 SINGLE_OPTIONAL_INT = (int, False, None, None, False)
 SINGLE_REQUIRED_INT = (int, True, None, None, False)
+SINGLE_REQUIRED_BOOLEAN = (bool, True, None, None, False)
+
 OPTIONAL_LIST_OF_STRINGS = ([str], False, list_serializer,
                             list_deserializer, False)
 REQUIRED_LIST_OF_STRINGS = ([str], True, list_serializer,
@@ -967,3 +965,28 @@ REQUIRED_MESSAGE = (Message, True, msg_ser, msg_deser, False)
 
 OPTIONAL_LIST_OF_MESSAGES = ([Message], False, msg_list_ser, msg_list_deser,
                              False)
+
+
+def any_ser(val, sformat="urlencoded", lev=0):
+    if isinstance(val, (str, int, bool)):
+        return val
+    elif isinstance(val, Message):
+        return msg_ser(val, sformat, lev)
+    elif isinstance(val, dict):
+        return json.dumps(val)
+    elif isinstance(val, list):
+        return msg_list_ser(val)
+    else:
+        raise ValueError("Can't serialize this type of data")
+
+
+def any_deser(val, sformat="urlencoded", lev=0):
+    if isinstance(val, dict):
+        return Message(**val)
+    elif isinstance(val, list):
+        return [msg_deser(v, sformat) for v in val]
+    else:
+        raise ValueError("Can't deserialize this type of data")
+
+
+SINGLE_OPTIONAL_ANY = (any, False, any_ser, any_deser, False)

@@ -53,6 +53,10 @@ class EndSessionRequest(Message):
         super(EndSessionRequest, self).verify(**kwargs)
         clear_verified_claims(self)
 
+        if 'post_logout_redirect_uri' in self:
+            if "id_token_hint" not in self:
+                raise False
+
         if "id_token_hint" in self:
             # Try to decode the JWT, checks the signature
             args = {}

@@ -2,6 +2,7 @@ import inspect
 import logging
 import sys
 
+
 from oidcmsg.exception import VerificationError
 from oidcmsg.message import Message
 from oidcmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
@@ -10,6 +11,7 @@ from oidcmsg.message import REQUIRED_LIST_OF_SP_SEP_STRINGS
 from oidcmsg.message import REQUIRED_LIST_OF_STRINGS
 from oidcmsg.message import SINGLE_OPTIONAL_INT
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
+from oidcmsg.message import SINGLE_REQUIRED_BOOLEAN
 from oidcmsg.message import SINGLE_REQUIRED_STRING
 
 logger = logging.getLogger(__name__)
@@ -214,12 +216,41 @@ class ASConfigurationResponse(Message):
     c_default = {"version": "3.0"}
 
 
+# RFC 7662
+class TokenIntrospectionRequest(Message):
+    c_param = {
+        "token": SINGLE_REQUIRED_STRING,
+        "token_type_hint": SINGLE_OPTIONAL_STRING,
+        # The ones below are part of authentication information
+        "client_id": SINGLE_OPTIONAL_STRING,
+        "client_assertion_type": SINGLE_OPTIONAL_STRING,
+        "client_assertion": SINGLE_OPTIONAL_STRING,
+    }
+
+
+class TokenIntrospectionResponse(Message):
+    c_param = {
+        "active": SINGLE_REQUIRED_BOOLEAN,
+        "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
+        "client_id": SINGLE_OPTIONAL_STRING,
+        "username": SINGLE_OPTIONAL_STRING,
+        "token_type": SINGLE_OPTIONAL_STRING,
+        "exp": SINGLE_OPTIONAL_INT,
+        "iat": SINGLE_OPTIONAL_INT,
+        "nbf": SINGLE_OPTIONAL_INT,
+        "sub": SINGLE_OPTIONAL_STRING,
+        "aud": OPTIONAL_LIST_OF_STRINGS,
+        "iss": SINGLE_OPTIONAL_STRING,
+        "jti": SINGLE_OPTIONAL_STRING,
+    }
+
+
 def factory(msgtype, **kwargs):
     """
     Factory method that can be used to easily instansiate a class instance
-    
-    :param msgtype: The name of the class 
-    :param kwargs: Keyword arguments 
+
+    :param msgtype: The name of the class
+    :param kwargs: Keyword arguments
     :return: An instance of the class or None if the name doesn't match any
         known class.
     """
