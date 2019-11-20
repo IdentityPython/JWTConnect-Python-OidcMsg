@@ -1,5 +1,5 @@
 __author__ = 'Roland Hedberg'
-__version__ = '0.6.3'
+__version__ = '0.6.4'
 
 
 def proper_path(path):
