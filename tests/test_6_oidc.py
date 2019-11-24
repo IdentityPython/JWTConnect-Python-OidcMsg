@@ -49,7 +49,6 @@ from oidcmsg.oidc import claims_ser
 from oidcmsg.oidc import factory
 from oidcmsg.oidc import msg_ser
 from oidcmsg.oidc import msg_ser_json
-from oidcmsg.oidc import scope2claims
 from oidcmsg.oidc import verified_claim_name
 from oidcmsg.time_util import utc_time_sans_frac
 
@@ -983,24 +982,6 @@ def test_factory_chain():
     dr = factory('ResponseMessage', error='some_error')
     assert isinstance(dr, ResponseMessage)
     assert list(dr.keys()) == ['error']
-
-
-def test_scope2claims():
-    assert scope2claims(['openid']) == {'sub': None}
-    assert set(scope2claims(['profile']).keys()) == {
-        "name", "given_name", "family_name", "middle_name", "nickname",
-        "profile", "picture", "website", "gender", "birthdate", "zoneinfo",
-        "locale", "updated_at", "preferred_username"}
-    assert set(scope2claims(['email']).keys()) == {"email", "email_verified"}
-    assert set(scope2claims(['address']).keys()) == {'address'}
-    assert set(scope2claims(['phone']).keys()) == {"phone_number",
-                                                   "phone_number_verified"}
-    assert scope2claims(['offline_access']) == {}
-
-    assert scope2claims(['openid', 'email', 'phone']) == {
-        'sub': None, "email": None, "email_verified": None,
-        "phone_number": None, "phone_number_verified": None
-        }
 
 
 def test_dict_deser():

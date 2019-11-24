@@ -1135,30 +1135,6 @@ class ClaimsRequest(Message):
         }
 
 
-SCOPE2CLAIMS = {
-    "openid": ["sub"],
-    "profile": ["name", "given_name", "family_name", "middle_name",
-                "nickname", "profile", "picture", "website", "gender",
-                "birthdate", "zoneinfo", "locale", "updated_at",
-                "preferred_username"],
-    "email": ["email", "email_verified"],
-    "address": ["address"],
-    "phone": ["phone_number", "phone_number_verified"],
-    "offline_access": []
-    }
-
-
-def scope2claims(scopes):
-    res = {}
-    for scope in scopes:
-        try:
-            claims = dict([(name, None) for name in SCOPE2CLAIMS[scope]])
-            res.update(claims)
-        except KeyError:
-            continue
-    return res
-
-
 def factory(msgtype, **kwargs):
     for name, obj in inspect.getmembers(sys.modules[__name__]):
         if inspect.isclass(obj) and issubclass(obj, Message):
@@ -1195,7 +1171,7 @@ def claims_match(value, claimspec):
     Implements matching according to section 5.5.1 of
     http://openid.net/specs/openid-connect-core-1_0.html
     The lack of value is not checked here.
-    Also the text doesn't prohibit claims specification having both 'value' 
+    Also the text doesn't prohibit claims specification having both 'value'
     and 'values'.
 
     :param value: single value
