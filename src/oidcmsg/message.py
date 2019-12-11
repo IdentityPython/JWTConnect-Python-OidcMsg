@@ -508,9 +508,9 @@ class Message(MutableMapping):
                 txt = as_unicode(_res)
             self.jwe_header = _decryptor.jwt.headers
 
-        try:
+        if kwargs.get('sigalg'):
             _verifier = jws_factory(txt, alg=kwargs['sigalg'])
-        except :
+        else:
             _verifier = jws_factory(txt)
 
         if _verifier:
@@ -519,7 +519,6 @@ class Message(MutableMapping):
             _header = _jwt.headers
 
             key = []
-
             # if "sender" in kwargs:
             #     key.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
 
