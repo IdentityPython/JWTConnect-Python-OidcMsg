@@ -15,6 +15,7 @@ from cryptojwt.jwt import JWT
 
 from oidcmsg import oauth2
 from oidcmsg import time_util
+from oidcmsg import verified_claim_name
 from oidcmsg.exception import FormatError
 from oidcmsg.exception import InvalidRequest
 from oidcmsg.exception import IssuerMismatch
@@ -243,11 +244,6 @@ ID_TOKEN_VERIFY_ARGS = ['keyjar', 'verify', 'encalg', 'encenc', 'sigalg',
                         'allow_sign_alg_none']
 
 CLAIMS_WITH_VERIFIED = ['id_token', 'id_token_hint', 'request']
-VERIFIED_CLAIM_PREFIX = '__verified'
-
-
-def verified_claim_name(claim):
-    return '{}_{}'.format(VERIFIED_CLAIM_PREFIX, claim)
 
 
 def clear_verified_claims(msg):

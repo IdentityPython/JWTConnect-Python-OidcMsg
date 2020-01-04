@@ -2,6 +2,13 @@ __author__ = 'Roland Hedberg'
 __version__ = '0.6.4'
 
 
+VERIFIED_CLAIM_PREFIX = '__verified'
+
+
+def verified_claim_name(claim):
+    return '{}_{}'.format(VERIFIED_CLAIM_PREFIX, claim)
+
+
 def proper_path(path):
     """
     Clean up the path specification so it looks like something I could use.
