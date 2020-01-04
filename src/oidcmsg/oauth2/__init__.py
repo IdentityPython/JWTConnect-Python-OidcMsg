@@ -1,8 +1,10 @@
 import inspect
 import logging
+import string
 import sys
 
-
+from oidcmsg import verified_claim_name
+from oidcmsg.exception import MissingAttribute
 from oidcmsg.exception import VerificationError
 from oidcmsg.message import Message
 from oidcmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
@@ -24,13 +26,25 @@ def is_error_message(msg):
         return False
 
 
+error_chars = set(string.ascii_uppercase + string.ascii_lowercase + " " + "!")
+
+
 class ResponseMessage(Message):
     """
     The basic error response
     """
-    c_param = {"error": SINGLE_OPTIONAL_STRING,
-               "error_description": SINGLE_OPTIONAL_STRING,
-               "error_uri": SINGLE_OPTIONAL_STRING}
+    c_param = {
+        "error": SINGLE_OPTIONAL_STRING,
+        "error_description": SINGLE_OPTIONAL_STRING,
+        "error_uri": SINGLE_OPTIONAL_STRING
+    }
+
+    def verify(self, **kwargs):
+        if "error_description" in self:
+            # Verify that the characters used are within the allow ranges
+            # %x20-21 / %x23-5B / %x5D-7E
+            if all(x in error_chars for x in self["error_description"]):
+                raise ValueError("Characters outside allowed set")
 
 
 class AuthorizationErrorResponse(ResponseMessage):
@@ -40,22 +54,26 @@ class AuthorizationErrorResponse(ResponseMessage):
     c_param = ResponseMessage.c_param.copy()
     c_param.update({"state": SINGLE_OPTIONAL_STRING})
     c_allowed_values = ResponseMessage.c_allowed_values.copy()
-    c_allowed_values.update({"error": ["invalid_request",
-                                       "unauthorized_client",
-                                       "access_denied",
-                                       "unsupported_response_type",
-                                       "invalid_scope", "server_error",
-                                       "temporarily_unavailable"]})
+    c_allowed_values.update({
+        "error": ["invalid_request",
+                  "unauthorized_client",
+                  "access_denied",
+                  "unsupported_response_type",
+                  "invalid_scope", "server_error",
+                  "temporarily_unavailable"]
+    })
 
 
 class TokenErrorResponse(ResponseMessage):
     """
     Error response from the token endpoint
     """
-    c_allowed_values = {"error": ["invalid_request", "invalid_client",
-                                  "invalid_grant", "unauthorized_client",
-                                  "unsupported_grant_type",
-                                  "invalid_scope"]}
+    c_allowed_values = {
+        "error": ["invalid_request", "invalid_client",
+                  "invalid_grant", "unauthorized_client",
+                  "unsupported_grant_type",
+                  "invalid_scope"]
+    }
 
 
 class AccessTokenRequest(Message):
@@ -243,6 +261,63 @@ class TokenIntrospectionResponse(Message):
         "iss": SINGLE_OPTIONAL_STRING,
         "jti": SINGLE_OPTIONAL_STRING,
     }
+
+
+class JWTSecuredAuthorizationRequest(AuthorizationRequest):
+    c_param = AuthorizationRequest.c_param.copy()
+    c_param.update({
+        "request": SINGLE_OPTIONAL_STRING,
+        "request_uri": SINGLE_OPTIONAL_STRING
+    })
+
+    def verify(self, **kwargs):
+        if "request" in self:
+            _vc_name = verified_claim_name("request")
+            if _vc_name in self:
+                del self[_vc_name]
+
+            args = {}
+            for arg in ["keyjar", "opponent_id", "sender", "alg", "encalg",
+                        "encenc"]:
+                try:
+                    args[arg] = kwargs[arg]
+                except KeyError:
+                    pass
+
+            _req = AuthorizationRequest().from_jwt(str(self["request"]), **args)
+            self.update(_req)
+            self[_vc_name] = _req
+        elif "request_uri" not in self:
+            raise MissingAttribute("One of request or request_uri must be present")
+
+        return True
+
+
+class PushedAuthorizationRequest(AuthorizationRequest):
+    c_param = AuthorizationRequest.c_param.copy()
+    c_param.update({
+        "request": SINGLE_OPTIONAL_STRING
+    })
+
+    def verify(self, **kwargs):
+        if "request" in self:
+            _vc_name = verified_claim_name("request")
+            if _vc_name in self:
+                del self[_vc_name]
+
+            args = {}
+            for arg in ["keyjar", "opponent_id", "sender", "alg", "encalg",
+                        "encenc"]:
+                try:
+                    args[arg] = kwargs[arg]
+                except KeyError:
+                    pass
+
+            _req = AuthorizationRequest().from_jwt(str(self["request"]), **args)
+            self.update(_req)
+            self[_vc_name] = _req
+
+        return True
 
 
 def factory(msgtype, **kwargs):
