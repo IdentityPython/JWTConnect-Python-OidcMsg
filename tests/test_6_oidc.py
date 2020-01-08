@@ -385,6 +385,7 @@ class TestProviderConfigurationResponse(object):
         pcr = ProviderConfigurationResponse().deserialize(json.dumps(resp),
                                                           "json")
 
+        # Missing subject_types_supported
         with pytest.raises(MissingRequiredAttribute):
             assert pcr.verify()
 
