@@ -103,6 +103,34 @@ class AuthorizationRequest(Message):
         "state": SINGLE_OPTIONAL_STRING,
     }
 
+    def merge(self, request_object, treatement="strict", whitelist=None):
+        """
+        How to combine parameter that appear in the request with parameters that
+        appear in the request object.
+
+        :param request: The original request
+        :param request_object: The result of parsing the request/request_uri parameter
+        :param treatement: How to do the merge strict/lax/whitelist
+        :param whitelist: If whitelisted parameters from the request should be included in the
+            result, this is the list to use.
+        """
+
+        if treatement == 'strict':
+            params = list(self.keys())
+            # remove all parameters in request that does not appear in request_object
+            for param in params:
+                if param not in request_object:
+                    del self[param]
+        elif treatement == "lax":
+            pass
+        elif treatement == "whitelist" and whitelist:
+            params = list(self.keys())
+            for param in params:
+                if param not in whitelist:
+                    del self[param]
+
+        self.update(request_object)
+
 
 class AuthorizationResponse(ResponseMessage):
     """
@@ -285,7 +313,7 @@ class JWTSecuredAuthorizationRequest(AuthorizationRequest):
                     pass
 
             _req = AuthorizationRequest().from_jwt(str(self["request"]), **args)
-            self.update(_req)
+            self.merge(_req, 'strict')
             self[_vc_name] = _req
         elif "request_uri" not in self:
             raise MissingAttribute("One of request or request_uri must be present")
@@ -314,7 +342,7 @@ class PushedAuthorizationRequest(AuthorizationRequest):
                     pass
 
             _req = AuthorizationRequest().from_jwt(str(self["request"]), **args)
-            self.update(_req)
+            self.merge(_req, "lax")
             self[_vc_name] = _req
 
         return True
