@@ -818,6 +818,12 @@ class Message(MutableMapping):
         for key in _blanks:
             del self._dict[key]
 
+    def required_parameters(self):
+        """
+        Return the required parameters for this type of message.
+        """
+        return [p for p, s in self.c_param.items() if s[1] is True]
+
 
 # =============================================================================
 
