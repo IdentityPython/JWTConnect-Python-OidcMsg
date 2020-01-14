@@ -12,8 +12,10 @@ from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
 from oidcmsg.message import REQUIRED_LIST_OF_SP_SEP_STRINGS
 from oidcmsg.message import REQUIRED_LIST_OF_STRINGS
 from oidcmsg.message import SINGLE_OPTIONAL_INT
+from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
 from oidcmsg.message import SINGLE_REQUIRED_BOOLEAN
+from oidcmsg.message import SINGLE_REQUIRED_INT
 from oidcmsg.message import SINGLE_REQUIRED_STRING
 
 logger = logging.getLogger(__name__)
@@ -348,6 +350,20 @@ class PushedAuthorizationRequest(AuthorizationRequest):
             self[_vc_name] = _req
 
         return True
+
+
+class SecurityEventToken(Message):
+    c_param = {
+        "iss": SINGLE_REQUIRED_STRING,
+        "iat": SINGLE_REQUIRED_INT,
+        "jti": SINGLE_REQUIRED_STRING,
+        "aud": OPTIONAL_LIST_OF_STRINGS,
+        "sub": SINGLE_OPTIONAL_STRING,
+        "exp": SINGLE_OPTIONAL_INT,
+        "events": SINGLE_OPTIONAL_JSON,
+        "txt": SINGLE_OPTIONAL_STRING,
+        "toe": SINGLE_OPTIONAL_INT
+    }
 
 
 def factory(msgtype, **kwargs):
