@@ -1,10 +1,10 @@
 # pylint: disable=no-self-use,missing-docstring
 
 import json
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
 
 import pytest
-
 from cryptojwt.key_jar import build_keyjar
 
 from oidcmsg.exception import MissingRequiredAttribute
@@ -12,19 +12,18 @@ from oidcmsg.message import DecodeError
 from oidcmsg.message import json_deserializer
 from oidcmsg.message import json_serializer
 from oidcmsg.message import sp_sep_list_deserializer
-
-from oidcmsg.oauth2 import factory
-from oidcmsg.oauth2 import is_error_message
 from oidcmsg.oauth2 import AccessTokenRequest
 from oidcmsg.oauth2 import AccessTokenResponse
 from oidcmsg.oauth2 import AuthorizationErrorResponse
 from oidcmsg.oauth2 import AuthorizationRequest
 from oidcmsg.oauth2 import AuthorizationResponse
 from oidcmsg.oauth2 import CCAccessTokenRequest
-from oidcmsg.oauth2 import ResponseMessage
-from oidcmsg.oauth2 import RefreshAccessTokenRequest
 from oidcmsg.oauth2 import ROPCAccessTokenRequest
+from oidcmsg.oauth2 import RefreshAccessTokenRequest
+from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.oauth2 import TokenErrorResponse
+from oidcmsg.oauth2 import factory
+from oidcmsg.oauth2 import is_error_message
 
 __author__ = 'Roland Hedberg'
 
@@ -117,7 +116,8 @@ class TestAuthorizationRequest(object):
 
         ue = ar.to_urlencoded()
         assert query_string_compare(ue,
-                                    "state=cold&redirect_uri=http%3A%2F%2Ffoobar.example.com%2Foaclient&"
+                                    "state=cold&redirect_uri=http%3A%2F%2Ffoobar.example.com"
+                                    "%2Foaclient&"
                                     "response_type=code&client_id=foobar")
 
     def test_urlencoded_resp_type_token(self):
@@ -128,7 +128,8 @@ class TestAuthorizationRequest(object):
 
         ue = ar.to_urlencoded()
         assert query_string_compare(ue,
-                                    "state=xyz&redirect_uri=https%3A%2F%2Fclient.example.com%2Fcb&response_type=token&"
+                                    "state=xyz&redirect_uri=https%3A%2F%2Fclient.example.com%2Fcb"
+                                    "&response_type=token&"
                                     "client_id=s6BhdRkqt3")
 
     def test_deserialize_urlencoded(self):
@@ -146,7 +147,8 @@ class TestAuthorizationRequest(object):
 
         ue = ar.to_urlencoded()
         assert query_string_compare(ue,
-                                    "scope=foo+bar&state=cold&redirect_uri=http%3A%2F%2Ffoobar.example.com%2Foaclient&"
+                                    "scope=foo+bar&state=cold&redirect_uri=http%3A%2F%2Ffoobar"
+                                    ".example.com%2Foaclient&"
                                     "response_type=code&client_id=foobar")
 
     def test_deserialize_urlencoded_multiple_params(self):
@@ -165,9 +167,11 @@ class TestAuthorizationRequest(object):
             ar.verify()
 
     def test_urlencoded_invalid_scope(self):
-        args = {"response_type": [10], "client_id": "foobar",
-                "redirect_uri": "http://foobar.example.com/oaclient",
-                "scope": ["foo", "bar"], "state": "cold"}
+        args = {
+            "response_type": [10], "client_id": "foobar",
+            "redirect_uri": "http://foobar.example.com/oaclient",
+            "scope": ["foo", "bar"], "state": "cold"
+        }
 
         with pytest.raises(DecodeError):
             AuthorizationRequest(**args)
@@ -245,11 +249,13 @@ class TestAuthorizationRequest(object):
         assert ar.verify()
 
     def test_load_dict(self):
-        bib = {"scope": ["openid"],
-               "state": "id-6da9ca0cc23959f5f33e8becd9b08cae",
-               "redirect_uri": "http://localhost:8087authz",
-               "response_type": ["code"],
-               "client_id": "a1b2c3"}
+        bib = {
+            "scope": ["openid"],
+            "state": "id-6da9ca0cc23959f5f33e8becd9b08cae",
+            "redirect_uri": "http://localhost:8087authz",
+            "response_type": ["code"],
+            "client_id": "a1b2c3"
+        }
 
         arq = AuthorizationRequest(**bib)
 
@@ -260,11 +266,13 @@ class TestAuthorizationRequest(object):
         assert arq["client_id"] == bib["client_id"]
 
     def test_json_serizalize_deserialize_multiple_params(self):
-        argv = {"scope": ["openid"],
-                "state": "id-b0be8bb64118c3ec5f70093a1174b039",
-                "redirect_uri": "http://localhost:8087authz",
-                "response_type": ["code"],
-                "client_id": "a1b2c3"}
+        argv = {
+            "scope": ["openid"],
+            "state": "id-b0be8bb64118c3ec5f70093a1174b039",
+            "redirect_uri": "http://localhost:8087authz",
+            "response_type": ["code"],
+            "client_id": "a1b2c3"
+        }
 
         arq = AuthorizationRequest(**argv)
         jstr = arq.serialize(method="json")
@@ -416,15 +424,18 @@ class TestAccessTokenResponse(object):
 
         uec = atr.to_urlencoded()
         assert query_string_compare(uec,
-                                    "scope=inner+outer&level=3&expires_in=3600&token_type=example&extra=local&"
+                                    "scope=inner+outer&level=3&expires_in=3600&token_type=example"
+                                    "&extra=local&"
                                     "extra=external&refresh_token=tGzv3JOkF0XG5Qx2TlKWIA&"
-                                    "access_token=2YotnFZFEjr1zCsicMWpAA&example_parameter=example_value")
+                                    "access_token=2YotnFZFEjr1zCsicMWpAA&example_parameter"
+                                    "=example_value")
 
         del atr["extra"]
         ouec = atr.to_urlencoded()
         assert query_string_compare(ouec,
                                     "access_token=2YotnFZFEjr1zCsicMWpAA&refresh_token=tGzv3JOkF0XG5Qx2TlKWIA&"
-                                    "level=3&example_parameter=example_value&token_type=example&expires_in=3600&"
+                                    "level=3&example_parameter=example_value&token_type=example"
+                                    "&expires_in=3600&"
                                     "scope=inner+outer")
         assert len(uec) == (len(ouec) + len("extra=local") +
                             len("extra=external") + 2)

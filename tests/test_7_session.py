@@ -41,21 +41,22 @@ KEYDEF = [
     {"type": "EC", "crv": "P-256", "use": ["enc"]}
     ]
 
-_dirname = os.path.dirname(os.path.abspath(__file__))
 
-CLI_KEY = init_key_jar(public_path='{}/pub_client.jwks'.format(_dirname),
-                       private_path='{}/priv_client.jwks'.format(_dirname),
+def full_path(local_file):
+    _dirname = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(_dirname, local_file)
+
+
+CLI_KEY = init_key_jar(public_path=full_path('pub_client.jwks'),
+                       private_path=full_path('priv_client.jwks'),
                        key_defs=KEYDEF, owner=CLIENT_ID)
 
-ISS_KEY = init_key_jar(public_path='{}/pub_iss.jwks'.format(_dirname),
-                       private_path='{}/priv_iss.jwks'.format(_dirname),
+ISS_KEY = init_key_jar(public_path=full_path('pub_iss.jwks'),
+                       private_path=full_path('priv_iss.jwks'),
                        key_defs=KEYDEF, owner=ISS)
 
-ISS_KEY.import_jwks_as_json(open('{}/pub_client.jwks'.format(_dirname)).read(),
-                            CLIENT_ID)
-
-CLI_KEY.import_jwks_as_json(open('{}/pub_iss.jwks'.format(_dirname)).read(),
-                            ISS)
+ISS_KEY.import_jwks_as_json(open(full_path('pub_client.jwks')).read(), CLIENT_ID)
+CLI_KEY.import_jwks_as_json(open(full_path('pub_iss.jwks')).read(),ISS)
 
 
 class TestEndSessionResponse(object):
