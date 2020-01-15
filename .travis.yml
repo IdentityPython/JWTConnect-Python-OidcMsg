@@ -1,28 +1,27 @@
-language: python
-
 sudo: false
 
-python: 3.6
+language: python
+python:
+  - 3.6
+  - 3.7
+  - pypy3
+
+addons:
+  apt:
+    packages:
+      -
 
 install:
+  - pip install codecov
   - pip install tox
+  - pip install tox-travis
 
-env:
-   - TOXENV=py34
-   - TOXENV=py35
-   - TOXENV=py36
-   - TOXENV=py37
-   - TOXENV=quality
-   - TOXENV=docs
-
-# Everything behaves under python 3.6 except python3.5
-matrix:
-  include:
-    - python: 3.5
-      env: TOXENV=py35
-    - env: TOXENV=isort-check
 script:
-  - tox -e $TOXENV
+  - codecov --version
+  - tox
+
+after_success:
+  - codecov
 
 notifications:
   email: false
