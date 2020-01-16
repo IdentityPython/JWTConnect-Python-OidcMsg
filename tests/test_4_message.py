@@ -34,6 +34,8 @@ from oidcmsg.oauth2 import Message
 
 __author__ = 'Roland Hedberg'
 
+from oidcmsg.oauth2 import ResponseMessage
+
 keys = [
     {"type": "RSA", "use": ["sig"]},
     {"type": "RSA", "use": ["enc"]},
@@ -496,3 +498,16 @@ def test_msg_ser():
         msg_ser([1,2], 'dict')
     with pytest.raises(OidcMsgError):
         msg_ser([1,2], 'list')
+
+
+def test_error_description():
+    msg = ResponseMessage(error="foobar", error_description="ÅÄÖ")
+    with pytest.raises(ValueError):
+        msg.verify()
+
+    msg = ResponseMessage(error="foobar", error_description="abc\ndef")
+    with pytest.raises(ValueError):
+        msg.verify()
+
+    msg = ResponseMessage(error="foobar", error_description="abc def")
+    msg.verify()

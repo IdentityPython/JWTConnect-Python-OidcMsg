@@ -62,7 +62,6 @@ CLI_KEY.import_jwks_as_json(open(full_path('pub_iss.jwks')).read(),ISS)
 class TestEndSessionResponse(object):
     def test_example(self):
         esr = EndSessionResponse()
-        pass
 
 
 class TestEndSessionRequest(object):
