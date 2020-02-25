@@ -540,6 +540,7 @@ def test_factory_auth_response():
 
 
 def test_set_default():
-    ar = AccessTokenRequest()
+    ar = AccessTokenRequest(set_defaults=False)
+    assert list(ar.keys()) == []
     ar.set_defaults()
     assert 'grant_type' in ar
