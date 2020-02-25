@@ -915,6 +915,9 @@ class ProviderConfigurationResponse(ResponseMessage):
         elif parts.scheme != "https":
             raise SchemeError("Not HTTPS")
 
+        if "RS256" not in self["id_token_signing_alg_values_supported"]:
+            raise ValueError('RS256 missing from id_token_signing_alg_values_supported')
+
         if not parts.query and not parts.fragment:
             pass
         else:

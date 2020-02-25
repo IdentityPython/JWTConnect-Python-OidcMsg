@@ -536,7 +536,6 @@ class TestRegistrationRequest(object):
 
         reg = RegistrationRequest().deserialize(json.dumps(msg), "json")
         assert reg.verify()
-
         assert _eq(list(msg.keys()) + ['response_types'], reg.keys())
 
     def test_registration_request(self):
@@ -582,7 +581,6 @@ class TestRegistrationRequest(object):
                                   application_type="web",
                                   redirect_uris=[
                                       "https://example.com/authz_cb"])
-
         ser_req = req.serialize('urlencoded')
         deser_req = registration_request_deser(ser_req)
         assert set(deser_req.keys()) == {'operation', 'default_max_age',

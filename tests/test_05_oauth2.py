@@ -490,7 +490,6 @@ class TestROPCAccessTokenRequest(object):
 class TestCCAccessTokenRequest(object):
     def test_init(self):
         cc = CCAccessTokenRequest(scope="/foo")
-
         assert cc["grant_type"] == "client_credentials"
         assert cc["scope"] == ["/foo"]
 
@@ -499,7 +498,6 @@ class TestRefreshAccessTokenRequest(object):
     def test_init(self):
         ratr = RefreshAccessTokenRequest(refresh_token="ababababab",
                                          client_id="Client_id")
-
         assert ratr["grant_type"] == "refresh_token"
         assert ratr["refresh_token"] == "ababababab"
         assert ratr["client_id"] == "Client_id"

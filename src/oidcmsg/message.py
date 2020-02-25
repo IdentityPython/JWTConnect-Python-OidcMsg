@@ -35,8 +35,11 @@ class Message(MutableMapping):
     c_default = {}
     c_allowed_values = {}
 
-    def __init__(self, **kwargs):
-        self._dict = self.c_default.copy()
+    def __init__(self, set_defaults=True, **kwargs):
+        if set_defaults:
+            self._dict = self.c_default.copy()
+        else:
+            self._dict = {}
         self.lax = False
         self.jwt = None
         self.jws_header = None
@@ -73,7 +76,7 @@ class Message(MutableMapping):
         Based on specification set a parameters value to the default value.
         """
         for key, val in self.c_default.items():
-            self._dict[key] = val
+            self._dict.setdefault(key, val)
 
     def to_urlencoded(self, lev=0):
         """
