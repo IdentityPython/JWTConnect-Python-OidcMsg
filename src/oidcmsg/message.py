@@ -1016,3 +1016,5 @@ def any_deser(val, sformat="urlencoded", lev=0):
 
 
 SINGLE_OPTIONAL_ANY = (any, False, any_ser, any_deser, False)
+REQUIRED_LIST_OF_DICTS = ([dict], True, list_serializer, list_deserializer, False)
+OPTIONAL_LIST_OF_DICTS = ([dict], False, list_serializer, list_deserializer, False)
