@@ -61,7 +61,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Topic :: Software Development :: Libraries :: Python Modules"],
     install_requires=[
-        "cryptojwt>=0.7.15",
+        "cryptojwt>=0.7.16",
         "pyOpenSSL",
     ],
     zip_safe=False,
