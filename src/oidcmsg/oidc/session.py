@@ -55,7 +55,7 @@ class EndSessionRequest(Message):
 
         if 'post_logout_redirect_uri' in self:
             if "id_token_hint" not in self:
-                raise False
+                return False
 
         if "id_token_hint" in self:
             # Try to decode the JWT, checks the signature
