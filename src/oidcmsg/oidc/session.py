@@ -1,7 +1,10 @@
 import logging
 
+from cryptojwt.exception import UnsupportedAlgorithm
+
 from oidcmsg.time_util import utc_time_sans_frac
-from ..exception import MessageException, NotForMe
+from ..exception import MessageException
+from ..exception import NotForMe
 from ..message import Message
 from ..message import REQUIRED_LIST_OF_STRINGS
 from ..message import SINGLE_OPTIONAL_STRING
@@ -9,13 +12,13 @@ from ..message import SINGLE_REQUIRED_INT
 from ..message import SINGLE_REQUIRED_JSON
 from ..message import SINGLE_REQUIRED_STRING
 from ..oauth2 import ResponseMessage
-from ..oidc import clear_verified_claims, verify_id_token
-from ..oidc import verified_claim_name
-from ..oidc import IdToken
 from ..oidc import ID_TOKEN_VERIFY_ARGS
+from ..oidc import IdToken
 from ..oidc import MessageWithIdToken
 from ..oidc import SINGLE_OPTIONAL_IDTOKEN
-
+from ..oidc import clear_verified_claims
+from ..oidc import verified_claim_name
+from ..oidc import verify_id_token
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +28,7 @@ class RefreshSessionRequest(MessageWithIdToken):
     c_param.update({
         "redirect_url": SINGLE_REQUIRED_STRING,
         "state": SINGLE_REQUIRED_STRING
-        })
+    })
 
 
 class RefreshSessionResponse(MessageWithIdToken, ResponseMessage):
@@ -47,7 +50,7 @@ class EndSessionRequest(Message):
         "id_token_hint": SINGLE_OPTIONAL_IDTOKEN,
         "post_logout_redirect_uri": SINGLE_OPTIONAL_STRING,
         "state": SINGLE_OPTIONAL_STRING
-        }
+    }
 
     def verify(self, **kwargs):
         super(EndSessionRequest, self).verify(**kwargs)
@@ -111,7 +114,7 @@ class LogoutToken(Message):
             raise ValueError('Wrong member value in "events"')
 
         # There must be either a 'sub' or a 'sid', and may contain both
-        if not('sub' in self or 'sid' in self):
+        if not ('sub' in self or 'sid' in self):
             raise ValueError('There MUST be either a "sub" or a "sid"')
 
         try:
@@ -141,6 +144,12 @@ class LogoutToken(Message):
             if self['iat'] > (_now + _skew):
                 raise ValueError('Invalid issued_at time')
 
+        _allowed = kwargs.get("allowed_sign_alg")
+        if _allowed and self.jws_header['alg'] != _allowed:
+            _msg = "Wrong token signing algorithm, {} != {}".format(
+                self.jws_header['alg'], kwargs["allowed_sign_alg"])
+            raise UnsupportedAlgorithm(_msg)
+
         return True
 
 
@@ -155,7 +164,7 @@ class BackChannelLogoutRequest(Message):
 
     c_param = {
         "logout_token": SINGLE_REQUIRED_STRING
-        }
+    }
 
     def verify(self, **kwargs):
         super(BackChannelLogoutRequest, self).verify(**kwargs)

@@ -9,6 +9,7 @@ import sys
 import time
 
 from cryptojwt import as_unicode
+from cryptojwt.exception import UnsupportedAlgorithm
 from cryptojwt.jws.jws import factory as jws_factory
 from cryptojwt.jws.utils import left_hash
 from cryptojwt.jwt import JWT
@@ -241,7 +242,7 @@ def check_char_set(string, allowed):
 ID_TOKEN_VERIFY_ARGS = ['keyjar', 'verify', 'encalg', 'encenc', 'sigalg',
                         'issuer', 'allow_missing_kid', 'no_kid_issuer',
                         'trusting', 'skew', 'nonce_storage_time', 'client_id',
-                        'allow_sign_alg_none']
+                        'allow_sign_alg_none', 'allowed_sign_alg']
 
 CLAIMS_WITH_VERIFIED = ['id_token', 'id_token_hint', 'request']
 
@@ -282,11 +283,18 @@ def verify_id_token(msg, check_hash=False, claim='id_token', **kwargs):
             _allow_none = kwargs['allow_sign_alg_none']
         except KeyError:
             logger.info('Signing algorithm None not allowed')
-            return False
+            raise UnsupportedAlgorithm('Signing algorithm None not allowed')
         else:
             if not _allow_none:
                 logger.info('Signing algorithm None not allowed')
-                return False
+                raise UnsupportedAlgorithm('Signing algorithm None not allowed')
+    else:
+        if "allowed_sign_alg" in kwargs:
+            if _jws.jwt.headers['alg'] != kwargs["allowed_sign_alg"]:
+                _msg = "Wrong token signing algorithm, {} != {}".format(
+                    _jws.jwt.headers['alg'], kwargs["allowed_sign_alg"])
+                logger.error(_msg)
+                raise UnsupportedAlgorithm(_msg)
 
     _body = _jws.jwt.payload()
     if 'keyjar' in kwargs:
