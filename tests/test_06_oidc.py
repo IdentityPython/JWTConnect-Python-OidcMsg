@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 
 import pytest
 from cryptojwt.exception import BadSignature
+from cryptojwt.exception import UnsupportedAlgorithm
 from cryptojwt.jws.exception import SignerAlgError
 from cryptojwt.jws.utils import left_hash
 from cryptojwt.jwt import JWT
@@ -1422,10 +1423,11 @@ def test_wrong_sign_alg():
     packer = JWT(kj, sign_alg='HS256', lifetime=3600, iss='https://example.com/op')
     _jws = packer.pack(payload=idt.to_dict())
     msg = AuthorizationResponse(id_token=_jws)
-    assert verify_id_token(msg, check_hash=True, keyjar=kj,
+    with pytest.raises(UnsupportedAlgorithm):
+        verify_id_token(msg, check_hash=True, keyjar=kj,
                            iss="https://example.com/op",
                            client_id="554295ce3770612820620000",
-                           allowed_sign_alg="RS256") is False
+                           allowed_sign_alg="RS256")
 
 
 def test_correct_sign_alg():
