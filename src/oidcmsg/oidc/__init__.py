@@ -1,12 +1,11 @@
 # encoding: utf-8
-from urllib.parse import urlencode
-from urllib.parse import urlparse
-
 import inspect
 import json
 import logging
 import sys
 import time
+from urllib.parse import urlencode
+from urllib.parse import urlparse
 
 from cryptojwt import as_unicode
 from cryptojwt.exception import UnsupportedAlgorithm
@@ -29,7 +28,6 @@ from oidcmsg.exception import OidcMsgError
 from oidcmsg.exception import SchemeError
 from oidcmsg.exception import VerificationError
 from oidcmsg.message import Message
-from oidcmsg.message import msg_ser
 from oidcmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
 from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
 from oidcmsg.message import OPTIONAL_MESSAGE
@@ -39,6 +37,7 @@ from oidcmsg.message import SINGLE_OPTIONAL_INT
 from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
 from oidcmsg.message import SINGLE_REQUIRED_STRING
+from oidcmsg.message import msg_ser
 from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.time_util import utc_time_sans_frac
 
@@ -279,16 +278,16 @@ def verify_id_token(msg, check_hash=False, claim='id_token', **kwargs):
         raise ValueError('{} not a signed JWT'.format(claim))
 
     if _jws.jwt.headers['alg'] == 'none':
-        try:
-            _allow_none = kwargs['allow_sign_alg_none']
-        except KeyError:
-            logger.info('Signing algorithm None not allowed')
-            raise UnsupportedAlgorithm('Signing algorithm None not allowed')
-        else:
-            if not _allow_none:
+        _signed = False
+        _sign_alg = kwargs.get("sigalg")
+        if _sign_alg == "none":
+            _allowed = True
+        else:  # There might or might not be a specified signing alg
+            if kwargs.get('allow_sign_alg_none', False) is False:
                 logger.info('Signing algorithm None not allowed')
                 raise UnsupportedAlgorithm('Signing algorithm None not allowed')
     else:
+        _signed = True
         if "allowed_sign_alg" in kwargs:
             if _jws.jwt.headers['alg'] != kwargs["allowed_sign_alg"]:
                 _msg = "Wrong token signing algorithm, {} != {}".format(
@@ -297,7 +296,7 @@ def verify_id_token(msg, check_hash=False, claim='id_token', **kwargs):
                 raise UnsupportedAlgorithm(_msg)
 
     _body = _jws.jwt.payload()
-    if 'keyjar' in kwargs:
+    if _signed and 'keyjar' in kwargs:
         try:
             if _body['iss'] not in kwargs['keyjar']:
                 raise ValueError('Unknown issuer')
@@ -308,7 +307,7 @@ def verify_id_token(msg, check_hash=False, claim='id_token', **kwargs):
     if not idt.verify(**kwargs):
         return False
 
-    if check_hash:
+    if _signed and check_hash:
         _alg = idt.jws_header["alg"]
         hfunc = "HS" + _alg[-3:]
 
@@ -353,7 +352,7 @@ class AccessTokenResponse(oauth2.AccessTokenResponse):
 class UserInfoRequest(Message):
     c_param = {
         "access_token": SINGLE_OPTIONAL_STRING,
-        }
+    }
 
 
 class AuthorizationResponse(oauth2.AuthorizationResponse,
@@ -368,7 +367,7 @@ class AuthorizationResponse(oauth2.AuthorizationResponse,
         "id_token": SINGLE_OPTIONAL_IDTOKEN,
         # Below is REQUIRED if doing session management
         "session_state": SINGLE_OPTIONAL_STRING
-        })
+    })
 
     def verify(self, **kwargs):
         super(AuthorizationResponse, self).verify(**kwargs)
@@ -422,13 +421,13 @@ class AuthorizationRequest(oauth2.AuthorizationRequest):
             "request_uri": SINGLE_OPTIONAL_STRING,
             # "session_state": SINGLE_OPTIONAL_STRING,
             "response_mode": SINGLE_OPTIONAL_STRING,
-            }
-        )
+        }
+    )
     c_allowed_values = oauth2.AuthorizationRequest.c_allowed_values.copy()
     c_allowed_values.update({
         "display": ["page", "popup", "touch", "wap"],
         "prompt": ["none", "login", "consent", "select_account"]
-        })
+    })
 
     def verify(self, **kwargs):
         """Authorization Request parameters that are OPTIONAL in the OAuth 2.0
@@ -518,12 +517,12 @@ class AccessTokenRequest(oauth2.AccessTokenRequest):
     c_param.update({
         "client_assertion_type": SINGLE_OPTIONAL_STRING,
         "client_assertion": SINGLE_OPTIONAL_STRING
-        })
+    })
     c_default = {"grant_type": "authorization_code"}
     c_allowed_values = {
         "client_assertion_type": [
             "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"],
-        }
+    }
 
 
 class AddressClaim(Message):
@@ -534,7 +533,7 @@ class AddressClaim(Message):
         "region": SINGLE_OPTIONAL_STRING,
         "postal_code": SINGLE_OPTIONAL_STRING,
         "country": SINGLE_OPTIONAL_STRING
-        }
+    }
 
 
 class OpenIDSchema(ResponseMessage):
@@ -563,7 +562,7 @@ class OpenIDSchema(ResponseMessage):
             "updated_at": SINGLE_OPTIONAL_INT,
             "_claim_names": OPTIONAL_MESSAGE,
             "_claim_sources": OPTIONAL_MESSAGE
-            })
+        })
 
     def verify(self, **kwargs):
         super(OpenIDSchema, self).verify(**kwargs)
@@ -627,12 +626,12 @@ class RegistrationRequest(Message):
         "frontchannel_logout_session_required": SINGLE_OPTIONAL_BOOLEAN,
         "backchannel_logout_uri": SINGLE_OPTIONAL_STRING,
         "backchannel_logout_session_supported": SINGLE_OPTIONAL_BOOLEAN
-        }
+    }
     c_default = {"application_type": "web", "response_types": ["code"]}
     c_allowed_values = {
         "application_type": ["native", "web"],
         "subject_type": ["public", "pairwise"]
-        }
+    }
 
     def verify(self, **kwargs):
         super(RegistrationRequest, self).verify(**kwargs)
@@ -675,7 +674,7 @@ class RegistrationResponse(ResponseMessage):
             "registration_client_uri": SINGLE_OPTIONAL_STRING,
             "client_id_issued_at": SINGLE_OPTIONAL_INT,
             "client_secret_expires_at": SINGLE_OPTIONAL_INT
-            })
+        })
     c_param.update(RegistrationRequest.c_param)
 
     def verify(self, **kwargs):
@@ -702,7 +701,7 @@ class ClientRegistrationErrorResponse(oauth2.ResponseMessage):
         "error": ["invalid_redirect_uri",
                   "invalid_client_metadata",
                   "invalid_configuration_parameter"]
-        }
+    }
 
 
 class IdToken(OpenIDSchema):
@@ -722,7 +721,7 @@ class IdToken(OpenIDSchema):
         "azp": SINGLE_OPTIONAL_STRING,
         "sub_jwk": SINGLE_OPTIONAL_STRING,
         "sid": SINGLE_OPTIONAL_STRING
-        })
+    })
     hashable = {'access_token': 'at_hash', 'code': 'c_hash'}
 
     def val_hash(self, alg):
@@ -896,7 +895,7 @@ class ProviderConfigurationResponse(ResponseMessage):
         # "jwk_encryption_url": SINGLE_OPTIONAL_STRING,
         # "x509_url": SINGLE_REQUIRED_STRING,
         # "x509_encryption_url": SINGLE_OPTIONAL_STRING,
-        })
+    })
     c_default = {
         "version": "3.0",
         "token_endpoint_auth_methods_supported": [
@@ -906,7 +905,7 @@ class ProviderConfigurationResponse(ResponseMessage):
         "request_uri_parameter_supported": True,
         "require_request_uri_registration": True,
         "grant_types_supported": ["authorization_code", "implicit"]
-        }
+    }
 
     def verify(self, **kwargs):
         super(ProviderConfigurationResponse, self).verify(**kwargs)
@@ -932,7 +931,7 @@ class ProviderConfigurationResponse(ResponseMessage):
             raise ValueError('Issuer ID invalid')
 
         if any("code" in rt for rt in self[
-                "response_types_supported"]) and "token_endpoint" not in self:
+            "response_types_supported"]) and "token_endpoint" not in self:
             raise MissingRequiredAttribute("token_endpoint")
 
         return True
@@ -948,7 +947,7 @@ class JsonWebToken(Message):
         "nbf": SINGLE_OPTIONAL_INT,
         "iat": SINGLE_OPTIONAL_INT,
         "jti": SINGLE_OPTIONAL_STRING,
-        }
+    }
 
     def verify(self, **kwargs):
         super(JsonWebToken, self).verify(**kwargs)
@@ -1010,7 +1009,7 @@ class AuthnToken(JsonWebToken):
         "jti": SINGLE_REQUIRED_STRING,
         "exp": SINGLE_REQUIRED_INT,
         "iat": SINGLE_OPTIONAL_INT,
-        }
+    }
 
 
 def jwt_deser(val, sformat="json"):
@@ -1030,14 +1029,14 @@ class UserInfoErrorResponse(oauth2.ResponseMessage):
     c_allowed_values = {
         "error": ["invalid_schema", "invalid_request",
                   "invalid_token", "insufficient_scope"]
-        }
+    }
 
 
 class DiscoveryRequest(Message):
     c_param = {
         "resource": SINGLE_REQUIRED_STRING,
         "rel": SINGLE_REQUIRED_STRING
-        }
+    }
 
 
 class Link(Message):
@@ -1050,7 +1049,7 @@ class Link(Message):
         "href": SINGLE_OPTIONAL_STRING,
         "titles": SINGLE_OPTIONAL_DICT,
         "properties": SINGLE_OPTIONAL_DICT
-        }
+    }
 
 
 def _l_deser(val, sformat):
@@ -1115,14 +1114,14 @@ class JRD(ResponseMessage):
         "aliases": OPTIONAL_LIST_OF_STRINGS,
         "properties": SINGLE_OPTIONAL_DICT,
         "links": REQUIRED_LINKS
-        }
+    }
 
 
 class WebFingerRequest(Message):
     c_param = {
         "resource": SINGLE_REQUIRED_STRING,
         "rel": SINGLE_REQUIRED_STRING
-        }
+    }
     c_default = {"rel": "http://openid.net/specs/connect/1.0/issuer"}
 
 
@@ -1139,7 +1138,7 @@ class ClaimsRequest(Message):
     c_param = {
         "userinfo": OPTIONAL_MULTIPLE_Claims,
         "id_token": OPTIONAL_MULTIPLE_Claims
-        }
+    }
 
 
 def factory(msgtype, **kwargs):
