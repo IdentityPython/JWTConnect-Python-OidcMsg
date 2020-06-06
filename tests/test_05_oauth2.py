@@ -42,14 +42,14 @@ keym = [
 
 KEYJAR = build_keyjar(keys)
 IKEYJAR = build_keyjar(keys)
-IKEYJAR.issuer_keys['issuer'] = IKEYJAR.issuer_keys['']
-del IKEYJAR.issuer_keys['']
+IKEYJAR.import_jwks(IKEYJAR.export_jwks(private=True), 'issuer')
+del IKEYJAR['']
 
 KEYJARS = {}
 for iss in ['A', 'B', 'C']:
     _kj = build_keyjar(keym)
-    _kj.issuer_keys[iss] = _kj.issuer_keys['']
-    del _kj.issuer_keys['']
+    _kj.import_jwks(_kj.export_jwks(private=True) ,iss)
+    del _kj['']
     KEYJARS[iss] = _kj
 
 

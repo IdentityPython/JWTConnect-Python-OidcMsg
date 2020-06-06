@@ -767,10 +767,9 @@ class TestAccessTokenResponse(object):
         idts = IdToken(**idval)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
-        keyjar.add_symmetric('https://alpha.cloud.nds.rub.de',
-                             "SomeTestPassword")
-        _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'),
-                                  algorithm="HS256", lifetime=300)
+        keyjar.add_symmetric('https://alpha.cloud.nds.rub.de', "SomeTestPassword")
+        _signed_jwt = idts.to_jwt(key=keyjar.get_signing_key('oct'), algorithm="HS256",
+                                  lifetime=300)
 
         _info = {
             "access_token": "accessTok", "id_token": _signed_jwt,

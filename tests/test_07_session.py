@@ -49,11 +49,11 @@ def full_path(local_file):
 
 CLI_KEY = init_key_jar(public_path=full_path('pub_client.jwks'),
                        private_path=full_path('priv_client.jwks'),
-                       key_defs=KEYDEF, owner=CLIENT_ID)
+                       key_defs=KEYDEF, issuer_id=CLIENT_ID)
 
 ISS_KEY = init_key_jar(public_path=full_path('pub_iss.jwks'),
                        private_path=full_path('priv_iss.jwks'),
-                       key_defs=KEYDEF, owner=ISS)
+                       key_defs=KEYDEF, issuer_id=ISS)
 
 ISS_KEY.import_jwks_as_json(open(full_path('pub_client.jwks')).read(), CLIENT_ID)
 CLI_KEY.import_jwks_as_json(open(full_path('pub_iss.jwks')).read(),ISS)
@@ -325,7 +325,7 @@ def test_back_channel_logout_request():
         }
     lt = LogoutToken(**val)
     signer = JWS(lt.to_json(), alg='ES256')
-    _jws = signer.sign_compact(keys=ISS_KEY.get_signing_key(owner=ISS))
+    _jws = signer.sign_compact(keys=ISS_KEY.get_signing_key(issuer_id=ISS))
 
     bclr = BackChannelLogoutRequest(logout_token=_jws)
 
@@ -336,8 +336,7 @@ def test_back_channel_logout_request():
 
     assert 'logout_token' in _request
 
-    _verified = _request.verify(keyjar=CLI_KEY, iss=ISS,
-                                                     aud=CLIENT_ID, skew=30)
+    _verified = _request.verify(keyjar=CLI_KEY, iss=ISS, aud=CLIENT_ID, skew=30)
 
     assert _verified
     assert set(_request.keys()) == {'logout_token', '__verified_logout_token'}

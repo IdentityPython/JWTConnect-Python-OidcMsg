@@ -1,25 +1,19 @@
+import json
 from urllib.parse import parse_qs
 from urllib.parse import urlparse
 
-import json
 import pytest
 from cryptojwt.exception import HeaderError
-
 from cryptojwt.jwk.hmac import SYMKey
 from cryptojwt.jwk.rsa import new_rsa_key
 from cryptojwt.jws.exception import NoSuitableSigningKeys
-
 from cryptojwt.key_bundle import KeyBundle
-from cryptojwt.key_jar import build_keyjar
 from cryptojwt.key_jar import KeyJar
+from cryptojwt.key_jar import build_keyjar
 
 from oidcmsg.exception import DecodeError
 from oidcmsg.exception import MessageException
 from oidcmsg.exception import OidcMsgError
-from oidcmsg.exception import WrongEncryptionAlgorithm
-
-from oidcmsg.message import json_deserializer, msg_ser
-from oidcmsg.message import json_serializer
 from oidcmsg.message import OPTIONAL_LIST_OF_MESSAGES
 from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
 from oidcmsg.message import OPTIONAL_MESSAGE
@@ -28,8 +22,10 @@ from oidcmsg.message import SINGLE_OPTIONAL_INT
 from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
 from oidcmsg.message import SINGLE_REQUIRED_STRING
+from oidcmsg.message import json_deserializer
+from oidcmsg.message import json_serializer
+from oidcmsg.message import msg_ser
 from oidcmsg.message import sp_sep_list_deserializer
-
 from oidcmsg.oauth2 import Message
 
 __author__ = 'Roland Hedberg'
@@ -41,25 +37,25 @@ keys = [
     {"type": "RSA", "use": ["enc"]},
     {"type": "EC", "crv": "P-256", "use": ["sig"]},
     {"type": "EC", "crv": "P-256", "use": ["enc"]},
-    ]
+]
 
 keym = [
     {"type": "RSA", "use": ["sig"]},
     {"type": "RSA", "use": ["sig"]},
     {"type": "RSA", "use": ["sig"]},
-    ]
+]
 
 KEYJAR = build_keyjar(keys)
 
 IKEYJAR = build_keyjar(keys)
-IKEYJAR.issuer_keys['issuer'] = IKEYJAR.issuer_keys['']
-del IKEYJAR.issuer_keys['']
+IKEYJAR.import_jwks(IKEYJAR.export_jwks(private=True), 'issuer')
+del IKEYJAR['']
 
 KEYJARS = {}
 for iss in ['A', 'B', 'C']:
     _kj = build_keyjar(keym)
-    _kj.issuer_keys[iss] = _kj.issuer_keys['']
-    del _kj.issuer_keys['']
+    _kj.import_jwks(_kj.export_jwks(private=True), iss)
+    del _kj['']
     KEYJARS[iss] = _kj
 
 
@@ -121,7 +117,7 @@ class DummyMessage(Message):
         "opt_str_list": OPTIONAL_LIST_OF_STRINGS,
         "req_str_list": REQUIRED_LIST_OF_STRINGS,
         "opt_json": SINGLE_OPTIONAL_JSON
-        }
+    }
 
 
 class TestMessage(object):
@@ -296,7 +292,7 @@ class TestMessage(object):
 @pytest.mark.parametrize("keytype,alg", [
     ('RSA', 'RS256'),
     ('EC', 'ES256')
-    ])
+])
 def test_to_jwt(keytype, alg):
     msg = Message(a='foo', b='bar', c='tjoho')
     _jwt = msg.to_jwt(KEYJAR.get_signing_key(keytype, ''), alg)
@@ -307,7 +303,7 @@ def test_to_jwt(keytype, alg):
 @pytest.mark.parametrize("keytype,alg,enc", [
     ('RSA', 'RSA1_5', 'A128CBC-HS256'),
     ('EC', 'ECDH-ES', 'A128GCM'),
-    ])
+])
 def test_to_jwe(keytype, alg, enc):
     msg = Message(a='foo', b='bar', c='tjoho')
     _jwe = msg.to_jwe(KEYJAR.get_encrypt_key(keytype, ''), alg=alg, enc=enc)
@@ -334,7 +330,7 @@ def test_msg_deserializer():
         c_param = {
             "msg": OPTIONAL_MESSAGE,
             "opt_str": SINGLE_OPTIONAL_STRING,
-            }
+        }
 
     _dict = {
         "req_str": "Fair", "req_str_list": ["spike", "lee"],
@@ -359,7 +355,7 @@ def test_msg_list_deserializer():
         c_param = {
             "msgs": OPTIONAL_LIST_OF_MESSAGES,
             "opt_str": SINGLE_OPTIONAL_STRING,
-            }
+        }
 
     _dict = {
         "req_str": "Fair", "req_str_list": ["spike", "lee"],
@@ -385,7 +381,7 @@ def test_msg_list_deserializer_dict():
         c_param = {
             "msgs": OPTIONAL_LIST_OF_MESSAGES,
             "opt_str": SINGLE_OPTIONAL_STRING,
-            }
+        }
 
     _dict = {
         "req_str": "Fair", "req_str_list": ["spike", "lee"],
@@ -409,7 +405,7 @@ def test_msg_list_deserializer_url():
         c_param = {
             "msgs": OPTIONAL_LIST_OF_MESSAGES,
             "opt_str": SINGLE_OPTIONAL_STRING,
-            }
+        }
 
     _dict = {
         "req_str": "Fair", "req_str_list": ["spike", "lee"],
@@ -446,7 +442,7 @@ def test_json_type_error():
 @pytest.mark.parametrize("keytype,alg,enc", [
     ('RSA', 'RSA1_5', 'A128CBC-HS256'),
     ('EC', 'ECDH-ES', 'A128GCM'),
-    ])
+])
 def test_to_jwe(keytype, alg, enc):
     msg = Message(a='foo', b='bar', c='tjoho')
     _jwe = msg.to_jwe(KEYJAR.get_encrypt_key(keytype, ''), alg=alg,
@@ -469,8 +465,7 @@ def test_no_suitable_keys():
     keytype = 'RSA'
     alg = 'RS256'
     msg = Message(a='foo', b='bar', c='tjoho')
-    _jwt = msg.to_jwt(NEW_KEYJAR.get_signing_key(keytype, '', kid=NEW_KID),
-                      alg)
+    _jwt = msg.to_jwt(NEW_KEYJAR.get_signing_key(keytype, '', kid=NEW_KID), alg)
     with pytest.raises(NoSuitableSigningKeys):
         Message().from_jwt(_jwt, KEYJAR)
 
@@ -495,9 +490,9 @@ def test_weed():
 def test_msg_ser():
     assert msg_ser('a.b.c', 'dict') == 'a.b.c'
     with pytest.raises(MessageException):
-        msg_ser([1,2], 'dict')
+        msg_ser([1, 2], 'dict')
     with pytest.raises(OidcMsgError):
-        msg_ser([1,2], 'list')
+        msg_ser([1, 2], 'list')
 
 
 def test_error_description():
