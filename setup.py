@@ -51,7 +51,7 @@ setup(
     author_email="roland@catalogix.se",
     license="Apache 2.0",
     url='https://github.com/IdentityPython/oidcmsg/',
-    packages=["oidcmsg", "oidcmsg/oauth2", "oidcmsg/oidc"],
+    packages=["oidcmsg", "oidcmsg/oauth2", "oidcmsg/oidc", 'oidcmsg/storage'],
     package_dir={"": "src"},
     classifiers=[
         "Development Status :: 4 - Beta",
