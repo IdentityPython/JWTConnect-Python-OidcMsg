@@ -1,5 +1,5 @@
 __author__ = 'Roland Hedberg'
-__version__ = '0.6.10'
+__version__ = '1.0.0'
 
 
 VERIFIED_CLAIM_PREFIX = '__verified'
