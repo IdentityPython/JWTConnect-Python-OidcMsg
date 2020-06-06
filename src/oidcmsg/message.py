@@ -10,7 +10,6 @@ from cryptojwt.jwe.jwe import factory as jwe_factory
 from cryptojwt.jws.exception import NoSuitableSigningKeys
 from cryptojwt.jws.jws import JWS
 from cryptojwt.jws.jws import factory as jws_factory
-from cryptojwt.key_jar import update_keyjar
 from cryptojwt.utils import as_unicode
 
 from oidcmsg.exception import DecodeError
@@ -549,7 +548,7 @@ class Message(MutableMapping):
                     _verifier.verify_compact(txt, key)
                 except NoSuitableSigningKeys:
                     if keyjar:
-                        update_keyjar(keyjar)
+                        keyjar.update()
                         key = keyjar.get_jwt_verify_keys(_jwt, **kwargs)
                         _verifier.verify_compact(txt, key)
 
