@@ -299,7 +299,8 @@ def verify_id_token(msg, check_hash=False, claim='id_token', **kwargs):
     if _signed and 'keyjar' in kwargs:
         try:
             if _body['iss'] not in kwargs['keyjar']:
-                raise ValueError('Unknown issuer')
+                logger.info('KeyJar issuers: {}'.format(kwargs['keyjar']))
+                raise ValueError('Unknown issuer: "{}"'.format(_body['iss']))
         except KeyError:
             raise MissingRequiredAttribute('iss')
 
