@@ -86,6 +86,7 @@ class AbstractFileSystem(object):
         except KeyError:
             return default
         else:
+            logger.debug('Read "%s"', item)
             return self.db[item]
 
     def set(self, key, value):
