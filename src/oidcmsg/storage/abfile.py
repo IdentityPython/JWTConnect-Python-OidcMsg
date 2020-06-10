@@ -86,7 +86,7 @@ class AbstractFileSystem(object):
         except KeyError:
             return default
         else:
-            logger.debug('Read "%s"', item)
+            logger.debug('Read from "%s"', item)
             return self.db[item]
 
     def set(self, key, value):
@@ -115,6 +115,7 @@ class AbstractFileSystem(object):
                 fp.write(self.value_conv.serialize(value))
 
         self.db[_key] = value
+        logger.debug('Wrote to "%s"', key)
         self.fmtime[_key] = self.get_mtime(fname)
 
     def delete(self, key):
