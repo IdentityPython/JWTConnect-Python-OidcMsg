@@ -34,7 +34,13 @@ class OidcContext:
                 self.db_conf = add_issuer(self.db_conf, _iss)
             self.storage_cls = get_storage_class(self.db_conf)
 
-        self.db = init_storage(self.db_conf)
+            if self.db_conf.get('default'):
+                self.db = init_storage(self.db_conf)
+            else:
+                self.db = None
+        else:
+            self.db = init_storage()
+
         self.keyjar = self._keyjar(keyjar, self.db_conf, config, entity_id=entity_id)
 
     def add_boxes(self, boxes, db_conf):
@@ -64,17 +70,19 @@ class OidcContext:
                 # make sure I have the keys under my own name too (if I know it)
                 _keyjar.import_jwks_as_json(_keyjar.export_jwks_as_json(True, ''), entity_id)
 
+            _httpc_params = conf.get('httpc_param')
+            if _httpc_params:
+                _keyjar.httpc_params = _httpc_params
+
             return _keyjar
         else:
             return keyjar
-
 
     def set(self, item, value):
         if isinstance(value, Message):
             self.db[item] = value.to_dict()
         else:
             self.db[item] = value
-
 
     def get(self, item):
         if item == 'seed':
