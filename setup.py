@@ -63,6 +63,7 @@ setup(
     install_requires=[
         "cryptojwt>=1.0.0",
         "pyOpenSSL",
+        "filelock>=3.0.12"
     ],
     zip_safe=False,
     cmdclass={'test': PyTest},
