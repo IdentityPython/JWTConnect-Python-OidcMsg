@@ -70,7 +70,7 @@ class OidcContext:
                 # make sure I have the keys under my own name too (if I know it)
                 _keyjar.import_jwks_as_json(_keyjar.export_jwks_as_json(True, ''), entity_id)
 
-            _httpc_params = conf.get('httpc_param')
+            _httpc_params = conf.get('httpc_params')
             if _httpc_params:
                 _keyjar.httpc_params = _httpc_params
 
