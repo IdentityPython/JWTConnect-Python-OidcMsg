@@ -8,12 +8,12 @@ class AbstractStorage(object):
     """
 
     def __init__(self, conf_dict):
-        if isinstance(conf_dict['handler'], str):
-            _handler = importer(conf_dict['handler'])
-            _args = {k: v for k, v in conf_dict.items() if k != 'handler'}
+        if isinstance(conf_dict["handler"], str):
+            _handler = importer(conf_dict["handler"])
+            _args = {k: v for k, v in conf_dict.items() if k != "handler"}
             self.storage = _handler(_args)
         else:
-            self.storage = conf_dict['handler'](conf_dict)
+            self.storage = conf_dict["handler"](conf_dict)
 
     def get(self, k, default=None):
         return self.storage.get(k, default)

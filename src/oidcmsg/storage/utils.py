@@ -3,17 +3,17 @@ import importlib
 
 def modsplit(name):
     """Split importable"""
-    if ':' in name:
-        _part = name.split(':')
+    if ":" in name:
+        _part = name.split(":")
         if len(_part) != 2:
             raise ValueError("Syntax error: {s}")
         return _part[0], _part[1]
 
-    _part = name.split('.')
+    _part = name.split(".")
     if len(_part) < 2:
         raise ValueError("Syntax error: {s}")
 
-    return '.'.join(_part[:-1]), _part[-1]
+    return ".".join(_part[:-1]), _part[-1]
 
 
 def importer(name):

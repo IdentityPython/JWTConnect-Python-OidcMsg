@@ -10,17 +10,16 @@ def key_label(func):
 
 
 class LabeledAbstractStorage(AbstractStorage):
-
-    def __init__(self, conf_dict, label=''):
-        _conf = {k: v for k, v in conf_dict.items() if k != 'label'}
+    def __init__(self, conf_dict, label=""):
+        _conf = {k: v for k, v in conf_dict.items() if k != "label"}
         AbstractStorage.__init__(self, conf_dict=_conf)
 
-        _label = label or conf_dict.get('label', '')
+        _label = label or conf_dict.get("label", "")
 
         if not _label:
-            self.label = ''
+            self.label = ""
         else:
-            self.label = '__{}__'.format(_label)
+            self.label = "__{}__".format(_label)
 
     @key_label
     def get(self, k, default=None):
@@ -57,15 +56,15 @@ class LabeledAbstractStorage(AbstractStorage):
     def __iter__(self):
         for key, val in self.storage.__iter__():
             if key.startswith(self.label):
-                yield key[len(self.label):], val
+                yield key[len(self.label) :], val
 
     def keys(self):
-        return [k[len(self.label):] for k in self.storage.keys() if k.startswith(self.label)]
+        return [k[len(self.label) :] for k in self.storage.keys() if k.startswith(self.label)]
 
     def items(self):
         for key, val in self.storage.__iter__():
             if key.startswith(self.label):
-                yield key[len(self.label):], val
+                yield key[len(self.label) :], val
 
     def __len__(self):
         return len(self.keys())
@@ -85,15 +84,15 @@ class SetGetDict(dict):
         del self[item]
 
 
-class LabeledDict():
-    def __init__(self, label=''):
+class LabeledDict:
+    def __init__(self, label=""):
         self.storage = SetGetDict()
 
-        if label == '':
+        if label == "":
             self.label = label
             self.label_len = 0
         else:
-            self.label = '__{}__'.format(label)
+            self.label = "__{}__".format(label)
             self.label_len = len(self.label)
 
     @key_label
@@ -131,8 +130,7 @@ class LabeledDict():
     def __iter__(self):
         for key, val in self.storage.__iter__():
             if key.startswith(self.label):
-                yield key[self.label_len:], val
+                yield key[self.label_len :], val
 
     def keys(self):
-        return [k[self.label_len:] for k in self.storage.keys() if k.startswith(self.label)]
-
+        return [k[self.label_len :] for k in self.storage.keys() if k.startswith(self.label)]

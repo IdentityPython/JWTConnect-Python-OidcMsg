@@ -2,11 +2,13 @@ import abc
 import datetime
 import json
 
-from oidcmsg.message import Message
+from oidcendpoint.util import importer
+
 from oidcmsg.message import OPTIONAL_MESSAGE
 from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
 from oidcmsg.message import SINGLE_REQUIRED_STRING
+from oidcmsg.message import Message
 from oidcmsg.message import msg_deser
 from oidcmsg.message import msg_list_ser
 from oidcmsg.message import msg_ser
@@ -18,14 +20,12 @@ from oidcmsg.oidc import claims_request_deser
 from oidcmsg.oidc import deserialize_from_one_of
 from oidcmsg.oidc import msg_ser_json
 
-from oidcendpoint.util import importer
-
 
 class PlaceOfBirth(Message):
     c_param = {
         "country": SINGLE_REQUIRED_STRING,
         "region": SINGLE_OPTIONAL_STRING,
-        "locality": SINGLE_REQUIRED_STRING
+        "locality": SINGLE_REQUIRED_STRING,
     }
 
 
@@ -38,14 +38,20 @@ def place_of_birth_deser(val, sformat="json"):
         if not isinstance(val, str):
             val = json.dumps(val)
             sformat = "json"
-    elif sformat == 'dict':
+    elif sformat == "dict":
         if isinstance(val, str):
             val = json.loads(val)
 
     return PlaceOfBirth().deserialize(val, sformat)
 
 
-SINGLE_OPTIONAL_PLACE_OF_BIRTH = (PlaceOfBirth, False, msg_ser_json, place_of_birth_deser, False)
+SINGLE_OPTIONAL_PLACE_OF_BIRTH = (
+    PlaceOfBirth,
+    False,
+    msg_ser_json,
+    place_of_birth_deser,
+    False,
+)
 
 # YYYY-MM-DDThh:mm:ss±hh
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
@@ -151,25 +157,24 @@ OPTIONAL_DATE = (str, False, date_ser, date_deser, False)
 
 class IdentityAssuranceClaims(OpenIDSchema):
     c_param = OpenIDSchema.c_param.copy()
-    c_param.update({
-        "place_of_birth": SINGLE_OPTIONAL_JSON,
-        "nationalities": SINGLE_OPTIONAL_STRING,
-        "birth_family_name": SINGLE_OPTIONAL_STRING,
-        "birth_given_name": SINGLE_OPTIONAL_STRING,
-        "birth_middle_name": SINGLE_OPTIONAL_STRING,
-        "salutation": SINGLE_OPTIONAL_STRING,
-        "title": SINGLE_OPTIONAL_STRING
-    })
+    c_param.update(
+        {
+            "place_of_birth": SINGLE_OPTIONAL_JSON,
+            "nationalities": SINGLE_OPTIONAL_STRING,
+            "birth_family_name": SINGLE_OPTIONAL_STRING,
+            "birth_given_name": SINGLE_OPTIONAL_STRING,
+            "birth_middle_name": SINGLE_OPTIONAL_STRING,
+            "salutation": SINGLE_OPTIONAL_STRING,
+            "title": SINGLE_OPTIONAL_STRING,
+        }
+    )
 
 
 OPTIONAL_IDA_CLAIMS = (IdentityAssuranceClaims, False, msg_ser, msg_deser, False)
 
 
 class Verifier(Message):
-    c_param = {
-        "organization": SINGLE_REQUIRED_STRING,
-        "txn": SINGLE_REQUIRED_STRING
-    }
+    c_param = {"organization": SINGLE_REQUIRED_STRING, "txn": SINGLE_REQUIRED_STRING}
 
 
 def verifier_deser(val, sformat="urlencoded"):
@@ -186,10 +191,7 @@ REQUIRED_VERIFIER = (Verifier, True, msg_ser, verifier_deser, False)
 
 
 class Issuer(Message):
-    c_param = {
-        "name": SINGLE_REQUIRED_STRING,
-        "country": SINGLE_REQUIRED_STRING
-    }
+    c_param = {"name": SINGLE_REQUIRED_STRING, "country": SINGLE_REQUIRED_STRING}
 
 
 def issuer_deser(val, sformat="urlencoded"):
@@ -211,7 +213,7 @@ class Document(Message):
         "number": SINGLE_REQUIRED_STRING,
         "issuer": REQUIRED_ISSUER,
         "date_of_issuance": REQURIED_TIME_STAMP,
-        "date_of_expiry": REQURIED_TIME_STAMP
+        "date_of_expiry": REQURIED_TIME_STAMP,
     }
 
 
@@ -223,9 +225,7 @@ OPTIONAL_DOCUMENT = (Document, False, msg_ser, document_deser, False)
 
 
 class Evidence(Message):
-    c_param = {
-        "type": SINGLE_OPTIONAL_STRING
-    }
+    c_param = {"type": SINGLE_OPTIONAL_STRING}
 
     def verify(self, **kwargs):
         _type = self.get("type")
@@ -275,12 +275,14 @@ OPTIONAL_EVIDENCE_LIST = ([Evidence], False, msg_list_ser, evidence_list_deser, 
 
 class IdDocument(Evidence):
     c_param = Evidence.c_param.copy()
-    c_param.update({
-        "method": SINGLE_REQUIRED_STRING,
-        "verifier": REQUIRED_VERIFIER,
-        "time": OPTIONAL_TIME_STAMP,
-        "document": OPTIONAL_DOCUMENT
-    })
+    c_param.update(
+        {
+            "method": SINGLE_REQUIRED_STRING,
+            "verifier": REQUIRED_VERIFIER,
+            "time": OPTIONAL_TIME_STAMP,
+            "document": OPTIONAL_DOCUMENT,
+        }
+    )
 
 
 def id_document_deser(val, sformat="urlencoded"):
@@ -299,9 +301,9 @@ OPTIONAL_ID_DOCUMENT = (IdDocument, False, msg_ser, id_document_deser, False)
 
 class Provider(AddressClaim):
     c_param = AddressClaim.c_param.copy()
-    c_param.update({
-        "name": SINGLE_OPTIONAL_STRING,
-    })
+    c_param.update(
+        {"name": SINGLE_OPTIONAL_STRING,}
+    )
 
 
 def provider_deser(val, sformat="urlencoded"):
@@ -319,10 +321,7 @@ REQUIRED_PROVIDER = (Provider, True, msg_ser, provider_deser, False)
 
 class UtilityBill(Evidence):
     c_param = Evidence.c_param.copy()
-    c_param.update({
-        "provider": REQUIRED_PROVIDER,
-        "date": OPTIONAL_TIME_STAMP
-    })
+    c_param.update({"provider": REQUIRED_PROVIDER, "date": OPTIONAL_TIME_STAMP})
 
 
 def utility_bill_deser(val, sformat="urlencoded"):
@@ -341,11 +340,13 @@ OPTIONAL_UTILITY_BILL = (UtilityBill, False, msg_ser, utility_bill_deser, False)
 
 class QES(Evidence):
     c_param = Evidence.c_param.copy()
-    c_param.update({
-        "issuer": SINGLE_REQUIRED_STRING,
-        "serial_number": SINGLE_REQUIRED_STRING,
-        "created_at": REQURIED_TIME_STAMP
-    })
+    c_param.update(
+        {
+            "issuer": SINGLE_REQUIRED_STRING,
+            "serial_number": SINGLE_REQUIRED_STRING,
+            "created_at": REQURIED_TIME_STAMP,
+        }
+    )
 
 
 def qes_deser(val, sformat="urlencoded"):
@@ -389,17 +390,28 @@ def verification_element_deser(val, sformat="urlencoded"):
 
 
 OPTIONAL_VERIFICATION_ELEMENT = (
-    VerificationElement, False, msg_ser, verification_element_deser, False)
+    VerificationElement,
+    False,
+    msg_ser,
+    verification_element_deser,
+    False,
+)
 
 
 class VerifiedClaims(Message):
     c_param = {
         "verification": OPTIONAL_VERIFICATION_ELEMENT,
-        "claims": OPTIONAL_IDA_CLAIMS
+        "claims": OPTIONAL_IDA_CLAIMS,
     }
 
 
-SINGLE_OPTIONAL_CLAIMSREQ = (ClaimsRequest, False, msg_ser_json, claims_request_deser, False)
+SINGLE_OPTIONAL_CLAIMSREQ = (
+    ClaimsRequest,
+    False,
+    msg_ser_json,
+    claims_request_deser,
+    False,
+)
 
 OPTIONAL_VERIFICATION_REQUEST = OPTIONAL_MESSAGE
 
@@ -489,14 +501,16 @@ def verification_element_request_deser(val, sformat="urlencoded"):
 
 
 OPTIONAL_VERIFICATION_ELEMENT_REQUEST = (
-    VerificationElementRequest, False, msg_ser, verification_element_request_deser, True)
+    VerificationElementRequest,
+    False,
+    msg_ser,
+    verification_element_request_deser,
+    True,
+)
 
 
 class VerifiedClaimsRequest(Message):
-    c_param = {
-        "verification": OPTIONAL_MESSAGE,
-        "claims": OPTIONAL_IDA_CLAIMS
-    }
+    c_param = {"verification": OPTIONAL_MESSAGE, "claims": OPTIONAL_IDA_CLAIMS}
 
     def verify(self, **kwargs):
         super(VerifiedClaimsRequest, self).verify(**kwargs)
@@ -537,7 +551,9 @@ class ClaimsConstructor:
             if _value_type:
                 if isinstance(value, ClaimsConstructor):
                     if not isinstance(value.base_class, _value_type):
-                        raise ValueError("Wrong type of value '{}':'{}'".format(key, type(value.base_class)))
+                        raise ValueError(
+                            "Wrong type of value '{}':'{}'".format(key, type(value.base_class))
+                        )
                 elif not _correct_value_type(value, _value_type):
                     raise ValueError("Wrong type of value '{}':'{}'".format(key, type(value)))
 

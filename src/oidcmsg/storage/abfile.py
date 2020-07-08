@@ -40,11 +40,11 @@ class AbstractFileSystem(object):
             is a class that has the methods 'serialize'/'deserialize'.
         """
 
-        _fdir = conf_dict.get('fdir', '')
-        if '{issuer}' in _fdir:
-            issuer = conf_dict.get('issuer')
+        _fdir = conf_dict.get("fdir", "")
+        if "{issuer}" in _fdir:
+            issuer = conf_dict.get("issuer")
             if not issuer:
-                raise ValueError('Missing issuer value')
+                raise ValueError("Missing issuer value")
             self.fdir = _fdir.format(issuer=issuer)
         else:
             self.fdir = _fdir
@@ -52,13 +52,13 @@ class AbstractFileSystem(object):
         self.fmtime = {}
         self.db = {}
 
-        key_conv = conf_dict.get('key_conv')
+        key_conv = conf_dict.get("key_conv")
         if key_conv:
             self.key_conv = importer(key_conv)()
         else:
             self.key_conv = QPKey()
 
-        value_conv = conf_dict.get('value_conv')
+        value_conv = conf_dict.get("value_conv")
         if value_conv:
             self.value_conv = importer(value_conv)()
         else:
@@ -109,9 +109,9 @@ class AbstractFileSystem(object):
             _key = key
 
         fname = os.path.join(self.fdir, _key)
-        lock = FileLock('{}.lock'.format(fname))
+        lock = FileLock("{}.lock".format(fname))
         with lock:
-            with open(fname, 'w') as fp:
+            with open(fname, "w") as fp:
                 fp.write(self.value_conv.serialize(value))
 
         self.db[_key] = value
@@ -121,7 +121,7 @@ class AbstractFileSystem(object):
     def delete(self, key):
         fname = os.path.join(self.fdir, key)
         if os.path.isfile(fname):
-            lock = FileLock('{}.lock'.format(fname))
+            lock = FileLock("{}.lock".format(fname))
             with lock:
                 os.unlink(fname)
 
@@ -179,21 +179,21 @@ class AbstractFileSystem(object):
             else:
                 return False
         else:
-            logger.error('Could not access {}'.format(fname))
+            logger.error("Could not access {}".format(fname))
             raise KeyError(item)
 
     def _read_info(self, fname):
         if os.path.isfile(fname):
             try:
-                lock = FileLock('{}.lock'.format(fname))
+                lock = FileLock("{}.lock".format(fname))
                 with lock:
-                    info = open(fname, 'r').read().strip()
+                    info = open(fname, "r").read().strip()
                 return self.value_conv.deserialize(info)
             except Exception as err:
                 logger.error(err)
                 raise
         else:
-            logger.error('No such file: {}'.format(fname))
+            logger.error("No such file: {}".format(fname))
         return None
 
     def sync(self):
@@ -209,7 +209,7 @@ class AbstractFileSystem(object):
 
             if not os.path.isfile(fname):
                 continue
-            if fname.endswith('.lock'):
+            if fname.endswith(".lock"):
                 continue
 
             if f in self.fmtime:
@@ -220,7 +220,7 @@ class AbstractFileSystem(object):
                 try:
                     self.db[f] = self._read_info(fname)
                 except Exception as err:
-                    logger.warning('Bad content in {} ({})'.format(fname, err))
+                    logger.warning("Bad content in {} ({})".format(fname, err))
                 else:
                     self.fmtime[f] = mtime
 

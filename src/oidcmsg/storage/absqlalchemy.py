@@ -9,13 +9,13 @@ from oidcmsg.storage.db_setup import Base
 
 class AbstractStorageSQLAlchemy:
     def __init__(self, conf_dict):
-        self.engine = alchemy_db.create_engine(conf_dict['url'])
+        self.engine = alchemy_db.create_engine(conf_dict["url"])
         self.connection = self.engine.connect()
         Base.metadata.create_all(self.engine)
         self.metadata = alchemy_db.MetaData()
-        self.table = alchemy_db.Table(conf_dict['params']['table'],
-                                      self.metadata, autoload=True,
-                                      autoload_with=self.engine)
+        self.table = alchemy_db.Table(
+            conf_dict["params"]["table"], self.metadata, autoload=True, autoload_with=self.engine,
+        )
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
@@ -46,27 +46,24 @@ class AbstractStorageSQLAlchemy:
 
     def set(self, k, v):
         value = self._data_to_db(v)
-        ins = self.table.insert().values(owner=k,
-                                         data=value)
+        ins = self.table.insert().values(owner=k, data=value)
         self.session.execute(ins)
         self.session.commit()
         return 1
 
-    def update(self, k, v, col_match='owner', col_value='data'):
+    def update(self, k, v, col_match="owner", col_value="data"):
         """
             k = value_to_match
             v = value_to_be_substituted
         """
         value = self._data_to_db(v)
         table_column = getattr(self.table.c, col_match)
-        upquery = self.table.update(). \
-            where(table_column == k). \
-            values(**{col_value: value})
+        upquery = self.table.update().where(table_column == k).values(**{col_value: value})
         self.session.execute(upquery)
         self.session.commit()
         return 1
 
-    def delete(self, v, k='owner'):
+    def delete(self, v, k="owner"):
         """
         return the count of deleted objects
         """
