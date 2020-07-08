@@ -6,7 +6,6 @@ import sys
 from oidcmsg import verified_claim_name
 from oidcmsg.exception import MissingAttribute
 from oidcmsg.exception import VerificationError
-from oidcmsg.message import Message
 from oidcmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
 from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
 from oidcmsg.message import REQUIRED_LIST_OF_SP_SEP_STRINGS
@@ -17,6 +16,7 @@ from oidcmsg.message import SINGLE_OPTIONAL_STRING
 from oidcmsg.message import SINGLE_REQUIRED_BOOLEAN
 from oidcmsg.message import SINGLE_REQUIRED_INT
 from oidcmsg.message import SINGLE_REQUIRED_STRING
+from oidcmsg.message import Message
 
 logger = logging.getLogger(__name__)
 

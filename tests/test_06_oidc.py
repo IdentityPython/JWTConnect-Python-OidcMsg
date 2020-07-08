@@ -21,8 +21,9 @@ from oidcmsg.exception import MessageException
 from oidcmsg.exception import MissingRequiredAttribute
 from oidcmsg.exception import NotAllowedValue
 from oidcmsg.exception import OidcMsgError
-from oidcmsg.oauth2 import ROPCAccessTokenRequest
 from oidcmsg.oauth2 import ResponseMessage
+from oidcmsg.oauth2 import ROPCAccessTokenRequest
+from oidcmsg.oidc import JRD
 from oidcmsg.oidc import AccessTokenRequest
 from oidcmsg.oidc import AccessTokenResponse
 from oidcmsg.oidc import AddressClaim
@@ -35,7 +36,6 @@ from oidcmsg.oidc import CHashError
 from oidcmsg.oidc import Claims
 from oidcmsg.oidc import DiscoveryRequest
 from oidcmsg.oidc import IdToken
-from oidcmsg.oidc import JRD
 from oidcmsg.oidc import Link
 from oidcmsg.oidc import OpenIDSchema
 from oidcmsg.oidc import ProviderConfigurationResponse
@@ -475,11 +475,9 @@ class TestProviderConfigurationResponse(object):
             "authorization_endpoint":
                 "https://server.example.com/connect/authorize",
             "jwks_uri": "https://server.example.com/jwks.json",
-            "response_types_supported": ["code", "code id_token", "id_token",
-                                         "token id_token"],
+            "response_types_supported": ["code", "code id_token", "id_token", "token id_token"],
             "subject_types_supported": ["public", "pairwise"],
-            "id_token_signing_alg_values_supported": ["RS256", "ES256",
-                                                      "HS256"],
+            "id_token_signing_alg_values_supported": ["RS256", "ES256", "HS256"],
         }
 
         del provider_config[required_param]
@@ -494,8 +492,7 @@ class TestProviderConfigurationResponse(object):
             "jwks_uri": "https://server.example.com/jwks.json",
             "response_types_supported": ["id_token", "token id_token"],
             "subject_types_supported": ["public", "pairwise"],
-            "id_token_signing_alg_values_supported": ["RS256", "ES256",
-                                                      "HS256"],
+            "id_token_signing_alg_values_supported": ["RS256", "ES256", "HS256"],
         }
 
         # should not raise an exception
@@ -547,8 +544,7 @@ class TestRegistrationRequest(object):
         req = RegistrationRequest(operation="register", default_max_age=10,
                                   require_auth_time=True, default_acr="foo",
                                   application_type="web",
-                                  redirect_uris=[
-                                      "https://example.com/authz_cb"])
+                                  redirect_uris=["https://example.com/authz_cb"])
         assert req.verify()
         js = req.to_json()
         js_obj = json.loads(js)
@@ -570,11 +566,9 @@ class TestRegistrationRequest(object):
         "id_token_encrypted_response_enc",
         "userinfo_encrypted_response_enc",
     ])
-    def test_registration_request_with_coupled_encryption_params(self,
-                                                                 enc_param):
+    def test_registration_request_with_coupled_encryption_params(self, enc_param):
         registration_params = {
-            "redirect_uris": ["https://example.com/authz_cb"],
-            enc_param: "RS25asdasd6"
+            "redirect_uris": ["https://example.com/authz_cb"], enc_param: "RS256"
         }
         registration_req = RegistrationRequest(**registration_params)
         with pytest.raises(MissingRequiredAttribute):
@@ -745,8 +739,8 @@ class TestAuthorizationRequest(object):
         ar = AuthorizationRequest(**args)
         keyjar = KeyJar()
         keyjar.add_symmetric('', "SomeTestPassword")
-        _signed_jwt = make_openid_request(ar, keyjar, 'foobar', 'HS256',
-                                          'barfoo')
+        keyjar.add_symmetric('foobar', "SomeTestPassword")
+        _signed_jwt = make_openid_request(ar, keyjar, 'foobar', 'HS256', 'barfoo')
         ar['request'] = _signed_jwt
         del ar['nonce']
         del ar['extra']

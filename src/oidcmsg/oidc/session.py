@@ -3,19 +3,20 @@ import logging
 from cryptojwt.exception import UnsupportedAlgorithm
 
 from oidcmsg.time_util import utc_time_sans_frac
+
 from ..exception import MessageException
 from ..exception import NotForMe
-from ..message import Message
 from ..message import REQUIRED_LIST_OF_STRINGS
 from ..message import SINGLE_OPTIONAL_STRING
 from ..message import SINGLE_REQUIRED_INT
 from ..message import SINGLE_REQUIRED_JSON
 from ..message import SINGLE_REQUIRED_STRING
+from ..message import Message
 from ..oauth2 import ResponseMessage
 from ..oidc import ID_TOKEN_VERIFY_ARGS
+from ..oidc import SINGLE_OPTIONAL_IDTOKEN
 from ..oidc import IdToken
 from ..oidc import MessageWithIdToken
-from ..oidc import SINGLE_OPTIONAL_IDTOKEN
 from ..oidc import clear_verified_claims
 from ..oidc import verified_claim_name
 from ..oidc import verify_id_token

@@ -1,7 +1,6 @@
 from .extension import LabeledDict
 from .utils import importer
 
-
 """
 Configuration examples
 

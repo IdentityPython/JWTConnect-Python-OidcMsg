@@ -3,23 +3,23 @@ import time
 
 import pytest
 from cryptojwt.jws.jws import JWS
-from cryptojwt.key_bundle import KeyBundle
-from cryptojwt.key_jar import init_key_jar
-from cryptojwt.key_jar import KeyJar
 from cryptojwt.jws.utils import alg2keytype
+from cryptojwt.key_bundle import KeyBundle
+from cryptojwt.key_jar import KeyJar
+from cryptojwt.key_jar import init_key_jar
 
 from oidcmsg.exception import MessageException
 from oidcmsg.exception import NotForMe
-from oidcmsg.oidc import verified_claim_name
 from oidcmsg.oidc import Claims
 from oidcmsg.oidc import ClaimsRequest
 from oidcmsg.oidc import IdToken
-from oidcmsg.oidc.session import BACK_CHANNEL_LOGOUT_EVENT, \
-    BackChannelLogoutRequest
-from oidcmsg.oidc.session import LogoutToken
+from oidcmsg.oidc import verified_claim_name
+from oidcmsg.oidc.session import BACK_CHANNEL_LOGOUT_EVENT
+from oidcmsg.oidc.session import BackChannelLogoutRequest
 from oidcmsg.oidc.session import CheckSessionRequest
 from oidcmsg.oidc.session import EndSessionRequest
 from oidcmsg.oidc.session import EndSessionResponse
+from oidcmsg.oidc.session import LogoutToken
 from oidcmsg.time_util import utc_time_sans_frac
 
 CLIENT_ID = "client_1"

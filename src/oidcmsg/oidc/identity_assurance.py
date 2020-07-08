@@ -2,11 +2,13 @@ import abc
 import datetime
 import json
 
-from oidcmsg.message import Message
+from oidcendpoint.util import importer
+
 from oidcmsg.message import OPTIONAL_MESSAGE
 from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
 from oidcmsg.message import SINGLE_REQUIRED_STRING
+from oidcmsg.message import Message
 from oidcmsg.message import msg_deser
 from oidcmsg.message import msg_list_ser
 from oidcmsg.message import msg_ser
@@ -17,8 +19,6 @@ from oidcmsg.oidc import OpenIDSchema
 from oidcmsg.oidc import claims_request_deser
 from oidcmsg.oidc import deserialize_from_one_of
 from oidcmsg.oidc import msg_ser_json
-
-from oidcendpoint.util import importer
 
 
 class PlaceOfBirth(Message):

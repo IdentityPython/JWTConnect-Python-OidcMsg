@@ -2,8 +2,6 @@ import time
 from urllib.parse import quote_plus
 
 from oidcmsg.oidc import Claims
-from oidcmsg.time_util import time_sans_frac
-
 from oidcmsg.oidc.identity_assurance import ClaimsConstructor
 from oidcmsg.oidc.identity_assurance import IDAClaimsRequest
 from oidcmsg.oidc.identity_assurance import VerificationElement
@@ -11,6 +9,7 @@ from oidcmsg.oidc.identity_assurance import VerifiedClaims
 from oidcmsg.oidc.identity_assurance import VerifiedClaimsRequest
 from oidcmsg.oidc.identity_assurance import from_iso8601_2004_time
 from oidcmsg.oidc.identity_assurance import to_iso8601_2004_time
+from oidcmsg.time_util import time_sans_frac
 
 
 def test_time_stamp():

@@ -1,5 +1,4 @@
 # pylint: disable=no-self-use,missing-docstring
-
 import json
 from urllib.parse import parse_qs
 from urllib.parse import urlparse
@@ -18,9 +17,9 @@ from oidcmsg.oauth2 import AuthorizationErrorResponse
 from oidcmsg.oauth2 import AuthorizationRequest
 from oidcmsg.oauth2 import AuthorizationResponse
 from oidcmsg.oauth2 import CCAccessTokenRequest
-from oidcmsg.oauth2 import ROPCAccessTokenRequest
 from oidcmsg.oauth2 import RefreshAccessTokenRequest
 from oidcmsg.oauth2 import ResponseMessage
+from oidcmsg.oauth2 import ROPCAccessTokenRequest
 from oidcmsg.oauth2 import TokenErrorResponse
 from oidcmsg.oauth2 import factory
 from oidcmsg.oauth2 import is_error_message

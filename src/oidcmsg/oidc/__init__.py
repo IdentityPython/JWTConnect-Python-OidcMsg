@@ -27,7 +27,6 @@ from oidcmsg.exception import NotForMe
 from oidcmsg.exception import OidcMsgError
 from oidcmsg.exception import SchemeError
 from oidcmsg.exception import VerificationError
-from oidcmsg.message import Message
 from oidcmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
 from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
 from oidcmsg.message import OPTIONAL_MESSAGE
@@ -37,6 +36,7 @@ from oidcmsg.message import SINGLE_OPTIONAL_INT
 from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
 from oidcmsg.message import SINGLE_REQUIRED_STRING
+from oidcmsg.message import Message
 from oidcmsg.message import msg_ser
 from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.time_util import utc_time_sans_frac
