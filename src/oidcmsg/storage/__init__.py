@@ -1,4 +1,7 @@
+import logging
 from .utils import importer
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractStorage(object):
@@ -11,7 +14,12 @@ class AbstractStorage(object):
         if isinstance(conf_dict['handler'], str):
             _handler = importer(conf_dict['handler'])
             _args = {k: v for k, v in conf_dict.items() if k != 'handler'}
-            self.storage = _handler(_args)
+            try:
+                self.storage = _handler(_args)
+            except TypeError as e:
+                # needed for globally configured ORM models
+                logger.debug('Abstorage {}: {}'.format(_handler, e))
+                self.storage = _handler()
         else:
             self.storage = conf_dict['handler'](conf_dict)
 
