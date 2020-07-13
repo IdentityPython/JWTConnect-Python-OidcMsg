@@ -51,7 +51,7 @@ class AbstractStorage(object):
         return self.__str__()
 
     def __len__(self):
-        return len(self.storage())
+        return len(self.storage)
 
     def __contains__(self, k):
         return self.storage.__contains__(k)
