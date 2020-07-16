@@ -2,16 +2,14 @@ from .extension import LabeledDict
 from .utils import importer
 
 """
-Configuration examples
+Configuration example
 
 STORAGE_CONFIG_1: {
-    'abstract_storage_cls': 'abstorage.extension.LabeledAbstractStorage',
     'keyjar': {
         'handler': 'abstorage.storages.abfile.AbstractFileSystem',
         'fdir': 'db/keyjar',
         'key_conv': 'abstorage.converter.QPKey',
         'value_conv': 'cryptojwt.serialize.item.KeyIssuer',
-        'label': 'keyjar'
     },
     'default': {
         'handler': 'abstorage.storages.abfile.AbstractFileSystem',
@@ -20,19 +18,6 @@ STORAGE_CONFIG_1: {
         'value_conv': 'abstorage.converter.JSON'
     }
 }
-
-ABS_STORAGE_SQLALCHEMY = dict(
-    driver='sqlalchemy',
-    url='sqlite:///:memory:',
-    params=dict(table='Thing'),
-    handler=AbstractStorageSQLAlchemy
-)
-
-STORAGE_CONFIG_2 = {
-    'abstract_storage_cls': 'abstorage.base.AbstractStorage',
-    'default': ABS_STORAGE_SQLALCHEMY
-}
-
 """
 
 
@@ -54,8 +39,14 @@ def get_storage_conf(db_conf=None, typ='default'):
     return _conf
 
 
-def get_storage_class(db_conf):
-    return importer(db_conf.get('abstract_storage_cls'))
+def storage_factory(configuration):
+    _handler = configuration.get('handler')
+    if _handler:
+        storage_cls = importer(_handler)
+    else:
+        raise ConfigurationError('Missing handler specification')
+    _conf = {k: v for k, v in configuration.items() if k != 'handler'}
+    return storage_cls(_conf)
 
 
 def init_storage(db_conf=None, key='default'):
@@ -67,7 +58,6 @@ def init_storage(db_conf=None, key='default'):
     """
 
     if db_conf:
-        storage_cls = get_storage_class(db_conf)
-        return storage_cls(get_storage_conf(db_conf, key))
+        return storage_factory(get_storage_conf(db_conf, key))
     else:
-        return LabeledDict(key)
+        return LabeledDict({'label': key})

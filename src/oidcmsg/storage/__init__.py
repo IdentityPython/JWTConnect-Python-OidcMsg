@@ -1,69 +1,51 @@
 import logging
+
 from .utils import importer
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractStorage(object):
+class Storage(object):
     """
-    An AbstractStorage that take a storage engine and offer a standard set
-    of methods and I/O to data.
+    Offers a standard set of methods and I/O on persistent data.
     """
 
-    def __init__(self, conf_dict):
-        if isinstance(conf_dict['handler'], str):
-            _handler = importer(conf_dict['handler'])
-            _args = {k: v for k, v in conf_dict.items() if k != 'handler'}
-            try:
-                self.storage = _handler(_args)
-            except TypeError as e:
-                # needed for globally configured ORM models
-                logger.debug('Abstorage {}: {}'.format(_handler, e))
-                self.storage = _handler()
-        else:
-            self.storage = conf_dict['handler'](conf_dict)
+    def __init__(self, conf_dict=None):
+        pass
 
     def get(self, k, default=None):
-        return self.storage.get(k, default)
+        raise NotImplemented()
 
-    def set(self, k, v):
-        return self.storage.set(k, v)
-
-    def update(self, k, v):
-        return self.storage.update(k, v)
+    def update(self, ava):
+        raise NotImplemented()
 
     def delete(self, k, v):
-        return self.storage.delete(v, k=k)
+        raise NotImplemented()
 
     def __getitem__(self, k):
-        return self.storage.get(k)
+        raise NotImplemented()
 
     def __setitem__(self, k, v):
-        return self.storage.set(k, v)
+        raise NotImplemented()
 
     def __delitem__(self, v):
-        return self.storage.delete(v)
+        raise NotImplemented()
 
     def __call__(self):
-        return self.storage()
-
-    def __repr__(self):
-        return self.__str__()
+        raise NotImplemented()
 
     def __len__(self):
-        return len(self.storage())
+        raise NotImplemented()
 
     def __contains__(self, k):
-        return self.storage.__contains__(k)
-
-    def __str__(self):
-        return self.storage.__str__()
+        raise NotImplemented()
 
     def __iter__(self):
-        return iter(self.storage.__iter__())
+        raise NotImplemented()
 
-    def flush(self):
-        return self.storage.flush()
+    def synch(self):
+        raise NotImplemented()
 
     def keys(self):
-        return self.storage.keys()
+        raise NotImplemented()
+

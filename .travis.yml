@@ -16,6 +16,7 @@ install:
 script:
 - codecov --version
 - tox
+- isort --check src tests
 after_success:
 - codecov
 notifications:
