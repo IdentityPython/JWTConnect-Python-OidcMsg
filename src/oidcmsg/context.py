@@ -5,9 +5,9 @@ from cryptojwt import KeyJar
 from cryptojwt.key_jar import init_key_jar
 
 from oidcmsg.message import Message
-from oidcmsg.storage.init import get_storage_class
 from oidcmsg.storage.init import get_storage_conf
 from oidcmsg.storage.init import init_storage
+from oidcmsg.storage.init import storage_factory
 
 
 def add_issuer(conf, issuer):
@@ -32,7 +32,6 @@ class OidcContext:
             _iss = config.get('issuer')
             if _iss:
                 self.db_conf = add_issuer(self.db_conf, _iss)
-            self.storage_cls = get_storage_class(self.db_conf)
 
             if self.db_conf.get('default'):
                 self.db = init_storage(self.db_conf)
@@ -50,19 +49,16 @@ class OidcContext:
     def _keyjar(self, keyjar=None, db_conf=None, conf=None, entity_id=''):
         if keyjar is None:
             if db_conf:
-                storage_args = {
-                    'abstract_storage_cls': self.storage_cls,
-                    'storage_conf': get_storage_conf(db_conf, 'keyjar')
-                }
+                _storage = storage_factory(get_storage_conf(db_conf, 'keyjar'))
             else:
-                storage_args = {}
+                _storage = None
 
             if 'keys' in conf:
                 args = {k: v for k, v in conf["keys"].items() if k != "uri_path"}
-                args.update(storage_args)
+                args.update({'storage': _storage})
                 _keyjar = init_key_jar(**args)
             else:
-                _keyjar = KeyJar(**storage_args)
+                _keyjar = KeyJar(storage=_storage)
                 if 'jwks' in conf:
                     _keyjar.import_jwks(conf['jwks'], '')
 
