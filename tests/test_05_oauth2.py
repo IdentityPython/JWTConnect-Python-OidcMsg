@@ -18,6 +18,8 @@ from oidcmsg.oauth2 import AuthorizationRequest
 from oidcmsg.oauth2 import AuthorizationResponse
 from oidcmsg.oauth2 import CCAccessTokenRequest
 from oidcmsg.oauth2 import RefreshAccessTokenRequest
+from oidcmsg.oauth2 import TokenExchangeRequest
+from oidcmsg.oauth2 import TokenExchangeResponse
 from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.oauth2 import ROPCAccessTokenRequest
 from oidcmsg.oauth2 import TokenErrorResponse
@@ -502,6 +504,45 @@ class TestRefreshAccessTokenRequest(object):
         assert ratr["client_id"] == "Client_id"
 
         assert ratr.verify()
+
+
+class TestTokenExchangeRequest(object):
+    def test_init(self):
+        request = TokenExchangeRequest(
+            grant_type="urn:ietf:params:oauth:grant-type:token-exchange",
+            subject_token="ababababab",
+            subject_token_type="urn:ietf:params:oauth:token-type:access_token"
+        )
+        assert (
+            request["grant_type"]
+            == "urn:ietf:params:oauth:grant-type:token-exchange"
+        )
+        assert request["subject_token"] == "ababababab"
+        assert (
+            request["subject_token_type"]
+            == "urn:ietf:params:oauth:token-type:access_token"
+        )
+
+        assert request.verify()
+
+
+class TestTokenExchangeResponse(object):
+    def test_init(self):
+        response = TokenExchangeResponse(
+            access_token="bababababa",
+            issued_token_type="urn:ietf:params:oauth:token-type:access_token",
+            token_type="Bearer",
+            expires_in=60
+        )
+        assert (
+            response["issued_token_type"]
+            == "urn:ietf:params:oauth:token-type:access_token"
+        )
+        assert response["access_token"] == "bababababa"
+        assert response["token_type"] == "Bearer"
+        assert response["expires_in"] == 60
+
+        assert response.verify()
 
 
 class TestResponseMessage_error(object):

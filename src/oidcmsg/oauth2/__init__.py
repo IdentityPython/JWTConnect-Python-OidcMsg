@@ -295,6 +295,32 @@ class TokenIntrospectionResponse(Message):
     }
 
 
+# RFC 8693
+class TokenExchangeRequest(Message):
+    c_param = {
+        "grant_type": SINGLE_REQUIRED_STRING,
+        "resource": OPTIONAL_LIST_OF_STRINGS,
+        "audience": OPTIONAL_LIST_OF_STRINGS,
+        "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
+        "requested_token_type": SINGLE_OPTIONAL_STRING,
+        "subject_token": SINGLE_REQUIRED_STRING,
+        "subject_token_type": SINGLE_REQUIRED_STRING,
+        "actor_token": SINGLE_OPTIONAL_STRING,
+        "actor_token_type": SINGLE_OPTIONAL_STRING,
+    }
+
+
+class TokenExchangeResponse(Message):
+    c_param = {
+        "access_token": SINGLE_REQUIRED_STRING,
+        "issued_token_type": SINGLE_REQUIRED_STRING,
+        "token_type": SINGLE_REQUIRED_STRING,
+        "expires_in": SINGLE_OPTIONAL_INT,
+        "refresh_token": SINGLE_OPTIONAL_STRING,
+        "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
+    }
+
+
 class JWTSecuredAuthorizationRequest(AuthorizationRequest):
     c_param = AuthorizationRequest.c_param.copy()
     c_param.update({
