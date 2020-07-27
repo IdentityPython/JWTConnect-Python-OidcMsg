@@ -16,7 +16,7 @@ def add_issuer(conf, issuer):
         if key == 'abstract_storage_cls':
             res[key] = val
         else:
-            _val = copy.deepcopy(val)
+            _val = copy.copy(val)
             _val['issuer'] = quote_plus(issuer)
             res[key] = _val
     return res
