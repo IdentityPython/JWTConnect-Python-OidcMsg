@@ -36,7 +36,7 @@ class OidcContext:
             if self.db_conf.get('default'):
                 self.db = init_storage(self.db_conf)
             else:
-                self.db = None
+                self.db = init_storage()
         else:
             self.db = init_storage()
 
@@ -48,10 +48,11 @@ class OidcContext:
 
     def _keyjar(self, keyjar=None, db_conf=None, conf=None, entity_id=''):
         if keyjar is None:
+            _storage = None
             if db_conf:
-                _storage = storage_factory(get_storage_conf(db_conf, 'keyjar'))
-            else:
-                _storage = None
+                _cnf = get_storage_conf(db_conf, 'keyjar')
+                if _cnf:
+                    _storage = storage_factory(_cnf)
 
             if 'keys' in conf:
                 args = {k: v for k, v in conf["keys"].items() if k != "uri_path"}
