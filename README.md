@@ -23,3 +23,4 @@ If some of these keys have a common origin, like described in a JWKS.
 Such a set will be kept in a **keyBundle**.
 Also implemented in this package. 
    
+Please read the [Official Documentation](https://oidcmsg.readthedocs.io/) for getting usage examples and further informations.
