@@ -1157,7 +1157,7 @@ def factory(msgtype, **kwargs):
     return oauth2.factory(msgtype, **kwargs)
 
 
-def make_openid_request(arq, keys, issuer, request_object_signing_alg, recv):
+def make_openid_request(arq, keys, issuer, request_object_signing_alg, recv, with_jti=False):
     """
     Construct the JWT to be passed by value (the request parameter) or by
     reference (request_uri).
@@ -1168,10 +1168,13 @@ def make_openid_request(arq, keys, issuer, request_object_signing_alg, recv):
     :param issuer: Who is signing this JSON Web Token
     :param request_object_signing_alg: Which signing algorithm to use
     :param recv: The intended receiver of the request
+    :param with_jti: Whether a JTI should be included in the JWT.
     :return: JWT encoded OpenID request
     """
 
     _jwt = JWT(key_jar=keys, iss=issuer, sign_alg=request_object_signing_alg)
+    if with_jti:
+        _jwt.with_jti = True
     return _jwt.pack(arq.to_dict(), owner=issuer, recv=recv)
 
 
