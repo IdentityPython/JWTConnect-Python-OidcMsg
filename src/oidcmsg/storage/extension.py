@@ -48,6 +48,10 @@ class LabeledDict():
         return self.storage.set(k, v)
 
     @key_label
+    def set(self, k, v):
+        return self.storage.set(k, v)
+
+    @key_label
     def __delitem__(self, k):
         del self.storage[k]
 
