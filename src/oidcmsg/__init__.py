@@ -29,3 +29,33 @@ def proper_path(path):
         path += "/"
 
     return path
+
+
+# This is for adding a base path to path specified in a configuration
+def add_base_path(conf, item_paths, base_path):
+    for section, items in item_paths.items():
+        if section == "":
+            part = conf
+        else:
+            part = conf.get(section)
+
+        if part:
+            if isinstance(items, list):
+                for attr in items:
+                    _path = part.get(attr)
+                    if _path:
+                        if _path.startswith("/"):
+                            continue
+                        elif _path == "":
+                            part[attr] = "./" + _path
+                        else:
+                            part[attr] = os.path.join(base_path, _path)
+            elif items is None:
+                if part.startswith("/"):
+                    continue
+                elif part == "":
+                    conf[section] = "./"
+                else:
+                    conf[section] = os.path.join(base_path, part)
+            else:  # Assume items is dictionary like
+                add_base_path(part, items, base_path)
