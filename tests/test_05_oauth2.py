@@ -18,11 +18,11 @@ from oidcmsg.oauth2 import AuthorizationRequest
 from oidcmsg.oauth2 import AuthorizationResponse
 from oidcmsg.oauth2 import CCAccessTokenRequest
 from oidcmsg.oauth2 import RefreshAccessTokenRequest
-from oidcmsg.oauth2 import TokenExchangeRequest
-from oidcmsg.oauth2 import TokenExchangeResponse
 from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.oauth2 import ROPCAccessTokenRequest
 from oidcmsg.oauth2 import TokenErrorResponse
+from oidcmsg.oauth2 import TokenExchangeRequest
+from oidcmsg.oauth2 import TokenExchangeResponse
 from oidcmsg.oauth2 import factory
 from oidcmsg.oauth2 import is_error_message
 

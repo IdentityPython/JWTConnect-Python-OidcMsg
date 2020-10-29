@@ -58,6 +58,8 @@ def init_storage(db_conf=None, key='default'):
     """
 
     if db_conf:
-        return storage_factory(get_storage_conf(db_conf, key))
-    else:
-        return LabeledDict({'label': key})
+        _conf = get_storage_conf(db_conf, key)
+        if _conf:
+            return storage_factory(_conf)
+
+    return LabeledDict({'label': key})
