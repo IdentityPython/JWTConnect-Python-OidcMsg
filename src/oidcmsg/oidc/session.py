@@ -6,6 +6,7 @@ from oidcmsg.time_util import utc_time_sans_frac
 
 from ..exception import MessageException
 from ..exception import NotForMe
+from ..message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
 from ..message import REQUIRED_LIST_OF_STRINGS
 from ..message import SINGLE_OPTIONAL_STRING
 from ..message import SINGLE_REQUIRED_INT
@@ -50,7 +51,8 @@ class EndSessionRequest(Message):
     c_param = {
         "id_token_hint": SINGLE_OPTIONAL_IDTOKEN,
         "post_logout_redirect_uri": SINGLE_OPTIONAL_STRING,
-        "state": SINGLE_OPTIONAL_STRING
+        "state": SINGLE_OPTIONAL_STRING,
+        "ui_locales": OPTIONAL_LIST_OF_SP_SEP_STRINGS
     }
 
     def verify(self, **kwargs):
