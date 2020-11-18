@@ -928,6 +928,12 @@ class ProviderConfigurationResponse(ResponseMessage):
         if "RS256" not in self["id_token_signing_alg_values_supported"]:
             raise ValueError('RS256 missing from id_token_signing_alg_values_supported')
 
+        if "none" in self["token_endpoint_auth_signing_alg_values_supported"]:
+            raise ValueError(
+                "The value none must not be used for "
+                "token_endpoint_auth_signing_alg_values_supported"
+            )
+
         if not parts.query and not parts.fragment:
             pass
         else:
