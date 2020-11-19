@@ -824,6 +824,11 @@ class IdToken(OpenIDSchema):
         else:
             if (_iat + _storage_time) < (_now - _skew):
                 raise IATError('Issued too long ago')
+            elif _iat > _now + _skew:
+                raise IATError('Issued sometime in the future')
+
+        if _exp < _iat:
+            raise IATError('Expiration time can not be earlier the issued at')
 
         if 'nonce' in kwargs and 'nonce' in self:
             if kwargs['nonce'] != self['nonce']:
