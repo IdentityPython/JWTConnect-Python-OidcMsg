@@ -23,8 +23,6 @@ from oidcmsg.exception import NotAllowedValue
 from oidcmsg.exception import OidcMsgError
 from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.oauth2 import ROPCAccessTokenRequest
-from oidcmsg.oidc import EXPError
-from oidcmsg.oidc import IATError
 from oidcmsg.oidc import JRD
 from oidcmsg.oidc import AccessTokenRequest
 from oidcmsg.oidc import AccessTokenResponse
@@ -37,6 +35,8 @@ from oidcmsg.oidc import AuthorizationResponse
 from oidcmsg.oidc import CHashError
 from oidcmsg.oidc import Claims
 from oidcmsg.oidc import DiscoveryRequest
+from oidcmsg.oidc import EXPError
+from oidcmsg.oidc import IATError
 from oidcmsg.oidc import IdToken
 from oidcmsg.oidc import Link
 from oidcmsg.oidc import OpenIDSchema
