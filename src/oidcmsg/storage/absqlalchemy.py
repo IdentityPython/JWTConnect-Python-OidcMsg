@@ -2,7 +2,7 @@ import datetime
 import json
 
 import sqlalchemy as alchemy_db
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 PlainDict = dict
 
@@ -15,7 +15,7 @@ class AbstractStorageSQLAlchemy:
                                       self.metadata, autoload=True,
                                       autoload_with=self.engine)
         Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        self.session = scoped_session(Session)
 
     def get(self, k):
         entry = self.session.query(self.table).filter_by(owner=k).first()
