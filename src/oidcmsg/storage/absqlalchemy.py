@@ -1,8 +1,9 @@
 import datetime
 import json
-import sqlalchemy as alchemy_db
 
-from sqlalchemy.orm import scoped_session, sessionmaker
+import sqlalchemy as alchemy_db
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import sessionmaker
 
 PlainDict = dict
 
