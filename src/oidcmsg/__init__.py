@@ -1,6 +1,8 @@
 __author__ = 'Roland Hedberg'
 __version__ = '1.1.3'
 
+import os
+
 VERIFIED_CLAIM_PREFIX = '__verified'
 
 

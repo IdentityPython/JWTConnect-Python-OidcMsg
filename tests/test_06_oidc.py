@@ -35,6 +35,8 @@ from oidcmsg.oidc import AuthorizationResponse
 from oidcmsg.oidc import CHashError
 from oidcmsg.oidc import Claims
 from oidcmsg.oidc import DiscoveryRequest
+from oidcmsg.oidc import EXPError
+from oidcmsg.oidc import IATError
 from oidcmsg.oidc import IdToken
 from oidcmsg.oidc import Link
 from oidcmsg.oidc import OpenIDSchema
@@ -928,6 +930,68 @@ def test_id_token():
 
     idt.verify()
 
+
+def test_id_token_expired():
+    _now = time_util.utc_time_sans_frac()
+
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+        ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        "at_hash": "L4Ign7TCAD_EppRbHAuCyw",
+        "iat": _now - 200,
+        "exp": _now - 100,
+        "iss": "https://sso.qa.7pass.ctf.prosiebensat1.com"
+    })
+
+    with pytest.raises(EXPError):
+        idt.verify()
+
+
+def test_id_token_iat_in_the_future():
+    _now = time_util.utc_time_sans_frac()
+
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+        ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        "at_hash": "L4Ign7TCAD_EppRbHAuCyw",
+        "iat": _now + 600,
+        "exp": _now + 1200,
+        "iss": "https://sso.qa.7pass.ctf.prosiebensat1.com"
+    })
+
+    with pytest.raises(IATError):
+        idt.verify()
+
+
+def test_id_token_exp_before_iat():
+    _now = time_util.utc_time_sans_frac()
+
+    idt = IdToken(**{
+        "sub": "553df2bcf909104751cfd8b2",
+        "aud": [
+            "5542958437706128204e0000",
+            "554295ce3770612820620000"
+        ],
+        "auth_time": 1441364872,
+        "azp": "554295ce3770612820620000",
+        "at_hash": "L4Ign7TCAD_EppRbHAuCyw",
+        "iat": _now + 50,
+        "exp": _now,
+        "iss": "https://sso.qa.7pass.ctf.prosiebensat1.com"
+    })
+
+    with pytest.raises(IATError):
+        idt.verify(skew=100)
 
 class TestAccessTokenRequest(object):
     def test_example(self):
