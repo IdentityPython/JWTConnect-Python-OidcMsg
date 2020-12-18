@@ -87,14 +87,16 @@ class AbstractFileSystem(Storage):
         :return:
         """
         item = self.key_conv.serialize(item)
+        if self._is_file(item):
+            if self.is_changed(item):
+                logger.info("File content change in {}".format(item))
+                fname = os.path.join(self.fdir, item)
+                self.storage[item] = self._read_info(fname)
 
-        if self.is_changed(item):
-            logger.info("File content change in {}".format(item))
-            fname = os.path.join(self.fdir, item)
-            self.storage[item] = self._read_info(fname)
-
-        logger.debug('Read from "%s"', item)
-        return self.storage[item]
+            logger.debug('Read from "%s"', item)
+            return self.storage[item]
+        else:
+            raise KeyError(item)
 
     def __setitem__(self, key, value):
         """
@@ -163,31 +165,32 @@ class AbstractFileSystem(Storage):
 
         return mtime
 
+    def _is_file(self, item):
+        fname = os.path.join(self.fdir, item)
+        return os.path.isfile(fname)
+
     def is_changed(self, item):
         """
-        Find out if this item has been modified since last
+        Find out if this item has been modified since last.
+        When I get here I know that item points to an existing file.
 
         :param item: A key
         :return: True/False
         """
         fname = os.path.join(self.fdir, item)
-        if os.path.isfile(fname):
-            mtime = self.get_mtime(fname)
+        mtime = self.get_mtime(fname)
 
-            try:
-                _ftime = self.fmtime[item]
-            except KeyError:  # Never been seen before
-                self.fmtime[item] = mtime
-                return True
+        try:
+            _ftime = self.fmtime[item]
+        except KeyError:  # Never been seen before
+            self.fmtime[item] = mtime
+            return True
 
-            if mtime > _ftime:  # has changed
-                self.fmtime[item] = mtime
-                return True
-            else:
-                return False
+        if mtime > _ftime:  # has changed
+            self.fmtime[item] = mtime
+            return True
         else:
-            logger.error('Could not access {}'.format(fname))
-            raise KeyError(item)
+            return False
 
     def _read_info(self, fname):
         if os.path.isfile(fname):
