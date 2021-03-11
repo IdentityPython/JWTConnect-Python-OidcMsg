@@ -1,6 +1,7 @@
 import logging
 
 from cryptojwt.exception import UnsupportedAlgorithm
+from oidcmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
 
 from oidcmsg.time_util import utc_time_sans_frac
 
@@ -50,7 +51,8 @@ class EndSessionRequest(Message):
     c_param = {
         "id_token_hint": SINGLE_OPTIONAL_IDTOKEN,
         "post_logout_redirect_uri": SINGLE_OPTIONAL_STRING,
-        "state": SINGLE_OPTIONAL_STRING
+        "state": SINGLE_OPTIONAL_STRING,
+        "ui_locales": OPTIONAL_LIST_OF_SP_SEP_STRINGS
     }
 
     def verify(self, **kwargs):
