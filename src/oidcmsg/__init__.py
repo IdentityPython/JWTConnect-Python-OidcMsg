@@ -1,5 +1,5 @@
 __author__ = 'Roland Hedberg'
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 import os
 

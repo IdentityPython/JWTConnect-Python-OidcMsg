@@ -27,6 +27,7 @@ from oidcmsg.exception import NotForMe
 from oidcmsg.exception import OidcMsgError
 from oidcmsg.exception import SchemeError
 from oidcmsg.exception import VerificationError
+from oidcmsg.message import Message
 from oidcmsg.message import OPTIONAL_LIST_OF_SP_SEP_STRINGS
 from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
 from oidcmsg.message import OPTIONAL_MESSAGE
@@ -36,7 +37,6 @@ from oidcmsg.message import SINGLE_OPTIONAL_INT
 from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
 from oidcmsg.message import SINGLE_REQUIRED_STRING
-from oidcmsg.message import Message
 from oidcmsg.message import msg_ser
 from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.time_util import utc_time_sans_frac
@@ -930,6 +930,14 @@ class ProviderConfigurationResponse(ResponseMessage):
         elif parts.scheme != "https":
             raise SchemeError("Not HTTPS")
 
+        # The parameter is optional
+        if "token_endpoint_auth_signing_alg_values_supported" in self and "none" in self[
+                "token_endpoint_auth_signing_alg_values_supported"]:
+            raise ValueError(
+                "The value none must not be used for "
+                "token_endpoint_auth_signing_alg_values_supported"
+            )
+
         if "RS256" not in self["id_token_signing_alg_values_supported"]:
             raise ValueError('RS256 missing from id_token_signing_alg_values_supported')
 
@@ -939,7 +947,7 @@ class ProviderConfigurationResponse(ResponseMessage):
             raise ValueError('Issuer ID invalid')
 
         if any("code" in rt for rt in self[
-            "response_types_supported"]) and "token_endpoint" not in self:
+                "response_types_supported"]) and "token_endpoint" not in self:
             raise MissingRequiredAttribute("token_endpoint")
 
         return True
