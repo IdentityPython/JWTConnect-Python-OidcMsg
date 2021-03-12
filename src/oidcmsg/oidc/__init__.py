@@ -824,6 +824,11 @@ class IdToken(OpenIDSchema):
         else:
             if (_iat + _storage_time) < (_now - _skew):
                 raise IATError('Issued too long ago')
+            elif _iat > _now + _skew:
+                raise IATError('Issued sometime in the future')
+
+        if _exp < _iat:
+            raise IATError('Expiration time can not be earlier the issued at')
 
         if 'nonce' in kwargs and 'nonce' in self:
             if kwargs['nonce'] != self['nonce']:
@@ -925,6 +930,14 @@ class ProviderConfigurationResponse(ResponseMessage):
         elif parts.scheme != "https":
             raise SchemeError("Not HTTPS")
 
+        # The parameter is optional
+        if "token_endpoint_auth_signing_alg_values_supported" in self and "none" in self[
+                "token_endpoint_auth_signing_alg_values_supported"]:
+            raise ValueError(
+                "The value none must not be used for "
+                "token_endpoint_auth_signing_alg_values_supported"
+            )
+
         if "RS256" not in self["id_token_signing_alg_values_supported"]:
             raise ValueError('RS256 missing from id_token_signing_alg_values_supported')
 
@@ -934,7 +947,7 @@ class ProviderConfigurationResponse(ResponseMessage):
             raise ValueError('Issuer ID invalid')
 
         if any("code" in rt for rt in self[
-            "response_types_supported"]) and "token_endpoint" not in self:
+                "response_types_supported"]) and "token_endpoint" not in self:
             raise MissingRequiredAttribute("token_endpoint")
 
         return True
