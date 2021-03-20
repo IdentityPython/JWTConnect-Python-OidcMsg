@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from urllib.parse import quote_plus
 
 from filelock import FileLock
 
@@ -23,7 +24,7 @@ class AbstractFileSystem(Storage):
     Not directories in directories.
     """
 
-    def __init__(self, conf_dict):
+    def __init__(self, conf_dict, ):
         """
         items = FileSystem(
             {
@@ -44,15 +45,12 @@ class AbstractFileSystem(Storage):
 
         super().__init__(conf_dict)
         self.config = conf_dict
-        _fdir = conf_dict.get('fdir', '')
-        if '{issuer}' in _fdir:
-            issuer = conf_dict.get('issuer')
-            if not issuer:
-                raise ValueError('Missing issuer value')
-            self.fdir = _fdir.format(issuer=issuer)
-        else:
-            self.fdir = _fdir
 
+        _fdir = conf_dict.get('fdir', '.')
+        if "issuer" in conf_dict:
+            _fdir = os.path.join(_fdir, quote_plus(conf_dict["issuer"]))
+
+        self.fdir = _fdir
         self.fmtime = {}
         self.storage = {}
 
@@ -87,11 +85,13 @@ class AbstractFileSystem(Storage):
         :return:
         """
         item = self.key_conv.serialize(item)
-        if self._is_file(item):
-            if self.is_changed(item):
-                logger.info("File content change in {}".format(item))
-                fname = os.path.join(self.fdir, item)
-                self.storage[item] = self._read_info(fname)
+        fname = os.path.join(self.fdir, item)
+        if self._is_file(fname):
+            lock = FileLock('{}.lock'.format(fname))
+            with lock:
+                if self.is_changed(item, fname):
+                    logger.info("File content change in {}".format(item))
+                    self.storage[item] = self._read_info(fname)
 
             logger.debug('Read from "%s"', item)
             return self.storage[item]
@@ -165,11 +165,10 @@ class AbstractFileSystem(Storage):
 
         return mtime
 
-    def _is_file(self, item):
-        fname = os.path.join(self.fdir, item)
+    def _is_file(self, fname):
         return os.path.isfile(fname)
 
-    def is_changed(self, item):
+    def is_changed(self, item, fname):
         """
         Find out if this item has been modified since last.
         When I get here I know that item points to an existing file.
@@ -177,7 +176,6 @@ class AbstractFileSystem(Storage):
         :param item: A key
         :return: True/False
         """
-        fname = os.path.join(self.fdir, item)
         mtime = self.get_mtime(fname)
 
         try:
@@ -223,7 +221,7 @@ class AbstractFileSystem(Storage):
                 continue
 
             if f in self.fmtime:
-                if self.is_changed(f):
+                if self.is_changed(f, fname):
                     self.storage[f] = self._read_info(fname)
             else:
                 mtime = self.get_mtime(fname)
