@@ -27,7 +27,7 @@ class ImpExp:
     def __init__(self):
         pass
 
-    def _dump(self, cls, item, exclude_attribute: Optional[list] = None):
+    def _dump(self, cls, item, exclude_attributes: Optional[List[str]] = None) -> dict:
         if cls in [None, "", [], {}]:
             val = item
         elif isinstance(item, Message):
@@ -35,24 +35,24 @@ class ImpExp:
         elif cls == object:
             val = qualified_name(item)
         elif isinstance(cls, list):
-            val = [self._dump(cls[0], v, exclude_attribute) for v in item]
+            val = [self._dump(cls[0], v, exclude_attributes) for v in item]
         else:
-            val = item.dump(exclude_attribute=exclude_attribute)
+            val = item.dump(exclude_attributes=exclude_attributes)
 
         return val
 
-    def dump(self, exclude_attribute: Optional[List[str]] = None) -> dict:
-        _exclude_attribute = exclude_attribute or []
+    def dump(self, exclude_attributes: Optional[List[str]] = None) -> dict:
+        _exclude_attributes = exclude_attributes or []
         info = {}
         for attr, cls in self.parameter.items():
-            if attr in _exclude_attribute:
+            if attr in _exclude_attributes:
                 continue
 
             item = getattr(self, attr, None)
             if item is None:
                 continue
 
-            info[attr] = self._dump(cls, item, exclude_attribute)
+            info[attr] = self._dump(cls, item, exclude_attributes)
 
         return info
 
