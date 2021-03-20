@@ -1,4 +1,5 @@
 import copy
+from typing import List
 from typing import Optional
 from urllib.parse import quote_plus
 
@@ -26,7 +27,7 @@ class ImpExp:
     def __init__(self):
         pass
 
-    def _dump(self, cls, item, cutoff: Optional[list] = None):
+    def _dump(self, cls, item, exclude_attribute: Optional[list] = None):
         if cls in [None, "", [], {}]:
             val = item
         elif isinstance(item, Message):
@@ -34,24 +35,24 @@ class ImpExp:
         elif cls == object:
             val = qualified_name(item)
         elif isinstance(cls, list):
-            val = [self._dump(cls[0], v, cutoff) for v in item]
+            val = [self._dump(cls[0], v, exclude_attribute) for v in item]
         else:
-            val = item.dump(cutoff=cutoff)
+            val = item.dump(exclude_attribute=exclude_attribute)
 
         return val
 
-    def dump(self, cutoff: Optional[list] = None) -> dict:
-        _cutoff = cutoff or []
+    def dump(self, exclude_attribute: Optional[List[str]] = None) -> dict:
+        _exclude_attribute = exclude_attribute or []
         info = {}
         for attr, cls in self.parameter.items():
-            if attr in _cutoff:
+            if attr in _exclude_attribute:
                 continue
 
             item = getattr(self, attr, None)
             if item is None:
                 continue
 
-            info[attr] = self._dump(cls, item, cutoff)
+            info[attr] = self._dump(cls, item, exclude_attribute)
 
         return info
 
