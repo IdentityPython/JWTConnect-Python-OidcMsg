@@ -1,24 +1,10 @@
-import copy
 from typing import List
 from typing import Optional
-from urllib.parse import quote_plus
 
 from cryptojwt.utils import importer
 from cryptojwt.utils import qualified_name
 
 from oidcmsg.message import Message
-
-
-def add_issuer(conf, issuer):
-    res = {}
-    for key, val in conf.items():
-        if key == 'abstract_storage_cls':
-            res[key] = val
-        else:
-            _val = copy.copy(val)
-            _val['issuer'] = quote_plus(issuer)
-            res[key] = _val
-    return res
 
 
 class ImpExp:
