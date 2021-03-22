@@ -61,7 +61,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Topic :: Software Development :: Libraries :: Python Modules"],
     install_requires=[
-        "cryptojwt>=1.1.0",
+        "cryptojwt>=1.5.0",
         "pyOpenSSL",
         "filelock>=3.0.12"
     ],
