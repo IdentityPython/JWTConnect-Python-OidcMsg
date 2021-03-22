@@ -12,8 +12,8 @@ class QPKey:
 
 
 class JSON:
-    def serialize(self, str):
-        return json.dumps(str)
+    def serialize(self, item):
+        return json.dumps(item)
 
     def deserialize(self, str):
         return json.loads(str)

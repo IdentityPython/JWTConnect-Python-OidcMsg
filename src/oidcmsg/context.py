@@ -4,10 +4,8 @@ from urllib.parse import quote_plus
 from cryptojwt import KeyJar
 from cryptojwt.key_jar import init_key_jar
 
+from oidcmsg.impexp import ImpExp
 from oidcmsg.message import Message
-from oidcmsg.storage.init import get_storage_conf
-from oidcmsg.storage.init import init_storage
-from oidcmsg.storage.init import storage_factory
 
 
 def add_issuer(conf, issuer):
@@ -22,44 +20,24 @@ def add_issuer(conf, issuer):
     return res
 
 
-class OidcContext:
+class OidcContext(ImpExp):
+    parameter = {"keyjar": KeyJar, "issuer": None}
+
     def __init__(self, config=None, keyjar=None, entity_id=''):
+        ImpExp.__init__(self)
         if config is None:
             config = {}
 
-        self.db_conf = config.get('db_conf')
-        if self.db_conf:
-            _iss = config.get('issuer')
-            if _iss:
-                self.db_conf = add_issuer(self.db_conf, _iss)
+        self.issuer = entity_id
+        self.keyjar = self._keyjar(keyjar, conf=config, entity_id=entity_id)
 
-            if self.db_conf.get('default'):
-                self.db = init_storage(self.db_conf)
-            else:
-                self.db = init_storage()
-        else:
-            self.db = init_storage()
-
-        self.keyjar = self._keyjar(keyjar, self.db_conf, config, entity_id=entity_id)
-
-    def add_boxes(self, boxes, db_conf):
-        for key, attr in boxes.items():
-            setattr(self, attr, init_storage(db_conf, key))
-
-    def _keyjar(self, keyjar=None, db_conf=None, conf=None, entity_id=''):
+    def _keyjar(self, keyjar=None, conf=None, entity_id=''):
         if keyjar is None:
-            _storage = None
-            if db_conf:
-                _cnf = get_storage_conf(db_conf, 'keyjar')
-                if _cnf:
-                    _storage = storage_factory(_cnf)
-
             if 'keys' in conf:
                 args = {k: v for k, v in conf["keys"].items() if k != "uri_path"}
-                args.update({'storage': _storage})
                 _keyjar = init_key_jar(**args)
             else:
-                _keyjar = KeyJar(storage=_storage)
+                _keyjar = KeyJar()
                 if 'jwks' in conf:
                     _keyjar.import_jwks(conf['jwks'], '')
 
@@ -74,15 +52,3 @@ class OidcContext:
             return _keyjar
         else:
             return keyjar
-
-    def set(self, item, value):
-        if isinstance(value, Message):
-            self.db[item] = value.to_dict()
-        else:
-            self.db[item] = value
-
-    def get(self, item):
-        if item == 'seed':
-            return bytes(self.db[item], 'utf-8')
-        else:
-            return self.db[item]

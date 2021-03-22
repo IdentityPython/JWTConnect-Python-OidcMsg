@@ -31,56 +31,62 @@ JWKS = {
 }
 
 
-def test_context():
+def test_dump_load():
     c = OidcContext({})
     assert c.keyjar is not None
+    mem = c.dump()
+    c2 = OidcContext().load(mem)
+    assert c2.keyjar is not None
 
 
-class TestContext(object):
+class TestDumpLoad(object):
     @pytest.fixture(autouse=True)
     def setup(self):
-        try:
-            shutil.rmtree('db')
-        except FileNotFoundError:
-            pass
-
         self.conf = {
-            'issuer': 'https://example.com',
-            'db_conf': {
-                'keyjar': {
-                    'handler': 'oidcmsg.storage.abfile.LabeledAbstractFileSystem',
-                    'fdir': 'db/keyjar',
-                    'key_conv': 'oidcmsg.storage.converter.QPKey',
-                    'value_conv': 'cryptojwt.serialize.item.KeyIssuer',
-                    'label': 'foo'
-                },
-                'default': {
-                    'handler': 'oidcmsg.storage.abfile.AbstractFileSystem',
-                    'fdir': 'db',
-                    'key_conv': 'oidcmsg.storage.converter.QPKey',
-                    'value_conv': 'oidcmsg.storage.converter.JSON'
-                }
-            }
+            'issuer': 'https://example.com'
         }
 
     def test_context_with_entity_id_no_keys(self):
         c = OidcContext(self.conf, entity_id='https://example.com')
-        assert c.keyjar.owners() == []
+        mem = c.dump()
+        c2 = OidcContext().load(mem)
+        assert c2.keyjar.owners() == []
+        assert c2.issuer == 'https://example.com'
 
     def test_context_with_entity_id_and_keys(self):
         conf = copy.deepcopy(self.conf)
         conf['keys'] = {'key_defs': KEYDEF}
-
         c = OidcContext(conf, entity_id='https://example.com')
-        assert set(c.keyjar.owners()) == {'', 'https://example.com'}
+
+        mem = c.dump()
+        c2 = OidcContext().load(mem)
+        assert set(c2.keyjar.owners()) == {'', 'https://example.com'}
 
     def test_context_with_entity_id_and_jwks(self):
         conf = copy.deepcopy(self.conf)
         conf['jwks'] = JWKS
+        c = OidcContext(conf, entity_id='https://example.com')
+
+        mem = c.dump()
+        c2 = OidcContext().load(mem)
+
+        assert set(c2.keyjar.owners()) == {'', 'https://example.com'}
+        assert len(c2.keyjar.get('sig', 'RSA')) == 1
+        assert len(c2.keyjar.get('sig', 'RSA', issuer_id='https://example.com')) == 1
+        assert len(c2.keyjar.get('sig', 'oct')) == 1
+        assert len(c2.keyjar.get('sig', 'oct', issuer_id='https://example.com')) == 1
+
+    def test_context_restore(self):
+        conf = copy.deepcopy(self.conf)
+        conf['keys'] = {'key_defs': KEYDEF}
 
         c = OidcContext(conf, entity_id='https://example.com')
-        assert set(c.keyjar.owners()) == {'', 'https://example.com'}
-        assert len(c.keyjar.get('sig', 'RSA')) == 1
-        assert len(c.keyjar.get('sig', 'RSA', issuer_id='https://example.com')) == 1
-        assert len(c.keyjar.get('sig', 'oct')) == 1
-        assert len(c.keyjar.get('sig', 'oct', issuer_id='https://example.com')) == 1
+        mem = c.dump()
+        c2 = OidcContext().load(mem)
+
+        assert set(c2.keyjar.owners()) == {'', 'https://example.com'}
+        assert len(c2.keyjar.get('sig', 'EC')) == 1
+        assert len(c2.keyjar.get('enc', 'EC')) == 1
+        assert len(c.keyjar.get('sig', 'RSA')) == 0
+        assert len(c.keyjar.get('sig', 'oct')) == 0
+
