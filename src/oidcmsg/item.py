@@ -41,3 +41,9 @@ class DLDict(ImpExp):
 
     def items(self):
         return self.db.items()
+
+    def values(self):
+        return self.db.values()
+
+    def __contains__(self, item):
+        return item in self.db
