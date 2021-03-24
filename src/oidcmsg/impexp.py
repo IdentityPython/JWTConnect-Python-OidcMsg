@@ -13,7 +13,7 @@ class ImpExp:
     def __init__(self):
         pass
 
-    def _dump(self, cls, item, exclude_attributes: Optional[List[str]] = None) -> dict:
+    def dump_attr(self, cls, item, exclude_attributes: Optional[List[str]] = None) -> dict:
         if cls in [None, "", [], {}]:
             val = item
         elif isinstance(item, Message):
@@ -21,7 +21,7 @@ class ImpExp:
         elif cls == object:
             val = qualified_name(item)
         elif isinstance(cls, list):
-            val = [self._dump(cls[0], v, exclude_attributes) for v in item]
+            val = [self.dump_attr(cls[0], v, exclude_attributes) for v in item]
         else:
             val = item.dump(exclude_attributes=exclude_attributes)
 
@@ -38,14 +38,14 @@ class ImpExp:
             if item is None:
                 continue
 
-            info[attr] = self._dump(cls, item, exclude_attributes)
+            info[attr] = self.dump_attr(cls, item, exclude_attributes)
 
         return info
 
     def _local_adjustments(self):
         pass
 
-    def _load(self, cls, item):
+    def load_attr(self, cls, item):
         if cls in [None, "", [], {}]:
             val = item
         elif cls == object:
@@ -64,7 +64,7 @@ class ImpExp:
             if attr not in item:
                 continue
 
-            setattr(self, attr, self._load(cls, item[attr]))
+            setattr(self, attr, self.load_attr(cls, item[attr]))
 
         self._local_adjustments()
         return self
