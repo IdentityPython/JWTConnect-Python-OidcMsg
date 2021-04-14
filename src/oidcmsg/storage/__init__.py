@@ -48,4 +48,3 @@ class Storage(object):
 
     def keys(self):
         raise NotImplemented()
-

@@ -24,7 +24,10 @@ class AbstractFileSystem(Storage):
     Not directories in directories.
     """
 
-    def __init__(self, conf_dict, ):
+    def __init__(
+        self,
+        conf_dict,
+    ):
         """
         items = FileSystem(
             {
@@ -46,7 +49,7 @@ class AbstractFileSystem(Storage):
         super().__init__(conf_dict)
         self.config = conf_dict
 
-        _fdir = conf_dict.get('fdir', '.')
+        _fdir = conf_dict.get("fdir", ".")
         if "issuer" in conf_dict:
             _fdir = os.path.join(_fdir, quote_plus(conf_dict["issuer"]))
 
@@ -54,13 +57,13 @@ class AbstractFileSystem(Storage):
         self.fmtime = {}
         self.storage = {}
 
-        key_conv = conf_dict.get('key_conv')
+        key_conv = conf_dict.get("key_conv")
         if key_conv:
             self.key_conv = importer(key_conv)()
         else:
             self.key_conv = QPKey()
 
-        value_conv = conf_dict.get('value_conv')
+        value_conv = conf_dict.get("value_conv")
         if value_conv:
             self.value_conv = importer(value_conv)()
         else:
@@ -71,7 +74,7 @@ class AbstractFileSystem(Storage):
 
         self.synch()
 
-    def get(self, item, default=None ):
+    def get(self, item, default=None):
         try:
             return self[item]
         except KeyError:
@@ -87,7 +90,7 @@ class AbstractFileSystem(Storage):
         item = self.key_conv.serialize(item)
         fname = os.path.join(self.fdir, item)
         if self._is_file(fname):
-            lock = FileLock('{}.lock'.format(fname))
+            lock = FileLock("{}.lock".format(fname))
             with lock:
                 if self.is_changed(item, fname):
                     logger.info("File content change in {}".format(item))
@@ -118,9 +121,9 @@ class AbstractFileSystem(Storage):
             _key = key
 
         fname = os.path.join(self.fdir, _key)
-        lock = FileLock('{}.lock'.format(fname))
+        lock = FileLock("{}.lock".format(fname))
         with lock:
-            with open(fname, 'w') as fp:
+            with open(fname, "w") as fp:
                 fp.write(self.value_conv.serialize(value))
 
         self.storage[_key] = value
@@ -130,7 +133,7 @@ class AbstractFileSystem(Storage):
     def __delitem__(self, key):
         fname = os.path.join(self.fdir, key)
         if os.path.isfile(fname):
-            lock = FileLock('{}.lock'.format(fname))
+            lock = FileLock("{}.lock".format(fname))
             with lock:
                 os.unlink(fname)
 
@@ -193,15 +196,15 @@ class AbstractFileSystem(Storage):
     def _read_info(self, fname):
         if os.path.isfile(fname):
             try:
-                lock = FileLock('{}.lock'.format(fname))
+                lock = FileLock("{}.lock".format(fname))
                 with lock:
-                    info = open(fname, 'r').read().strip()
+                    info = open(fname, "r").read().strip()
                 return self.value_conv.deserialize(info)
             except Exception as err:
                 logger.error(err)
                 raise
         else:
-            logger.error('No such file: {}'.format(fname))
+            logger.error("No such file: {}".format(fname))
         return None
 
     def synch(self):
@@ -217,7 +220,7 @@ class AbstractFileSystem(Storage):
 
             if not os.path.isfile(fname):
                 continue
-            if fname.endswith('.lock'):
+            if fname.endswith(".lock"):
                 continue
 
             if f in self.fmtime:
@@ -228,7 +231,7 @@ class AbstractFileSystem(Storage):
                 try:
                     self.storage[f] = self._read_info(fname)
                 except Exception as err:
-                    logger.warning('Bad content in {} ({})'.format(fname, err))
+                    logger.warning("Bad content in {} ({})".format(fname, err))
                 else:
                     self.fmtime[f] = mtime
 
@@ -281,27 +284,28 @@ class AbstractFileSystem(Storage):
 
             if not os.path.isfile(fname):
                 continue
-            if fname.endswith('.lock'):
+            if fname.endswith(".lock"):
                 continue
 
             n += 1
         return n
 
     def __str__(self):
-        return '{config:' + str(self.config) + ', info:' + str(self.storage) + '}'
+        return "{config:" + str(self.config) + ", info:" + str(self.storage) + "}"
+
 
 class LabeledAbstractFileSystem(Storage):
-    def __init__(self, conf_dict, label=''):
-        _conf = {k: v for k, v in conf_dict.items() if k != 'label'}
+    def __init__(self, conf_dict, label=""):
+        _conf = {k: v for k, v in conf_dict.items() if k != "label"}
         Storage.__init__(self, conf_dict=_conf)
 
         self.storage = AbstractFileSystem(conf_dict)
-        _label = label or conf_dict.get('label', '')
+        _label = label or conf_dict.get("label", "")
 
         if not _label:
-            self.label = ''
+            self.label = ""
         else:
-            self.label = '__{}__'.format(_label)
+            self.label = "__{}__".format(_label)
 
     @key_label
     def get(self, k, default=None):
@@ -330,15 +334,15 @@ class LabeledAbstractFileSystem(Storage):
     def __iter__(self):
         for key, val in self.storage.__iter__():
             if key.startswith(self.label):
-                yield key[len(self.label):], val
+                yield key[len(self.label) :], val
 
     def keys(self):
-        return [k[len(self.label):] for k in self.storage.keys() if k.startswith(self.label)]
+        return [k[len(self.label) :] for k in self.storage.keys() if k.startswith(self.label)]
 
     def items(self):
         for key, val in self.storage.__iter__():
             if key.startswith(self.label):
-                yield key[len(self.label):], val
+                yield key[len(self.label) :], val
 
     def __len__(self):
         if not os.path.isdir(self.storage.fdir):
@@ -351,7 +355,7 @@ class LabeledAbstractFileSystem(Storage):
 
                 if not os.path.isfile(fname):
                     continue
-                if fname.endswith('.lock'):
+                if fname.endswith(".lock"):
                     continue
 
                 n += 1

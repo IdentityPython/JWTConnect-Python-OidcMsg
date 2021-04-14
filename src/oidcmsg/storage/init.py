@@ -25,14 +25,14 @@ class ConfigurationError(Exception):
     pass
 
 
-def get_storage_conf(db_conf=None, typ='default'):
+def get_storage_conf(db_conf=None, typ="default"):
     _conf = None
     if db_conf:
         _conf = db_conf.get(typ)
         if _conf:
             return _conf
-        elif typ != 'default':
-            _conf = db_conf.get('default')
+        elif typ != "default":
+            _conf = db_conf.get("default")
         else:
             raise ConfigurationError()
 
@@ -40,16 +40,16 @@ def get_storage_conf(db_conf=None, typ='default'):
 
 
 def storage_factory(configuration):
-    _handler = configuration.get('handler')
+    _handler = configuration.get("handler")
     if _handler:
         storage_cls = importer(_handler)
     else:
-        raise ConfigurationError('Missing handler specification')
-    _conf = {k: v for k, v in configuration.items() if k != 'handler'}
+        raise ConfigurationError("Missing handler specification")
+    _conf = {k: v for k, v in configuration.items() if k != "handler"}
     return storage_cls(_conf)
 
 
-def init_storage(db_conf=None, key='default'):
+def init_storage(db_conf=None, key="default"):
     """
     Returns a storage instance.
 
@@ -62,4 +62,4 @@ def init_storage(db_conf=None, key='default'):
         if _conf:
             return storage_factory(_conf)
 
-    return LabeledDict({'label': key})
+    return LabeledDict({"label": key})

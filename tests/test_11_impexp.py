@@ -19,7 +19,7 @@ class ImpExpTest(ImpExp):
         "message": AuthorizationRequest,
         "response_class": object,
         "key_bundle": KeyBundle,
-        "bundles": [KeyBundle]
+        "bundles": [KeyBundle],
     }
 
 
@@ -28,8 +28,12 @@ def test_dump_load():
     b.string = "foo"
     b.list = ["a", "b", "c"]
     b.dict = {"a": 1, "b": 2}
-    b.message = AuthorizationRequest(scope="openid", redirect_uri="https://example.com/cb",
-                                     response_type="code", client_id="abcdefg")
+    b.message = AuthorizationRequest(
+        scope="openid",
+        redirect_uri="https://example.com/cb",
+        response_type="code",
+        client_id="abcdefg",
+    )
     b.response_class = AuthorizationResponse
     b.key_bundle = build_key_bundle(key_conf=KEYSPEC)
     b.bundles = [build_key_bundle(key_conf=KEYSPEC)]
@@ -56,8 +60,12 @@ def test_flush():
     b.string = "foo"
     b.list = ["a", "b", "c"]
     b.dict = {"a": 1, "b": 2}
-    b.message = AuthorizationRequest(scope="openid", redirect_uri="https://example.com/cb",
-                                     response_type="code", client_id="abcdefg")
+    b.message = AuthorizationRequest(
+        scope="openid",
+        redirect_uri="https://example.com/cb",
+        response_type="code",
+        client_id="abcdefg",
+    )
     b.response_class = AuthorizationResponse
     b.key_bundle = build_key_bundle(key_conf=KEYSPEC)
     b.bundles = [build_key_bundle(key_conf=KEYSPEC)]

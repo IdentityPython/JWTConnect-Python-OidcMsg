@@ -35,22 +35,18 @@ def test_verification_element():
 
     assert ve
 
-    s = '2020-01-11T11:00:00+0100'
+    s = "2020-01-11T11:00:00+0100"
     ve_2 = VerificationElement(trust_framework="TrustAreUs")
     ve_2["time"] = s
 
-    assert quote_plus('2020-01-11T11:00:00+0100') in ve_2.to_urlencoded()
+    assert quote_plus("2020-01-11T11:00:00+0100") in ve_2.to_urlencoded()
 
 
 def test_verified_claims():
     s = {
         "userinfo": {
             "verified_claims": {
-                "claims": {
-                    "given_name": None,
-                    "family_name": None,
-                    "birthdate": None
-                }
+                "claims": {"given_name": None, "family_name": None, "birthdate": None}
             }
         }
     }
@@ -61,25 +57,20 @@ def test_verified_claims():
 
 def test_verfication_element_from_dict():
     d = {
-        "verification": {
-            "trust_framework": "eidas_ial_substantial"
-        },
+        "verification": {"trust_framework": "eidas_ial_substantial"},
         "claims": {
             "given_name": "Max",
             "family_name": "Meier",
             "birthdate": "1956-01-28",
-            "place_of_birth": {
-                "country": "DE",
-                "locality": "Musterstadt"
-            },
+            "place_of_birth": {"country": "DE", "locality": "Musterstadt"},
             "nationality": "DE",
             "address": {
                 "locality": "Maxstadt",
                 "postal_code": "12344",
                 "country": "DE",
-                "street_address": "An der Sanddüne 22"
-            }
-        }
+                "street_address": "An der Sanddüne 22",
+            },
+        },
     }
     v = VerifiedClaims(**d)
     assert v
@@ -101,23 +92,16 @@ def test_userinfo_response():
                         "method": "pipp",
                         "document": {
                             "type": "idcard",
-                            "issuer": {
-                                "name": "Stadt Augsburg",
-                                "country": "DE"
-                            },
+                            "issuer": {"name": "Stadt Augsburg", "country": "DE"},
                             "number": "53554554",
                             "date_of_issuance": "2012-04-23",
-                            "date_of_expiry": "2022-04-22"
-                        }
+                            "date_of_expiry": "2022-04-22",
+                        },
                     }
-                ]
+                ],
             },
-            "claims": {
-                "given_name": "Max",
-                "family_name": "Meier",
-                "birthdate": "1956-01-28"
-            }
-        }
+            "claims": {"given_name": "Max", "family_name": "Meier", "birthdate": "1956-01-28"},
+        },
     }
 
     v = VerifiedClaims(**resp["verified_claims"])
@@ -138,11 +122,7 @@ def test_userinfo_claims_request_5_1_1():
     userinfo_claims = {
         "userinfo": {
             "verified_claims": {
-                "claims": {
-                    "given_name": None,
-                    "family_name": None,
-                    "birthdate": None
-                }
+                "claims": {"given_name": None, "family_name": None, "birthdate": None}
             }
         }
     }
@@ -159,7 +139,7 @@ def test_userinfo_claims_request_5_1_2():
                 "claims": {
                     "given_name": {"essential": True},
                     "family_name": {"essential": True},
-                    "birthdate": None
+                    "birthdate": None,
                 }
             }
         }
@@ -177,14 +157,10 @@ def test_userinfo_claims_request_5_1_3():
                 "claims": {
                     "given_name": {
                         "essential": True,
-                        "purpose": "To make communication look more personal"
+                        "purpose": "To make communication look more personal",
                     },
-                    "family_name": {
-                        "essential": True
-                    },
-                    "birthdate": {
-                        "purpose": "To send you best wishes on your birthday"
-                    }
+                    "family_name": {"essential": True},
+                    "birthdate": {"purpose": "To send you best wishes on your birthday"},
                 }
             }
         }
@@ -196,13 +172,7 @@ def test_userinfo_claims_request_5_1_3():
 
 
 def test_userinfo_claims_request_5_1_4():
-    userinfo_claims = {
-        "userinfo": {
-            "verified_claims": {
-                "claims": None
-            }
-        }
-    }
+    userinfo_claims = {"userinfo": {"verified_claims": {"claims": None}}}
 
     icr = IDAClaimsRequest(**userinfo_claims["userinfo"])
     icr.verify()
@@ -211,13 +181,7 @@ def test_userinfo_claims_request_5_1_4():
 
 def test_userinfo_claims_request_5_2_1():
     verified_claims = {
-        "verified_claims": {
-            "verification": {
-                "time": None,
-                "evidence": None
-            },
-            "claims": None
-        }
+        "verified_claims": {"verification": {"time": None, "evidence": None}, "claims": None}
     }
 
     icr = IDAClaimsRequest(**verified_claims)
@@ -228,16 +192,8 @@ def test_userinfo_claims_request_5_2_1():
 def test_userinfo_claims_request_5_2_2():
     verified_claims = {
         "verified_claims": {
-            "verification": {
-                "time": None,
-                "evidence": [
-                    {
-                        "method": None,
-                        "document": None
-                    }
-                ]
-            },
-            "claims": None
+            "verification": {"time": None, "evidence": [{"method": None, "document": None}]},
+            "claims": None,
         }
     }
 
@@ -254,15 +210,11 @@ def test_userinfo_claims_request_5_2_3():
                 "evidence": [
                     {
                         "method": None,
-                        "document": {
-                            "issuer": None,
-                            "number": None,
-                            "date_of_issuance": None
-                        }
+                        "document": {"issuer": None, "number": None, "date_of_issuance": None},
                     }
-                ]
+                ],
             },
-            "claims": None
+            "claims": None,
         }
     }
 
@@ -276,29 +228,16 @@ def test_userinfo_claims_request_5_3_1():
         "userinfo": {
             "verified_claims": {
                 "verification": {
-                    "trust_framework": {
-                        "value": "de_aml"
-                    },
+                    "trust_framework": {"value": "de_aml"},
                     "evidence": [
                         {
-                            "type": {
-                                "value": "id_document"
-                            },
-                            "method": {
-                                "value": "pipp"
-                            },
-                            "document": {
-                                "type": {
-                                    "values": [
-                                        "idcard",
-                                        "passport"
-                                    ]
-                                }
-                            }
+                            "type": {"value": "id_document"},
+                            "method": {"value": "pipp"},
+                            "document": {"type": {"values": ["idcard", "passport"]}},
                         }
-                    ]
+                    ],
                 },
-                "claims": None
+                "claims": None,
             }
         }
     }
@@ -311,14 +250,7 @@ def test_userinfo_claims_request_5_3_1():
 def test_userinfo_claims_request_5_3_2():
     userinfo_claims = {
         "userinfo": {
-            "verified_claims": {
-                "verification": {
-                    "date": {
-                        "max_age": 63113852
-                    }
-                },
-                "claims": None
-            }
+            "verified_claims": {"verification": {"date": {"max_age": 63113852}}, "claims": None}
         }
     }
 
@@ -340,33 +272,27 @@ def test_example_6_1():
                         "method": "pipp",
                         "document": {
                             "type": "idcard",
-                            "issuer": {
-                                "name": "Stadt Augsburg",
-                                "country": "DE"
-                            },
+                            "issuer": {"name": "Stadt Augsburg", "country": "DE"},
                             "number": "53554554",
                             "date_of_issuance": "2012-04-23",
-                            "date_of_expiry": "2022-04-22"
-                        }
+                            "date_of_expiry": "2022-04-22",
+                        },
                     }
-                ]
+                ],
             },
             "claims": {
                 "given_name": "Max",
                 "family_name": "Meier",
                 "birthdate": "1956-01-28",
-                "place_of_birth": {
-                    "country": "DE",
-                    "locality": "Musterstadt"
-                },
+                "place_of_birth": {"country": "DE", "locality": "Musterstadt"},
                 "nationality": "DE",
                 "address": {
                     "locality": "Maxstadt",
                     "postal_code": "12344",
                     "country": "DE",
-                    "street_address": "An der Sanddüne 22"
-                }
-            }
+                    "street_address": "An der Sanddüne 22",
+                },
+            },
         }
     }
 
@@ -389,14 +315,11 @@ def test_example_6_2():
                         "method": "pipp",
                         "document": {
                             "document_type": "de_erp_replacement_idcard",
-                            "issuer": {
-                                "name": "Stadt Augsburg",
-                                "country": "DE"
-                            },
+                            "issuer": {"name": "Stadt Augsburg", "country": "DE"},
                             "number": "53554554",
                             "date_of_issuance": "2012-04-23",
-                            "date_of_expiry": "2022-04-22"
-                        }
+                            "date_of_expiry": "2022-04-22",
+                        },
                     },
                     {
                         "type": "utility_bill",
@@ -404,28 +327,25 @@ def test_example_6_2():
                             "name": "Stadtwerke Musterstadt",
                             "country": "DE",
                             "region": "Thüringen",
-                            "street_address": "Energiestrasse 33"
+                            "street_address": "Energiestrasse 33",
                         },
-                        "date": "2013-01-31"
-                    }
-                ]
+                        "date": "2013-01-31",
+                    },
+                ],
             },
             "claims": {
                 "given_name": "Max",
                 "family_name": "Meier",
                 "birthdate": "1956-01-28",
-                "place_of_birth": {
-                    "country": "DE",
-                    "locality": "Musterstadt"
-                },
+                "place_of_birth": {"country": "DE", "locality": "Musterstadt"},
                 "nationality": "DE",
                 "address": {
                     "locality": "Maxstadt",
                     "postal_code": "12344",
                     "country": "DE",
-                    "street_address": "An der Sanddüne 22"
-                }
-            }
+                    "street_address": "An der Sanddüne 22",
+                },
+            },
         }
     }
 
@@ -441,25 +361,20 @@ def test_example_6_2():
 def test_example_6_3():
     verified_claims = {
         "verified_claims": {
-            "verification": {
-                "trust_framework": "eidas_ial_substantial"
-            },
+            "verification": {"trust_framework": "eidas_ial_substantial"},
             "claims": {
                 "given_name": "Max",
                 "family_name": "Meier",
                 "birthdate": "1956-01-28",
-                "place_of_birth": {
-                    "country": "DE",
-                    "locality": "Musterstadt"
-                },
+                "place_of_birth": {"country": "DE", "locality": "Musterstadt"},
                 "nationality": "DE",
                 "address": {
                     "locality": "Maxstadt",
                     "postal_code": "12344",
                     "country": "DE",
-                    "street_address": "An der Sanddüne 22"
-                }
-            }
+                    "street_address": "An der Sanddüne 22",
+                },
+            },
         }
     }
 
@@ -484,23 +399,16 @@ def test_example_6_4_2():
                         "method": "pipp",
                         "document": {
                             "type": "idcard",
-                            "issuer": {
-                                "name": "Stadt Augsburg",
-                                "country": "DE"
-                            },
+                            "issuer": {"name": "Stadt Augsburg", "country": "DE"},
                             "number": "53554554",
                             "date_of_issuance": "2012-04-23",
-                            "date_of_expiry": "2022-04-22"
-                        }
+                            "date_of_expiry": "2022-04-22",
+                        },
                     }
-                ]
+                ],
             },
-            "claims": {
-                "given_name": "Max",
-                "family_name": "Meier",
-                "birthdate": "1956-01-28"
-            }
-        }
+            "claims": {"given_name": "Max", "family_name": "Meier", "birthdate": "1956-01-28"},
+        },
     }
 
     vc = VerifiedClaims(**userinfo_response["verified_claims"])
