@@ -16,13 +16,12 @@ KEYSPEC_2 = [
 ]
 
 
-
 def test_dl_dict():
     _dict = DLDict()
     _kb1 = build_key_bundle(key_conf=KEYSPEC)
-    _dict['a'] = _kb1
+    _dict["a"] = _kb1
     _kb2 = build_key_bundle(key_conf=KEYSPEC_2)
-    _dict['b'] = _kb2
+    _dict["b"] = _kb2
 
     dump = _dict.dump()
 
@@ -30,5 +29,5 @@ def test_dl_dict():
 
     assert set(_dict_copy.keys()) == {"a", "b"}
 
-    kb1_copy = _dict_copy['a']
+    kb1_copy = _dict_copy["a"]
     assert len(kb1_copy.keys()) == 2

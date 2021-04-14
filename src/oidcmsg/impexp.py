@@ -2,6 +2,7 @@ from typing import Any
 from typing import List
 from typing import Optional
 
+from cryptojwt.utils import as_bytes
 from cryptojwt.utils import importer
 from cryptojwt.utils import qualified_name
 
@@ -17,8 +18,11 @@ class ImpExp:
         pass
 
     def dump_attr(self, cls, item, exclude_attributes: Optional[List[str]] = None) -> dict:
-        if cls in [None, 0, "", [], {}, bool]:
-            val = item
+        if cls in [None, 0, "", [], {}, bool, b'']:
+            if cls == b'':
+                val = as_bytes(item)
+            else:
+                val = item
         elif isinstance(item, Message):
             val = {qualified_name(item.__class__): item.to_dict()}
         elif cls == object:
@@ -53,11 +57,13 @@ class ImpExp:
     def local_load_adjustments(self, **kwargs):
         pass
 
-    def load_attr(self,
-                  cls: Any,
-                  item: dict,
-                  init_args: Optional[dict] = None,
-                  load_args: Optional[dict] = None) -> Any:
+    def load_attr(
+            self,
+            cls: Any,
+            item: dict,
+            init_args: Optional[dict] = None,
+            load_args: Optional[dict] = None,
+    ) -> Any:
         if load_args:
             _kwargs = {"load_args": load_args}
             _load_args = load_args
@@ -68,8 +74,11 @@ class ImpExp:
         if init_args:
             _kwargs["init_args"] = init_args
 
-        if cls in [None, 0, "", [], {}, bool]:
-            val = item
+        if cls in [None, 0, "", [], {}, bool, b'']:
+            if cls == b'':
+                val = as_bytes(item)
+            else:
+                val = item
         elif cls == object:
             val = importer(item)
         elif isinstance(cls, list):
@@ -98,9 +107,7 @@ class ImpExp:
 
         return val
 
-    def load(self, item: dict,
-             init_args: Optional[dict] = None,
-             load_args: Optional[dict] = None):
+    def load(self, item: dict, init_args: Optional[dict] = None, load_args: Optional[dict] = None):
 
         if load_args:
             _kwargs = {"load_args": load_args}

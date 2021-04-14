@@ -8,9 +8,7 @@ from oidcmsg.storage.utils import qualified_name
 
 
 class DLDict(ImpExp):
-    parameter = {
-        "db": {}
-    }
+    parameter = {"db": {}}
 
     def __init__(self, **kwargs):
         ImpExp.__init__(self)
@@ -22,7 +20,7 @@ class DLDict(ImpExp):
     def __getitem__(self, key: str):
         return self.db[key]
 
-    def __delitem__(self, key:str):
+    def __delitem__(self, key: str):
         del self.db[key]
 
     def dump(self, exclude_attributes: Optional[List[str]] = None) -> dict:
@@ -34,12 +32,11 @@ class DLDict(ImpExp):
 
         return res
 
-    def load(self, spec: dict,
-             init_args: Optional[dict] = None,
-             load_args: Optional[dict] = None
-             ) -> "DLDict":
+    def load(
+        self, spec: dict, init_args: Optional[dict] = None, load_args: Optional[dict] = None
+    ) -> "DLDict":
         if load_args:
-            _kwargs= {"load_args": load_args}
+            _kwargs = {"load_args": load_args}
             _load_args = {}
         else:
             _load_args = {}
@@ -96,10 +93,9 @@ def dump_dldict(item, exclude_attributes: Optional[List[str]] = None) -> dict:
     return res
 
 
-def load_dldict(spec: dict,
-                init_args: Optional[dict] = None,
-                load_args: Optional[dict] = None
-                ) -> dict:
+def load_dldict(
+    spec: dict, init_args: Optional[dict] = None, load_args: Optional[dict] = None
+) -> dict:
     db = {}
 
     for attr, (_item_cls, _item) in spec.items():
@@ -127,11 +123,10 @@ def dump_class_map(item, exclude_attributes: Optional[List[str]] = None) -> dict
     return _dump
 
 
-def load_class_map(spec: dict,
-                   init_args: Optional[dict] = None,
-                   load_args: Optional[dict] = None
-                   ) -> dict:
+def load_class_map(
+    spec: dict, init_args: Optional[dict] = None, load_args: Optional[dict] = None
+) -> dict:
     _item = {}
     for key, val in spec.items():
-            _item[key] = importer(val)
+        _item[key] = importer(val)
     return _item

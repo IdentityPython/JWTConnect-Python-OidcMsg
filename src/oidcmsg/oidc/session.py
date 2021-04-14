@@ -27,10 +27,7 @@ logger = logging.getLogger(__name__)
 
 class RefreshSessionRequest(MessageWithIdToken):
     c_param = MessageWithIdToken.c_param.copy()
-    c_param.update({
-        "redirect_url": SINGLE_REQUIRED_STRING,
-        "state": SINGLE_REQUIRED_STRING
-    })
+    c_param.update({"redirect_url": SINGLE_REQUIRED_STRING, "state": SINGLE_REQUIRED_STRING})
 
 
 class RefreshSessionResponse(MessageWithIdToken, ResponseMessage):
@@ -52,14 +49,14 @@ class EndSessionRequest(Message):
         "id_token_hint": SINGLE_OPTIONAL_IDTOKEN,
         "post_logout_redirect_uri": SINGLE_OPTIONAL_STRING,
         "state": SINGLE_OPTIONAL_STRING,
-        "ui_locales": OPTIONAL_LIST_OF_SP_SEP_STRINGS
+        "ui_locales": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
     }
 
     def verify(self, **kwargs):
         super(EndSessionRequest, self).verify(**kwargs)
         clear_verified_claims(self)
 
-        if 'post_logout_redirect_uri' in self:
+        if "post_logout_redirect_uri" in self:
             if "id_token_hint" not in self:
                 return False
 
@@ -72,7 +69,7 @@ class EndSessionRequest(Message):
                 except KeyError:
                     pass
             idt = IdToken().from_jwt(str(self["id_token_hint"]), **args)
-            if not verify_id_token(self, claim='id_token_hint', **kwargs):
+            if not verify_id_token(self, claim="id_token_hint", **kwargs):
                 return False
             # Add the verified ID Token to the message instance
             self[verified_claim_name("id_token_hint")] = idt
@@ -90,67 +87,68 @@ class LogoutToken(Message):
     Defined in
     https://openid.net/specs/openid-connect-backchannel-1_0.html#LogoutToken
     """
+
     c_param = {
         "iss": SINGLE_REQUIRED_STRING,
         "sub": SINGLE_OPTIONAL_STRING,
         "aud": REQUIRED_LIST_OF_STRINGS,  # Array of strings or string
         "iat": SINGLE_REQUIRED_INT,
         "jti": SINGLE_REQUIRED_STRING,
-        'events': SINGLE_REQUIRED_JSON,
-        'sid': SINGLE_OPTIONAL_STRING
+        "events": SINGLE_REQUIRED_JSON,
+        "sid": SINGLE_OPTIONAL_STRING,
     }
 
     def verify(self, **kwargs):
         super(LogoutToken, self).verify(**kwargs)
 
-        if 'nonce' in self:
-            raise MessageException('"nonce" is prohibited from appearing in '
-                                   'a LogoutToken.')
+        if "nonce" in self:
+            raise MessageException('"nonce" is prohibited from appearing in ' "a LogoutToken.")
 
         # Check the 'events' JSON
-        _keys = list(self['events'].keys())
+        _keys = list(self["events"].keys())
         if len(_keys) != 1:
             raise ValueError('Must only be one member in "events"')
         if _keys[0] != "http://schemas.openid.net/event/backchannel-logout":
             raise ValueError('Wrong member in "events"')
-        if self['events'][_keys[0]] != {}:
+        if self["events"][_keys[0]] != {}:
             raise ValueError('Wrong member value in "events"')
 
         # There must be either a 'sub' or a 'sid', and may contain both
-        if not ('sub' in self or 'sid' in self):
+        if not ("sub" in self or "sid" in self):
             raise ValueError('There MUST be either a "sub" or a "sid"')
 
         try:
-            if kwargs['aud'] not in self['aud']:
-                raise NotForMe('Not among intended audience')
+            if kwargs["aud"] not in self["aud"]:
+                raise NotForMe("Not among intended audience")
         except KeyError:
             pass
 
         try:
-            if kwargs['iss'] != self['iss']:
-                raise NotForMe('Wrong issuer')
+            if kwargs["iss"] != self["iss"]:
+                raise NotForMe("Wrong issuer")
         except KeyError:
             pass
 
         _now = utc_time_sans_frac()
 
         try:
-            _skew = kwargs['skew']
+            _skew = kwargs["skew"]
         except KeyError:
             _skew = 0
 
         try:
-            _exp = self['iat']
+            _exp = self["iat"]
         except KeyError:
             pass
         else:
-            if self['iat'] > (_now + _skew):
-                raise ValueError('Invalid issued_at time')
+            if self["iat"] > (_now + _skew):
+                raise ValueError("Invalid issued_at time")
 
         _allowed = kwargs.get("allowed_sign_alg")
-        if _allowed and self.jws_header['alg'] != _allowed:
+        if _allowed and self.jws_header["alg"] != _allowed:
             _msg = "Wrong token signing algorithm, {} != {}".format(
-                self.jws_header['alg'], kwargs["allowed_sign_alg"])
+                self.jws_header["alg"], kwargs["allowed_sign_alg"]
+            )
             raise UnsupportedAlgorithm(_msg)
 
         return True
@@ -165,9 +163,7 @@ class BackChannelLogoutRequest(Message):
     https://openid.net/specs/openid-connect-backchannel-1_0.html#LogoutToken
     """
 
-    c_param = {
-        "logout_token": SINGLE_REQUIRED_STRING
-    }
+    c_param = {"logout_token": SINGLE_REQUIRED_STRING}
 
     def verify(self, **kwargs):
         super(BackChannelLogoutRequest, self).verify(**kwargs)
@@ -183,6 +179,6 @@ class BackChannelLogoutRequest(Message):
             return False
 
         self[verified_claim_name("logout_token")] = idt
-        logger.info('Verified ID Token: {}'.format(idt.to_dict()))
+        logger.info("Verified ID Token: {}".format(idt.to_dict()))
 
         return True

@@ -27,8 +27,7 @@ from datetime import datetime
 from datetime import timedelta
 
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-TIME_FORMAT_WITH_FRAGMENT = re.compile(
-        "^(\d{4,4}-\d{2,2}-\d{2,2}T\d{2,2}:\d{2,2}:\d{2,2})\.\d*Z$")
+TIME_FORMAT_WITH_FRAGMENT = re.compile("^(\d{4,4}-\d{2,2}-\d{2,2}T\d{2,2}:\d{2,2}:\d{2,2})\.\d*Z$")
 
 
 class TimeUtilError(Exception):
@@ -70,18 +69,18 @@ D_FORMAT = [
     ("T", None),
     ("H", "tm_hour"),
     ("M", "tm_min"),
-    ("S", "tm_sec")
+    ("S", "tm_sec"),
 ]
 
 
 def parse_duration(duration):
     # (-)PnYnMnDTnHnMnS
     index = 0
-    if duration[0] == '-':
-        sign = '-'
+    if duration[0] == "-":
+        sign = "-"
         index += 1
     else:
-        sign = '+'
+        sign = "+"
     if duration[index] != "P":
         raise ValueError('duration index {} != "P"'.format(duration[index]))
     index += 1
@@ -90,7 +89,7 @@ def parse_duration(duration):
 
     for code, typ in D_FORMAT:
         # print duration[index:], code
-        if duration[index] == '-':
+        if duration[index] == "-":
             raise TimeUtilError("Negation not allowed on individual items")
         if code == "T":
             if duration[index] == "T":
@@ -103,16 +102,15 @@ def parse_duration(duration):
             try:
                 mod = duration[index:].index(code)
                 try:
-                    dic[typ] = int(duration[index:index + mod])
+                    dic[typ] = int(duration[index : index + mod])
                 except ValueError:
                     if code == "S":
                         try:
-                            dic[typ] = float(duration[index:index + mod])
+                            dic[typ] = float(duration[index : index + mod])
                         except ValueError:
                             raise TimeUtilError("Not a float")
                     else:
-                        raise TimeUtilError(
-                                "Fractions not allow on anything byt seconds")
+                        raise TimeUtilError("Fractions not allow on anything byt seconds")
                 index = mod + index + 1
             except ValueError:
                 dic[typ] = 0
@@ -126,7 +124,7 @@ def parse_duration(duration):
 def add_duration(tid, duration):
     (sign, dur) = parse_duration(duration)
 
-    if sign == '+':
+    if sign == "+":
         # Months
         temp = tid.tm_mon + dur["tm_mon"]
         month = modulo(temp, 1, 13)
@@ -165,8 +163,7 @@ def add_duration(tid, duration):
             month = modulo(temp, 1, 13)
             year += f_quotient(temp, 1, 13)
 
-        return time.localtime(time.mktime((year, month, days, hour, minutes,
-                                           secs, 0, 0, -1)))
+        return time.localtime(time.mktime((year, month, days, hour, minutes, secs, 0, 0, -1)))
     else:
         pass
 
@@ -174,23 +171,22 @@ def add_duration(tid, duration):
 # ---------------------------------------------------------------------------
 
 
-def time_in_a_while(days=0, seconds=0, microseconds=0, milliseconds=0,
-                    minutes=0, hours=0, weeks=0):
+def time_in_a_while(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0):
     """
     Will return a time specification for a time sometime in the future.
 
     :return: datetime instance using UTC time
     """
-    delta = timedelta(days, seconds, microseconds, milliseconds,
-                      minutes, hours, weeks)
+    delta = timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks)
     return datetime.utcnow() + delta
 
 
-def time_a_while_ago(days=0, seconds=0, microseconds=0, milliseconds=0,
-                     minutes=0, hours=0, weeks=0):
+def time_a_while_ago(
+    days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0
+):
     """
     Will return a time specification for a time sometime in the past.
-        
+
     :param days:
     :param seconds:
     :param microseconds:
@@ -200,13 +196,20 @@ def time_a_while_ago(days=0, seconds=0, microseconds=0, milliseconds=0,
     :param weeks:
     :return: datetime instance using UTC time
     """
-    delta = timedelta(days, seconds, microseconds, milliseconds,
-                      minutes, hours, weeks)
+    delta = timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks)
     return datetime.utcnow() - delta
 
 
-def in_a_while(days=0, seconds=0, microseconds=0, milliseconds=0,
-               minutes=0, hours=0, weeks=0, time_format=TIME_FORMAT):
+def in_a_while(
+    days=0,
+    seconds=0,
+    microseconds=0,
+    milliseconds=0,
+    minutes=0,
+    hours=0,
+    weeks=0,
+    time_format=TIME_FORMAT,
+):
     """
     :param days:
     :param seconds:
@@ -221,12 +224,21 @@ def in_a_while(days=0, seconds=0, microseconds=0, milliseconds=0,
     if not time_format:
         time_format = TIME_FORMAT
 
-    return time_in_a_while(days, seconds, microseconds, milliseconds,
-                           minutes, hours, weeks).strftime(time_format)
+    return time_in_a_while(
+        days, seconds, microseconds, milliseconds, minutes, hours, weeks
+    ).strftime(time_format)
 
 
-def a_while_ago(days=0, seconds=0, microseconds=0, milliseconds=0,
-                minutes=0, hours=0, weeks=0, time_format=TIME_FORMAT):
+def a_while_ago(
+    days=0,
+    seconds=0,
+    microseconds=0,
+    milliseconds=0,
+    minutes=0,
+    hours=0,
+    weeks=0,
+    time_format=TIME_FORMAT,
+):
     """
 
     :param days:
@@ -239,15 +251,16 @@ def a_while_ago(days=0, seconds=0, microseconds=0, milliseconds=0,
     :param time_format:
     :return: Formatet string
     """
-    return time_a_while_ago(days, seconds, microseconds, milliseconds,
-                            minutes, hours, weeks).strftime(time_format)
+    return time_a_while_ago(
+        days, seconds, microseconds, milliseconds, minutes, hours, weeks
+    ).strftime(time_format)
 
 
 # ---------------------------------------------------------------------------
 
 
 def shift_time(dtime, shift):
-    """ Adds/deletes an integer amount of seconds from a datetime specification
+    """Adds/deletes an integer amount of seconds from a datetime specification
 
     :param dtime: The datatime specification
     :param shift: The wanted time shift (+/-)
@@ -274,7 +287,7 @@ def str_to_time(timestr, time_format=TIME_FORMAT):
         try:
             elem = TIME_FORMAT_WITH_FRAGMENT.match(timestr)
         except Exception as exc:
-            print >> sys.stderr, "Exception: %s on %s" % (exc, timestr)
+            print >>sys.stderr, "Exception: %s on %s" % (exc, timestr)
             raise
         then = time.strptime(elem.groups()[0] + "Z", TIME_FORMAT)
 
@@ -342,8 +355,9 @@ def time_sans_frac():
     return int("%d" % time.time())
 
 
-def epoch_in_a_while(days=0, seconds=0, microseconds=0, milliseconds=0,
-                     minutes=0, hours=0, weeks=0):
+def epoch_in_a_while(
+    days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0
+):
     """
     Return the number of seconds since epoch a while from now.
 
@@ -357,6 +371,5 @@ def epoch_in_a_while(days=0, seconds=0, microseconds=0, milliseconds=0,
     :return: Seconds since epoch (1970-01-01)
     """
 
-    dt = time_in_a_while(days, seconds, microseconds, milliseconds, minutes,
-                         hours, weeks)
+    dt = time_in_a_while(days, seconds, microseconds, milliseconds, minutes, hours, weeks)
     return int((dt - datetime(1970, 1, 1)).total_seconds())
