@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def is_error_message(msg):
-    if 'error' in msg:
+    if "error" in msg:
         return True
     else:
         return False
@@ -35,10 +35,11 @@ class ResponseMessage(Message):
     """
     The basic error response
     """
+
     c_param = {
         "error": SINGLE_OPTIONAL_STRING,
         "error_description": SINGLE_OPTIONAL_STRING,
-        "error_uri": SINGLE_OPTIONAL_STRING
+        "error_uri": SINGLE_OPTIONAL_STRING,
     }
 
     def verify(self, **kwargs):
@@ -55,28 +56,39 @@ class AuthorizationErrorResponse(ResponseMessage):
     """
     Authorization error response.
     """
+
     c_param = ResponseMessage.c_param.copy()
     c_param.update({"state": SINGLE_OPTIONAL_STRING})
     c_allowed_values = ResponseMessage.c_allowed_values.copy()
-    c_allowed_values.update({
-        "error": ["invalid_request",
-                  "unauthorized_client",
-                  "access_denied",
-                  "unsupported_response_type",
-                  "invalid_scope", "server_error",
-                  "temporarily_unavailable"]
-    })
+    c_allowed_values.update(
+        {
+            "error": [
+                "invalid_request",
+                "unauthorized_client",
+                "access_denied",
+                "unsupported_response_type",
+                "invalid_scope",
+                "server_error",
+                "temporarily_unavailable",
+            ]
+        }
+    )
 
 
 class TokenErrorResponse(ResponseMessage):
     """
     Error response from the token endpoint
     """
+
     c_allowed_values = {
-        "error": ["invalid_request", "invalid_client",
-                  "invalid_grant", "unauthorized_client",
-                  "unsupported_grant_type",
-                  "invalid_scope"]
+        "error": [
+            "invalid_request",
+            "invalid_client",
+            "invalid_grant",
+            "unauthorized_client",
+            "unsupported_grant_type",
+            "invalid_scope",
+        ]
     }
 
 
@@ -84,13 +96,14 @@ class AccessTokenRequest(Message):
     """
     An access token request
     """
+
     c_param = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "code": SINGLE_REQUIRED_STRING,
         "redirect_uri": SINGLE_REQUIRED_STRING,
         "client_id": SINGLE_OPTIONAL_STRING,
         "client_secret": SINGLE_OPTIONAL_STRING,
-        'state': SINGLE_OPTIONAL_STRING
+        "state": SINGLE_OPTIONAL_STRING,
     }
     c_default = {"grant_type": "authorization_code"}
 
@@ -99,6 +112,7 @@ class AuthorizationRequest(Message):
     """
     An authorization request
     """
+
     c_param = {
         "response_type": REQUIRED_LIST_OF_SP_SEP_STRINGS,
         "client_id": SINGLE_REQUIRED_STRING,
@@ -119,7 +133,7 @@ class AuthorizationRequest(Message):
             result, this is the list to use.
         """
 
-        if treatement == 'strict':
+        if treatement == "strict":
             params = list(self.keys())
             # remove all parameters in request that does not appear in request_object
             for param in params:
@@ -143,31 +157,34 @@ class AuthorizationResponse(ResponseMessage):
     a client_id value provided when calling the verify method.
     The same with *iss* (issuer).
     """
+
     c_param = ResponseMessage.c_param.copy()
-    c_param.update({
-        "code": SINGLE_REQUIRED_STRING,
-        "state": SINGLE_OPTIONAL_STRING,
-        'iss': SINGLE_OPTIONAL_STRING,
-        'client_id': SINGLE_OPTIONAL_STRING
-    })
+    c_param.update(
+        {
+            "code": SINGLE_REQUIRED_STRING,
+            "state": SINGLE_OPTIONAL_STRING,
+            "iss": SINGLE_OPTIONAL_STRING,
+            "client_id": SINGLE_OPTIONAL_STRING,
+        }
+    )
 
     def verify(self, **kwargs):
         super(AuthorizationResponse, self).verify(**kwargs)
 
-        if 'client_id' in self:
+        if "client_id" in self:
             try:
-                if self['client_id'] != kwargs['client_id']:
-                    raise VerificationError('client_id mismatch')
+                if self["client_id"] != kwargs["client_id"]:
+                    raise VerificationError("client_id mismatch")
             except KeyError:
-                logger.info('No client_id to verify against')
+                logger.info("No client_id to verify against")
                 pass
-        if 'iss' in self:
+        if "iss" in self:
             try:
                 # Issuer URL for the authorization server issuing the response.
-                if self['iss'] != kwargs['iss']:
-                    raise VerificationError('Issuer mismatch')
+                if self["iss"] != kwargs["iss"]:
+                    raise VerificationError("Issuer mismatch")
             except KeyError:
-                logger.info('No issuer set in the Client config')
+                logger.info("No issuer set in the Client config")
                 pass
 
         return True
@@ -177,33 +194,35 @@ class AccessTokenResponse(ResponseMessage):
     """
     Access token response
     """
+
     c_param = ResponseMessage.c_param.copy()
-    c_param.update({
-        "access_token": SINGLE_REQUIRED_STRING,
-        "token_type": SINGLE_REQUIRED_STRING,
-        "expires_in": SINGLE_OPTIONAL_INT,
-        "refresh_token": SINGLE_OPTIONAL_STRING,
-        "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
-        "state": SINGLE_OPTIONAL_STRING
-    })
+    c_param.update(
+        {
+            "access_token": SINGLE_REQUIRED_STRING,
+            "token_type": SINGLE_REQUIRED_STRING,
+            "expires_in": SINGLE_OPTIONAL_INT,
+            "refresh_token": SINGLE_OPTIONAL_STRING,
+            "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
+            "state": SINGLE_OPTIONAL_STRING,
+        }
+    )
 
 
 class NoneResponse(ResponseMessage):
     c_param = ResponseMessage.c_param.copy()
-    c_param.update({
-        "state": SINGLE_OPTIONAL_STRING
-    })
+    c_param.update({"state": SINGLE_OPTIONAL_STRING})
 
 
 class ROPCAccessTokenRequest(Message):
     """
     Resource Owner Password Credentials Grant flow access token request
     """
+
     c_param = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "username": SINGLE_OPTIONAL_STRING,
         "password": SINGLE_OPTIONAL_STRING,
-        "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS
+        "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
     }
 
 
@@ -211,10 +230,8 @@ class CCAccessTokenRequest(Message):
     """
     Client Credential grant flow access token request
     """
-    c_param = {
-        "grant_type": SINGLE_REQUIRED_STRING,
-        "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS
-    }
+
+    c_param = {"grant_type": SINGLE_REQUIRED_STRING, "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS}
     c_default = {"grant_type": "client_credentials"}
     c_allowed_values = {"grant_type": ["client_credentials"]}
 
@@ -223,12 +240,13 @@ class RefreshAccessTokenRequest(Message):
     """
     Access token refresh request
     """
+
     c_param = {
         "grant_type": SINGLE_REQUIRED_STRING,
         "refresh_token": SINGLE_REQUIRED_STRING,
         "scope": OPTIONAL_LIST_OF_SP_SEP_STRINGS,
         "client_id": SINGLE_OPTIONAL_STRING,
-        "client_secret": SINGLE_OPTIONAL_STRING
+        "client_secret": SINGLE_OPTIONAL_STRING,
     }
     c_default = {"grant_type": "refresh_token"}
     c_allowed_values = {"grant_type": ["refresh_token"]}
@@ -242,27 +260,29 @@ class ASConfigurationResponse(Message):
     """
     Authorization Server configuration response
     """
+
     c_param = ResponseMessage.c_param.copy()
-    c_param.update({
-        "issuer": SINGLE_REQUIRED_STRING,
-        "authorization_endpoint": SINGLE_OPTIONAL_STRING,
-        "token_endpoint": SINGLE_OPTIONAL_STRING,
-        "jwks_uri": SINGLE_OPTIONAL_STRING,
-        "registration_endpoint": SINGLE_OPTIONAL_STRING,
-        "scopes_supported": OPTIONAL_LIST_OF_STRINGS,
-        "response_types_supported": REQUIRED_LIST_OF_STRINGS,
-        "response_modes_supported": OPTIONAL_LIST_OF_STRINGS,
-        "grant_types_supported": REQUIRED_LIST_OF_STRINGS,
-        "token_endpoint_auth_methods_supported": OPTIONAL_LIST_OF_STRINGS,
-        "token_endpoint_auth_signing_alg_values_supported":
-            OPTIONAL_LIST_OF_STRINGS,
-        "service_documentation": SINGLE_OPTIONAL_STRING,
-        "ui_locales_supported": OPTIONAL_LIST_OF_STRINGS,
-        "op_policy_uri": SINGLE_OPTIONAL_STRING,
-        "op_tos_uri": SINGLE_OPTIONAL_STRING,
-        'revocation_endpoint': SINGLE_OPTIONAL_STRING,
-        'introspection_endpoint': SINGLE_OPTIONAL_STRING,
-    })
+    c_param.update(
+        {
+            "issuer": SINGLE_REQUIRED_STRING,
+            "authorization_endpoint": SINGLE_OPTIONAL_STRING,
+            "token_endpoint": SINGLE_OPTIONAL_STRING,
+            "jwks_uri": SINGLE_OPTIONAL_STRING,
+            "registration_endpoint": SINGLE_OPTIONAL_STRING,
+            "scopes_supported": OPTIONAL_LIST_OF_STRINGS,
+            "response_types_supported": REQUIRED_LIST_OF_STRINGS,
+            "response_modes_supported": OPTIONAL_LIST_OF_STRINGS,
+            "grant_types_supported": REQUIRED_LIST_OF_STRINGS,
+            "token_endpoint_auth_methods_supported": OPTIONAL_LIST_OF_STRINGS,
+            "token_endpoint_auth_signing_alg_values_supported": OPTIONAL_LIST_OF_STRINGS,
+            "service_documentation": SINGLE_OPTIONAL_STRING,
+            "ui_locales_supported": OPTIONAL_LIST_OF_STRINGS,
+            "op_policy_uri": SINGLE_OPTIONAL_STRING,
+            "op_tos_uri": SINGLE_OPTIONAL_STRING,
+            "revocation_endpoint": SINGLE_OPTIONAL_STRING,
+            "introspection_endpoint": SINGLE_OPTIONAL_STRING,
+        }
+    )
     c_default = {"version": "3.0"}
 
 
@@ -323,10 +343,7 @@ class TokenExchangeResponse(Message):
 
 class JWTSecuredAuthorizationRequest(AuthorizationRequest):
     c_param = AuthorizationRequest.c_param.copy()
-    c_param.update({
-        "request": SINGLE_OPTIONAL_STRING,
-        "request_uri": SINGLE_OPTIONAL_STRING
-    })
+    c_param.update({"request": SINGLE_OPTIONAL_STRING, "request_uri": SINGLE_OPTIONAL_STRING})
 
     def verify(self, **kwargs):
         if "request" in self:
@@ -335,15 +352,14 @@ class JWTSecuredAuthorizationRequest(AuthorizationRequest):
                 del self[_vc_name]
 
             args = {}
-            for arg in ["keyjar", "opponent_id", "sender", "alg", "encalg",
-                        "encenc"]:
+            for arg in ["keyjar", "opponent_id", "sender", "alg", "encalg", "encenc"]:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:
                     pass
 
             _req = AuthorizationRequest().from_jwt(str(self["request"]), **args)
-            self.merge(_req, 'strict')
+            self.merge(_req, "strict")
             self[_vc_name] = _req
         elif "request_uri" not in self:
             raise MissingAttribute("One of request or request_uri must be present")
@@ -353,9 +369,7 @@ class JWTSecuredAuthorizationRequest(AuthorizationRequest):
 
 class PushedAuthorizationRequest(AuthorizationRequest):
     c_param = AuthorizationRequest.c_param.copy()
-    c_param.update({
-        "request": SINGLE_OPTIONAL_STRING
-    })
+    c_param.update({"request": SINGLE_OPTIONAL_STRING})
 
     def verify(self, **kwargs):
         if "request" in self:
@@ -364,8 +378,7 @@ class PushedAuthorizationRequest(AuthorizationRequest):
                 del self[_vc_name]
 
             args = {}
-            for arg in ["keyjar", "opponent_id", "sender", "alg", "encalg",
-                        "encenc"]:
+            for arg in ["keyjar", "opponent_id", "sender", "alg", "encalg", "encenc"]:
                 try:
                     args[arg] = kwargs[arg]
                 except KeyError:
@@ -388,7 +401,7 @@ class SecurityEventToken(Message):
         "exp": SINGLE_OPTIONAL_INT,
         "events": SINGLE_OPTIONAL_JSON,
         "txt": SINGLE_OPTIONAL_STRING,
-        "toe": SINGLE_OPTIONAL_INT
+        "toe": SINGLE_OPTIONAL_INT,
     }
 
 

@@ -1,13 +1,13 @@
-__author__ = 'Roland Hedberg'
-__version__ = '1.2.0'
+__author__ = "Roland Hedberg"
+__version__ = "1.3.0"
 
 import os
 
-VERIFIED_CLAIM_PREFIX = '__verified'
+VERIFIED_CLAIM_PREFIX = "__verified"
 
 
 def verified_claim_name(claim):
-    return '{}_{}'.format(VERIFIED_CLAIM_PREFIX, claim)
+    return "{}_{}".format(VERIFIED_CLAIM_PREFIX, claim)
 
 
 def proper_path(path):

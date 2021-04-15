@@ -20,15 +20,15 @@ class SetGetDict(dict):
         del self[item]
 
 
-class LabeledDict():
-    def __init__(self, label=''):
+class LabeledDict:
+    def __init__(self, label=""):
         self.storage = SetGetDict()
 
-        if label == '':
+        if label == "":
             self.label = label
             self.label_len = 0
         else:
-            self.label = '__{}__'.format(label)
+            self.label = "__{}__".format(label)
             self.label_len = len(self.label)
 
     @key_label
@@ -62,7 +62,7 @@ class LabeledDict():
     def __iter__(self):
         for key, val in self.storage.__iter__():
             if key.startswith(self.label):
-                yield key[self.label_len:], val
+                yield key[self.label_len :], val
 
     def keys(self):
-        return [k[self.label_len:] for k in self.storage.keys() if k.startswith(self.label)]
+        return [k[self.label_len :] for k in self.storage.keys() if k.startswith(self.label)]

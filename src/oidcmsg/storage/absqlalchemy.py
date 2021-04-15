@@ -7,14 +7,15 @@ from sqlalchemy.orm import sessionmaker
 
 PlainDict = dict
 
+
 class AbstractStorageSQLAlchemy:
     def __init__(self, conf_dict):
-        self.engine = alchemy_db.create_engine(conf_dict['url'])
+        self.engine = alchemy_db.create_engine(conf_dict["url"])
         self.connection = self.engine.connect()
         self.metadata = alchemy_db.MetaData()
-        self.table = alchemy_db.Table(conf_dict['params']['table'],
-                                      self.metadata, autoload=True,
-                                      autoload_with=self.engine)
+        self.table = alchemy_db.Table(
+            conf_dict["params"]["table"], self.metadata, autoload=True, autoload_with=self.engine
+        )
         Session = sessionmaker(bind=self.engine)
         self.session = scoped_session(Session)
 
@@ -26,20 +27,17 @@ class AbstractStorageSQLAlchemy:
 
     def set(self, k, v):
         self.delete(k)
-        ins = self.table.insert().values(owner=k,
-                                         data=v)
+        ins = self.table.insert().values(owner=k, data=v)
         self.session.execute(ins)
         self.session.commit()
         return 1
 
     def update(self, k, v):
         """
-            k = value_to_match
-            v = value_to_be_substituted
+        k = value_to_match
+        v = value_to_be_substituted
         """
-        upquery = self.table.update(). \
-            where(self.table.c.owner == k). \
-            values(**{'data': v})
+        upquery = self.table.update().where(self.table.c.owner == k).values(**{"data": v})
         self.session.execute(upquery)
         self.session.commit()
         return 1

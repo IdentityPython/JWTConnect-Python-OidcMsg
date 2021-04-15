@@ -26,7 +26,7 @@ from oidcmsg.oauth2 import TokenExchangeResponse
 from oidcmsg.oauth2 import factory
 from oidcmsg.oauth2 import is_error_message
 
-__author__ = 'Roland Hedberg'
+__author__ = "Roland Hedberg"
 
 keys = [
     {"type": "RSA", "use": ["sig"]},
@@ -43,14 +43,14 @@ keym = [
 
 KEYJAR = build_keyjar(keys)
 IKEYJAR = build_keyjar(keys)
-IKEYJAR.import_jwks(IKEYJAR.export_jwks(private=True), 'issuer')
-del IKEYJAR['']
+IKEYJAR.import_jwks(IKEYJAR.export_jwks(private=True), "issuer")
+del IKEYJAR[""]
 
 KEYJARS = {}
-for iss in ['A', 'B', 'C']:
+for iss in ["A", "B", "C"]:
     _kj = build_keyjar(keym)
-    _kj.import_jwks(_kj.export_jwks(private=True) ,iss)
-    del _kj['']
+    _kj.import_jwks(_kj.export_jwks(private=True), iss)
+    del _kj[""]
     KEYJARS[iss] = _kj
 
 
@@ -111,52 +111,69 @@ class TestAuthorizationRequest(object):
         assert query_string_compare(ue, "response_type=code&client_id=foobar")
 
     def test_urlencoded_with_redirect_uri(self):
-        ar = AuthorizationRequest(response_type=["code"], client_id="foobar",
-                                  redirect_uri="http://foobar.example.com/oaclient",
-                                  state="cold")
+        ar = AuthorizationRequest(
+            response_type=["code"],
+            client_id="foobar",
+            redirect_uri="http://foobar.example.com/oaclient",
+            state="cold",
+        )
 
         ue = ar.to_urlencoded()
-        assert query_string_compare(ue,
-                                    "state=cold&redirect_uri=http%3A%2F%2Ffoobar.example.com"
-                                    "%2Foaclient&"
-                                    "response_type=code&client_id=foobar")
+        assert query_string_compare(
+            ue,
+            "state=cold&redirect_uri=http%3A%2F%2Ffoobar.example.com"
+            "%2Foaclient&"
+            "response_type=code&client_id=foobar",
+        )
 
     def test_urlencoded_resp_type_token(self):
-        ar = AuthorizationRequest(response_type=["token"],
-                                  client_id="s6BhdRkqt3",
-                                  redirect_uri="https://client.example.com/cb",
-                                  state="xyz")
+        ar = AuthorizationRequest(
+            response_type=["token"],
+            client_id="s6BhdRkqt3",
+            redirect_uri="https://client.example.com/cb",
+            state="xyz",
+        )
 
         ue = ar.to_urlencoded()
-        assert query_string_compare(ue,
-                                    "state=xyz&redirect_uri=https%3A%2F%2Fclient.example.com%2Fcb"
-                                    "&response_type=token&"
-                                    "client_id=s6BhdRkqt3")
+        assert query_string_compare(
+            ue,
+            "state=xyz&redirect_uri=https%3A%2F%2Fclient.example.com%2Fcb"
+            "&response_type=token&"
+            "client_id=s6BhdRkqt3",
+        )
 
     def test_deserialize_urlencoded(self):
-        ar = AuthorizationRequest(response_type=["code"],
-                                  client_id="foobar")
+        ar = AuthorizationRequest(response_type=["code"], client_id="foobar")
         urlencoded = ar.to_urlencoded()
         ar2 = AuthorizationRequest().deserialize(urlencoded, "urlencoded")
 
         assert ar == ar2
 
     def test_urlencoded_with_scope(self):
-        ar = AuthorizationRequest(response_type=["code"], client_id="foobar",
-                                  redirect_uri="http://foobar.example.com/oaclient",
-                                  scope=["foo", "bar"], state="cold")
+        ar = AuthorizationRequest(
+            response_type=["code"],
+            client_id="foobar",
+            redirect_uri="http://foobar.example.com/oaclient",
+            scope=["foo", "bar"],
+            state="cold",
+        )
 
         ue = ar.to_urlencoded()
-        assert query_string_compare(ue,
-                                    "scope=foo+bar&state=cold&redirect_uri=http%3A%2F%2Ffoobar"
-                                    ".example.com%2Foaclient&"
-                                    "response_type=code&client_id=foobar")
+        assert query_string_compare(
+            ue,
+            "scope=foo+bar&state=cold&redirect_uri=http%3A%2F%2Ffoobar"
+            ".example.com%2Foaclient&"
+            "response_type=code&client_id=foobar",
+        )
 
     def test_deserialize_urlencoded_multiple_params(self):
-        ar = AuthorizationRequest(response_type=["code"],
-                                  client_id="foobar",
-                                  redirect_uri="http://foobar.example.com/oaclient",
-                                  scope=["foo", "bar"], state="cold")
+        ar = AuthorizationRequest(
+            response_type=["code"],
+            client_id="foobar",
+            redirect_uri="http://foobar.example.com/oaclient",
+            scope=["foo", "bar"],
+            state="cold",
+        )
         urlencoded = ar.to_urlencoded()
         ar2 = AuthorizationRequest().deserialize(urlencoded, "urlencoded")
 
@@ -169,83 +186,90 @@ class TestAuthorizationRequest(object):
 
     def test_urlencoded_invalid_scope(self):
         args = {
-            "response_type": [10], "client_id": "foobar",
+            "response_type": [10],
+            "client_id": "foobar",
             "redirect_uri": "http://foobar.example.com/oaclient",
-            "scope": ["foo", "bar"], "state": "cold"
+            "scope": ["foo", "bar"],
+            "state": "cold",
         }
 
         with pytest.raises(DecodeError):
             AuthorizationRequest(**args)
 
     def test_urlencoded_deserialize_state(self):
-        txt = "scope=foo+bar&state=-11&redirect_uri=http%3A%2F%2Ffoobar" \
-              ".example.com%2Foaclient&response_type=code&" \
-              "client_id=foobar"
+        txt = (
+            "scope=foo+bar&state=-11&redirect_uri=http%3A%2F%2Ffoobar"
+            ".example.com%2Foaclient&response_type=code&"
+            "client_id=foobar"
+        )
 
         ar = AuthorizationRequest().deserialize(txt, "urlencoded")
         assert ar["state"] == "-11"
 
     def test_urlencoded_deserialize_response_type(self):
-        txt = "scope=openid&state=id-6a3fc96caa7fd5cb1c7d00ed66937134&" \
-              "redirect_uri=http%3A%2F%2Flocalhost%3A8087authz&response_type" \
-              "=code&client_id=a1b2c3"
+        txt = (
+            "scope=openid&state=id-6a3fc96caa7fd5cb1c7d00ed66937134&"
+            "redirect_uri=http%3A%2F%2Flocalhost%3A8087authz&response_type"
+            "=code&client_id=a1b2c3"
+        )
 
         ar = AuthorizationRequest().deserialize(txt, "urlencoded")
         assert ar["scope"] == ["openid"]
         assert ar["response_type"] == ["code"]
 
     def test_req_json_serialize(self):
-        ar = AuthorizationRequest(response_type=["code"],
-                                  client_id="foobar")
+        ar = AuthorizationRequest(response_type=["code"], client_id="foobar")
 
         js_obj = json.loads(ar.serialize(method="json"))
-        expected_js_obj = {
-            "response_type": "code",
-            "client_id": "foobar"
-        }
+        expected_js_obj = {"response_type": "code", "client_id": "foobar"}
         assert js_obj == expected_js_obj
 
     def test_json_multiple_params(self):
-        ar = AuthorizationRequest(response_type=["code"],
-                                  client_id="foobar",
-                                  redirect_uri="http://foobar.example.com/oaclient",
-                                  state="cold")
+        ar = AuthorizationRequest(
+            response_type=["code"],
+            client_id="foobar",
+            redirect_uri="http://foobar.example.com/oaclient",
+            state="cold",
+        )
 
         ue_obj = json.loads(ar.serialize(method="json"))
         expected_ue_obj = {
             "response_type": "code",
             "state": "cold",
             "redirect_uri": "http://foobar.example.com/oaclient",
-            "client_id": "foobar"
+            "client_id": "foobar",
         }
         assert ue_obj == expected_ue_obj
 
     def test_json_resp_type_token(self):
-        ar = AuthorizationRequest(response_type=["token"],
-                                  client_id="s6BhdRkqt3",
-                                  redirect_uri="https://client.example.com/cb",
-                                  state="xyz")
+        ar = AuthorizationRequest(
+            response_type=["token"],
+            client_id="s6BhdRkqt3",
+            redirect_uri="https://client.example.com/cb",
+            state="xyz",
+        )
 
         ue_obj = json.loads(ar.serialize(method="json"))
         expected_ue_obj = {
             "state": "xyz",
             "redirect_uri": "https://client.example.com/cb",
             "response_type": "token",
-            "client_id": "s6BhdRkqt3"
+            "client_id": "s6BhdRkqt3",
         }
         assert ue_obj == expected_ue_obj
 
     def test_json_serialize_deserialize(self):
-        ar = AuthorizationRequest(response_type=["code"],
-                                  client_id="foobar")
+        ar = AuthorizationRequest(response_type=["code"], client_id="foobar")
         jtxt = ar.serialize(method="json")
         ar2 = AuthorizationRequest().deserialize(jtxt, "json")
 
         assert ar == ar2
 
     def test_verify(self):
-        query = 'redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fauthz' \
-                '&response_type=code&client_id=0123456789'
+        query = (
+            "redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fauthz"
+            "&response_type=code&client_id=0123456789"
+        )
         ar = AuthorizationRequest().deserialize(query, "urlencoded")
         assert ar.verify()
 
@@ -255,7 +279,7 @@ class TestAuthorizationRequest(object):
             "state": "id-6da9ca0cc23959f5f33e8becd9b08cae",
             "redirect_uri": "http://localhost:8087authz",
             "response_type": ["code"],
-            "client_id": "a1b2c3"
+            "client_id": "a1b2c3",
         }
 
         arq = AuthorizationRequest(**bib)
@@ -272,7 +296,7 @@ class TestAuthorizationRequest(object):
             "state": "id-b0be8bb64118c3ec5f70093a1174b039",
             "redirect_uri": "http://localhost:8087authz",
             "response_type": ["code"],
-            "client_id": "a1b2c3"
+            "client_id": "a1b2c3",
         }
 
         arq = AuthorizationRequest(**argv)
@@ -286,13 +310,11 @@ class TestAuthorizationRequest(object):
         assert jarq["client_id"] == "a1b2c3"
 
     def test_multiple_response_types_urlencoded(self):
-        ar = AuthorizationRequest(response_type=["code", "token"],
-                                  client_id="foobar")
+        ar = AuthorizationRequest(response_type=["code", "token"], client_id="foobar")
 
         ue = ar.to_urlencoded()
-        ue_splits = ue.split('&')
-        expected_ue_splits = "response_type=code+token&client_id=foobar".split(
-            '&')
+        ue_splits = ue.split("&")
+        expected_ue_splits = "response_type=code+token&client_id=foobar".split("&")
         assert _eq(ue_splits, expected_ue_splits)
 
         are = AuthorizationRequest().deserialize(ue, "urlencoded")
@@ -300,14 +322,14 @@ class TestAuthorizationRequest(object):
         assert _eq(are["response_type"], ["code", "token"])
 
     def test_multiple_scopes_urlencoded(self):
-        ar = AuthorizationRequest(response_type=["code", "token"],
-                                  client_id="foobar",
-                                  scope=["openid", "foxtrot"])
+        ar = AuthorizationRequest(
+            response_type=["code", "token"], client_id="foobar", scope=["openid", "foxtrot"]
+        )
         ue = ar.to_urlencoded()
-        ue_splits = ue.split('&')
-        expected_ue_splits = "scope=openid+foxtrot&response_type=code+token" \
-                             "&client_id=foobar".split(
-            '&')
+        ue_splits = ue.split("&")
+        expected_ue_splits = (
+            "scope=openid+foxtrot&response_type=code+token" "&client_id=foobar".split("&")
+        )
         assert _eq(ue_splits, expected_ue_splits)
 
         are = AuthorizationRequest().deserialize(ue, "urlencoded")
@@ -316,14 +338,10 @@ class TestAuthorizationRequest(object):
         assert _eq(are["scope"], ["openid", "foxtrot"])
 
     def test_multiple_response_types_json(self):
-        ar = AuthorizationRequest(response_type=["code", "token"],
-                                  client_id="foobar")
+        ar = AuthorizationRequest(response_type=["code", "token"], client_id="foobar")
         ue = ar.to_json()
         ue_obj = json.loads(ue)
-        expected_ue_obj = {
-            "response_type": "code token",
-            "client_id": "foobar"
-        }
+        expected_ue_obj = {"response_type": "code token", "client_id": "foobar"}
         assert ue_obj == expected_ue_obj
 
         are = AuthorizationRequest().deserialize(ue, "json")
@@ -331,15 +349,15 @@ class TestAuthorizationRequest(object):
         assert _eq(are["response_type"], ["code", "token"])
 
     def test_multiple_scopes_json(self):
-        ar = AuthorizationRequest(response_type=["code", "token"],
-                                  client_id="foobar",
-                                  scope=["openid", "foxtrot"])
+        ar = AuthorizationRequest(
+            response_type=["code", "token"], client_id="foobar", scope=["openid", "foxtrot"]
+        )
         ue = ar.to_json()
         ue_obj = json.loads(ue)
         expected_ue_obj = {
             "scope": "openid foxtrot",
             "response_type": "code token",
-            "client_id": "foobar"
+            "client_id": "foobar",
         }
         assert ue_obj == expected_ue_obj
 
@@ -351,16 +369,14 @@ class TestAuthorizationRequest(object):
 
 class TestAuthorizationErrorResponse(object):
     def test_init(self):
-        aer = AuthorizationErrorResponse(error="access_denied",
-                                         state="xyz")
+        aer = AuthorizationErrorResponse(error="access_denied", state="xyz")
         assert aer["error"] == "access_denied"
         assert aer["state"] == "xyz"
 
     def test_extra_params(self):
-        aer = AuthorizationErrorResponse(error="access_denied",
-                                         error_description="brewers has a "
-                                                           "four game series",
-                                         foo="bar")
+        aer = AuthorizationErrorResponse(
+            error="access_denied", error_description="brewers has a " "four game series", foo="bar"
+        )
         assert aer["error"] == "access_denied"
         assert aer["error_description"] == "brewers has a four game series"
         assert aer["foo"] == "bar"
@@ -374,10 +390,9 @@ class TestTokenErrorResponse(object):
         assert ter["state"] == "xyz"
 
     def test_extra_params(self):
-        ter = TokenErrorResponse(error="access_denied",
-                                 error_description="brewers has a four game "
-                                                   "series",
-                                 foo="bar")
+        ter = TokenErrorResponse(
+            error="access_denied", error_description="brewers has a four game " "series", foo="bar"
+        )
 
         assert ter["error"] == "access_denied"
         assert ter["error_description"] == "brewers has a four game series"
@@ -386,15 +401,14 @@ class TestTokenErrorResponse(object):
 
 class TestAccessTokenResponse(object):
     def test_json_serialize(self):
-        at = AccessTokenResponse(access_token="SlAV32hkKG",
-                                 token_type="Bearer", expires_in=3600)
+        at = AccessTokenResponse(access_token="SlAV32hkKG", token_type="Bearer", expires_in=3600)
 
         atj = at.serialize(method="json")
         atj_obj = json.loads(atj)
         expected_atj_obj = {
             "token_type": "Bearer",
             "access_token": "SlAV32hkKG",
-            "expires_in": 3600
+            "expires_in": 3600,
         }
         assert atj_obj == expected_atj_obj
 
@@ -405,7 +419,8 @@ class TestAccessTokenResponse(object):
             expires_in=3600,
             refresh_token="tGzv3JOkF0XG5Qx2TlKWIA",
             example_parameter="example_value",
-            scope=["inner", "outer"])
+            scope=["inner", "outer"],
+        )
 
         assert _eq(atr["scope"], ["inner", "outer"])
 
@@ -421,48 +436,75 @@ class TestAccessTokenResponse(object):
             example_parameter="example_value",
             scope=["inner", "outer"],
             extra=["local", "external"],
-            level=3)
+            level=3,
+        )
 
         uec = atr.to_urlencoded()
-        assert query_string_compare(uec,
-                                    "scope=inner+outer&level=3&expires_in=3600&token_type=example"
-                                    "&extra=local&"
-                                    "extra=external&refresh_token=tGzv3JOkF0XG5Qx2TlKWIA&"
-                                    "access_token=2YotnFZFEjr1zCsicMWpAA&example_parameter"
-                                    "=example_value")
+        assert query_string_compare(
+            uec,
+            "scope=inner+outer&level=3&expires_in=3600&token_type=example"
+            "&extra=local&"
+            "extra=external&refresh_token=tGzv3JOkF0XG5Qx2TlKWIA&"
+            "access_token=2YotnFZFEjr1zCsicMWpAA&example_parameter"
+            "=example_value",
+        )
 
         del atr["extra"]
         ouec = atr.to_urlencoded()
-        assert query_string_compare(ouec,
-                                    "access_token=2YotnFZFEjr1zCsicMWpAA&refresh_token=tGzv3JOkF0XG5Qx2TlKWIA&"
-                                    "level=3&example_parameter=example_value&token_type=example"
-                                    "&expires_in=3600&"
-                                    "scope=inner+outer")
-        assert len(uec) == (len(ouec) + len("extra=local") +
-                            len("extra=external") + 2)
+        assert query_string_compare(
+            ouec,
+            "access_token=2YotnFZFEjr1zCsicMWpAA&refresh_token=tGzv3JOkF0XG5Qx2TlKWIA&"
+            "level=3&example_parameter=example_value&token_type=example"
+            "&expires_in=3600&"
+            "scope=inner+outer",
+        )
+        assert len(uec) == (len(ouec) + len("extra=local") + len("extra=external") + 2)
 
         atr2 = AccessTokenResponse().deserialize(uec, "urlencoded")
-        assert _eq(atr2.keys(), ['access_token', 'expires_in', 'token_type',
-                                 'scope', 'refresh_token', 'level',
-                                 'example_parameter', 'extra'])
+        assert _eq(
+            atr2.keys(),
+            [
+                "access_token",
+                "expires_in",
+                "token_type",
+                "scope",
+                "refresh_token",
+                "level",
+                "example_parameter",
+                "extra",
+            ],
+        )
 
         atr3 = AccessTokenResponse().deserialize(ouec, "urlencoded")
-        assert _eq(atr3.keys(), ['access_token', 'expires_in', 'token_type',
-                                 'scope', 'refresh_token', 'level',
-                                 'example_parameter'])
+        assert _eq(
+            atr3.keys(),
+            [
+                "access_token",
+                "expires_in",
+                "token_type",
+                "scope",
+                "refresh_token",
+                "level",
+                "example_parameter",
+            ],
+        )
 
 
 class TestAccessTokenRequest(object):
     def test_extra(self):
-        atr = AccessTokenRequest(grant_type="authorization_code",
-                                 code="SplxlOBeZQQYbYS6WxSbIA",
-                                 redirect_uri="https://client.example.com/cb",
-                                 extra="foo")
+        atr = AccessTokenRequest(
+            grant_type="authorization_code",
+            code="SplxlOBeZQQYbYS6WxSbIA",
+            redirect_uri="https://client.example.com/cb",
+            extra="foo",
+        )
 
         query = atr.to_urlencoded()
-        assert query_string_compare(query,
-                                    "code=SplxlOBeZQQYbYS6WxSbIA&redirect_uri=https%3A%2F%2Fclient.example.com%2Fcb&"
-                                    "grant_type=authorization_code&extra=foo")
+        assert query_string_compare(
+            query,
+            "code=SplxlOBeZQQYbYS6WxSbIA&redirect_uri=https%3A%2F%2Fclient.example.com%2Fcb&"
+            "grant_type=authorization_code&extra=foo",
+        )
 
         atr2 = AccessTokenRequest().deserialize(query, "urlencoded")
         assert atr == atr2
@@ -470,8 +512,7 @@ class TestAccessTokenRequest(object):
 
 class TestAuthorizationResponse(object):
     def test_init(self):
-        atr = AuthorizationResponse(code="SplxlOBeZQQYbYS6WxSbIA",
-                                    state="Fun_state", extra="foo")
+        atr = AuthorizationResponse(code="SplxlOBeZQQYbYS6WxSbIA", state="Fun_state", extra="foo")
 
         assert atr["code"] == "SplxlOBeZQQYbYS6WxSbIA"
         assert atr["state"] == "Fun_state"
@@ -480,8 +521,7 @@ class TestAuthorizationResponse(object):
 
 class TestROPCAccessTokenRequest(object):
     def test_init(self):
-        ropc = ROPCAccessTokenRequest(grant_type="password",
-                                      username="johndoe", password="A3ddj3w")
+        ropc = ROPCAccessTokenRequest(grant_type="password", username="johndoe", password="A3ddj3w")
 
         assert ropc["grant_type"] == "password"
         assert ropc["username"] == "johndoe"
@@ -497,8 +537,7 @@ class TestCCAccessTokenRequest(object):
 
 class TestRefreshAccessTokenRequest(object):
     def test_init(self):
-        ratr = RefreshAccessTokenRequest(refresh_token="ababababab",
-                                         client_id="Client_id")
+        ratr = RefreshAccessTokenRequest(refresh_token="ababababab", client_id="Client_id")
         assert ratr["grant_type"] == "refresh_token"
         assert ratr["refresh_token"] == "ababababab"
         assert ratr["client_id"] == "Client_id"
@@ -511,17 +550,11 @@ class TestTokenExchangeRequest(object):
         request = TokenExchangeRequest(
             grant_type="urn:ietf:params:oauth:grant-type:token-exchange",
             subject_token="ababababab",
-            subject_token_type="urn:ietf:params:oauth:token-type:access_token"
+            subject_token_type="urn:ietf:params:oauth:token-type:access_token",
         )
-        assert (
-            request["grant_type"]
-            == "urn:ietf:params:oauth:grant-type:token-exchange"
-        )
+        assert request["grant_type"] == "urn:ietf:params:oauth:grant-type:token-exchange"
         assert request["subject_token"] == "ababababab"
-        assert (
-            request["subject_token_type"]
-            == "urn:ietf:params:oauth:token-type:access_token"
-        )
+        assert request["subject_token_type"] == "urn:ietf:params:oauth:token-type:access_token"
 
         assert request.verify()
 
@@ -532,12 +565,9 @@ class TestTokenExchangeResponse(object):
             access_token="bababababa",
             issued_token_type="urn:ietf:params:oauth:token-type:access_token",
             token_type="Bearer",
-            expires_in=60
+            expires_in=60,
         )
-        assert (
-            response["issued_token_type"]
-            == "urn:ietf:params:oauth:token-type:access_token"
-        )
+        assert response["issued_token_type"] == "urn:ietf:params:oauth:token-type:access_token"
         assert response["access_token"] == "bababababa"
         assert response["token_type"] == "Bearer"
         assert response["expires_in"] == 60
@@ -547,9 +577,11 @@ class TestTokenExchangeResponse(object):
 
 class TestResponseMessage_error(object):
     def test_error_message(self):
-        err = ResponseMessage(error="invalid_request",
-                              error_description="Something was missing",
-                              error_uri="http://example.com/error_message.html")
+        err = ResponseMessage(
+            error="invalid_request",
+            error_description="Something was missing",
+            error_uri="http://example.com/error_message.html",
+        )
 
         ue_str = err.to_urlencoded()
         del err["error_uri"]
@@ -561,26 +593,26 @@ class TestResponseMessage_error(object):
         assert is_error_message(err)
 
     def test_auth_error_message(self):
-        resp = AuthorizationResponse(error="invalid_request",
-                                     error_description="Something was missing")
+        resp = AuthorizationResponse(
+            error="invalid_request", error_description="Something was missing"
+        )
         assert is_error_message(resp)
 
 
 def test_factory():
-    dr = factory('ResponseMessage', error='some_error')
+    dr = factory("ResponseMessage", error="some_error")
     assert isinstance(dr, ResponseMessage)
-    assert list(dr.keys()) == ['error']
+    assert list(dr.keys()) == ["error"]
 
 
 def test_factory_auth_response():
-    ar = factory('AuthorizationResponse', client_id='client1', iss='Issuer',
-                 code='1234567')
+    ar = factory("AuthorizationResponse", client_id="client1", iss="Issuer", code="1234567")
     assert isinstance(ar, AuthorizationResponse)
-    assert ar.verify(client_id='client1', iss='Issuer')
+    assert ar.verify(client_id="client1", iss="Issuer")
 
 
 def test_set_default():
     ar = AccessTokenRequest(set_defaults=False)
     assert list(ar.keys()) == []
     ar.set_defaults()
-    assert 'grant_type' in ar
+    assert "grant_type" in ar

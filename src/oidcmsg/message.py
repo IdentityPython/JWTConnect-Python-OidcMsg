@@ -30,6 +30,7 @@ class Message(MutableMapping):
     """
     Represents a basic protocol nessage/item in OAuth2/OIDC
     """
+
     c_param = {}
     c_default = {}
     c_allowed_values = {}
@@ -88,8 +89,7 @@ class Message(MutableMapping):
         if not self.lax:
             for attribute, (_, req, _ser, _, _) in _spec.items():
                 if req and attribute not in self._dict:
-                    raise MissingRequiredAttribute("%s" % attribute,
-                                                   "%s" % self)
+                    raise MissingRequiredAttribute("%s" % attribute, "%s" % self)
 
         params = []
 
@@ -102,7 +102,7 @@ class Message(MutableMapping):
                     (_, req, _ser, _deser, null_allowed) = _spec[_key]
                 except (ValueError, KeyError):
                     try:
-                        (_, req, _ser, _, null_allowed) = _spec['*']
+                        (_, req, _ser, _, null_allowed) = _spec["*"]
                     except KeyError:
                         _ser = None
                         null_allowed = False
@@ -115,11 +115,10 @@ class Message(MutableMapping):
                 params.append((key, val.encode("utf-8")))
             elif isinstance(val, list):
                 if _ser:
-                    params.append((key, str(_ser(val, sformat="urlencoded",
-                                                 lev=lev))))
+                    params.append((key, str(_ser(val, sformat="urlencoded", lev=lev))))
                 else:
                     for item in val:
-                        params.append((key, str(item).encode('utf-8')))
+                        params.append((key, str(item).encode("utf-8")))
             elif isinstance(val, Message):
                 try:
                     _val = json.dumps(_ser(val, sformat="dict", lev=lev + 1))
@@ -196,7 +195,7 @@ class Message(MutableMapping):
 
         _info = parse_qs(urlencoded)
         if len(urlencoded) and _info == {}:
-            raise FormatError('Wrong format')
+            raise FormatError("Wrong format")
 
         for key, val in _info.items():
             try:
@@ -207,7 +206,7 @@ class Message(MutableMapping):
                     (typ, _, _, _deser, _) = _spec[_key]
                 except (ValueError, KeyError):
                     try:
-                        (typ, _, _, _deser, _) = _spec['*']
+                        (typ, _, _, _deser, _) = _spec["*"]
                     except KeyError:
                         if len(val) == 1:
                             val = val[0]
@@ -229,7 +228,7 @@ class Message(MutableMapping):
                     else:
                         self._dict[key] = val[0]
                 else:
-                    raise TooManyValues('{}'.format(key))
+                    raise TooManyValues("{}".format(key))
 
         return self
 
@@ -253,7 +252,7 @@ class Message(MutableMapping):
                     _ser = _spec[_key][2]
                 except (ValueError, KeyError):
                     try:
-                        _ser = _spec['*'][2]
+                        _ser = _spec["*"][2]
                     except KeyError:
                         _ser = None
 
@@ -262,8 +261,7 @@ class Message(MutableMapping):
 
             if isinstance(val, Message):
                 _res[key] = val.to_dict(lev + 1)
-            elif isinstance(val, list) and isinstance(
-                    next(iter(val or []), None), Message):
+            elif isinstance(val, list) and isinstance(next(iter(val or []), None), Message):
                 _res[key] = [v.to_dict(lev) for v in val]
             else:
                 _res[key] = val
@@ -296,7 +294,7 @@ class Message(MutableMapping):
                     _key = skey.split("#")[0]
                 except ValueError:
                     try:
-                        (vtyp, _, _, _deser, null_allowed) = _spec['*']
+                        (vtyp, _, _, _deser, null_allowed) = _spec["*"]
                         if val is None:
                             self._dict[key] = val
                             continue
@@ -308,7 +306,7 @@ class Message(MutableMapping):
                         (vtyp, _, _, _deser, null_allowed) = _spec[_key]
                     except KeyError:
                         try:
-                            (vtyp, _, _, _deser, null_allowed) = _spec['*']
+                            (vtyp, _, _, _deser, null_allowed) = _spec["*"]
                             if val is None:
                                 self._dict[key] = val
                                 continue
@@ -375,8 +373,7 @@ class Message(MutableMapping):
                 else:
                     for v in val:
                         if not isinstance(v, vtype):
-                            raise DecodeError(
-                                ERRTXT % (key, "type != %s (%s)" % (vtype, type(v))))
+                            raise DecodeError(ERRTXT % (key, "type != %s (%s)" % (vtype, type(v))))
 
                 self._dict[skey] = val
             elif isinstance(val, dict):
@@ -395,8 +392,7 @@ class Message(MutableMapping):
                 if vtyp is bool:
                     self._dict[skey] = val
                 else:
-                    raise ValueError(
-                        '"{}", wrong type of value for "{}"'.format(val, skey))
+                    raise ValueError('"{}", wrong type of value for "{}"'.format(val, skey))
             elif isinstance(val, vtyp):  # Not necessary to do anything
                 self._dict[skey] = val
             else:
@@ -421,24 +417,17 @@ class Message(MutableMapping):
                     try:
                         self._dict[skey] = int(val)
                     except (ValueError, TypeError):
-                        raise ValueError(
-                            '"{}", wrong type of value for "{}"'.format(val,
-                                                                        skey))
+                        raise ValueError('"{}", wrong type of value for "{}"'.format(val, skey))
                 elif vtyp is bool:
-                    raise ValueError(
-                        '"{}", wrong type of value for "{}"'.format(val, skey))
+                    raise ValueError('"{}", wrong type of value for "{}"'.format(val, skey))
                 elif vtyp != type(val):
                     if vtyp == Message:
                         if isinstance(val, (dict, str)):
                             self._dict[skey] = val
                         else:
-                            raise ValueError(
-                                '"{}", wrong type of value for "{}"'.format(
-                                    val, skey))
+                            raise ValueError('"{}", wrong type of value for "{}"'.format(val, skey))
                     else:
-                        raise ValueError(
-                            '"{}", wrong type of value for "{}"'.format(val,
-                                                                        skey))
+                        raise ValueError('"{}", wrong type of value for "{}"'.format(val, skey))
 
     def to_json(self, lev=0, indent=None):
         """
@@ -494,10 +483,10 @@ class Message(MutableMapping):
         """
 
         algarg = {}
-        if 'encalg' in kwargs:
-            algarg['alg'] = kwargs['encalg']
-        if 'encenc' in kwargs:
-            algarg['enc'] = kwargs['encenc']
+        if "encalg" in kwargs:
+            algarg["alg"] = kwargs["encalg"]
+        if "encenc" in kwargs:
+            algarg["enc"] = kwargs["encenc"]
         _decryptor = jwe_factory(txt, **algarg)
 
         if _decryptor:
@@ -505,9 +494,9 @@ class Message(MutableMapping):
 
             dkeys = keyjar.get_decrypt_key(owner="")
 
-            logger.debug('Decrypt class: %s', _decryptor.__class__)
+            logger.debug("Decrypt class: %s", _decryptor.__class__)
             _res = _decryptor.decrypt(txt, dkeys)
-            logger.debug('decrypted message: %s', _res)
+            logger.debug("decrypted message: %s", _res)
             if isinstance(_res, tuple):
                 txt = as_unicode(_res[0])
             elif isinstance(_res, list) and len(_res) == 2:
@@ -516,8 +505,8 @@ class Message(MutableMapping):
                 txt = as_unicode(_res)
             self.jwe_header = _decryptor.jwt.headers
 
-        if kwargs.get('sigalg'):
-            _verifier = jws_factory(txt, alg=kwargs['sigalg'])
+        if kwargs.get("sigalg"):
+            _verifier = jws_factory(txt, alg=kwargs["sigalg"])
         else:
             _verifier = jws_factory(txt)
 
@@ -540,8 +529,7 @@ class Message(MutableMapping):
 
                 if "alg" in _header and _header["alg"] != "none":
                     if not key:
-                        raise MissingSigningKey(
-                            "alg=%s" % _header["alg"])
+                        raise MissingSigningKey("alg=%s" % _header["alg"])
 
                 logger.debug("Found signing key.")
                 try:
@@ -565,7 +553,7 @@ class Message(MutableMapping):
 
         :return: A string representation of this class
         """
-        return '{}'.format(self.to_dict())
+        return "{}".format(self.to_dict())
 
     @staticmethod
     def _type_check(typ, _allowed, val, na=False):
@@ -738,14 +726,13 @@ class Message(MutableMapping):
 
     def extra(self):
         """
-        Return the extra parameters that this instance. Extra meaning those
+        Return the extra parameters that this instance contains. Extra meaning those
         that are not listed in the c_params specification.
 
         :return: The key,value pairs for keys that are not in the c_params
             specification,
         """
-        return dict([(key, val) for key, val in
-                     self._dict.items() if key not in self.c_param])
+        return dict([(key, val) for key, val in self._dict.items() if key not in self.c_param])
 
     def only_extras(self):
         """
@@ -845,6 +832,7 @@ class Message(MutableMapping):
 
         return None
 
+
 # =============================================================================
 
 
@@ -859,6 +847,7 @@ def add_non_standard(msg1, msg2):
 
 
 # =============================================================================
+
 
 def list_serializer(vals, sformat="urlencoded", lev=0):
     if isinstance(vals, str) or not isinstance(vals, list):
@@ -916,7 +905,7 @@ def msg_deser(val, sformat="urlencoded"):
 def msg_ser(inst, sformat, lev=0):
     if sformat in ["urlencoded", "json"]:
         if isinstance(inst, dict):
-            if sformat == 'json':
+            if sformat == "json":
                 res = json.dumps(inst)
             else:
                 res = urlencode([(k, v) for k, v in inst.items()])
@@ -968,28 +957,32 @@ SINGLE_OPTIONAL_INT = (int, False, None, None, False)
 SINGLE_REQUIRED_INT = (int, True, None, None, False)
 SINGLE_REQUIRED_BOOLEAN = (bool, True, None, None, False)
 
-OPTIONAL_LIST_OF_STRINGS = ([str], False, list_serializer,
-                            list_deserializer, False)
-REQUIRED_LIST_OF_STRINGS = ([str], True, list_serializer,
-                            list_deserializer, False)
-OPTIONAL_LIST_OF_SP_SEP_STRINGS = ([str], False, sp_sep_list_serializer,
-                                   sp_sep_list_deserializer, False)
-REQUIRED_LIST_OF_SP_SEP_STRINGS = ([str], True, sp_sep_list_serializer,
-                                   sp_sep_list_deserializer, False)
-SINGLE_OPTIONAL_JSON = (dict, False, json_serializer, json_deserializer,
-                        False)
+OPTIONAL_LIST_OF_STRINGS = ([str], False, list_serializer, list_deserializer, False)
+REQUIRED_LIST_OF_STRINGS = ([str], True, list_serializer, list_deserializer, False)
+OPTIONAL_LIST_OF_SP_SEP_STRINGS = (
+    [str],
+    False,
+    sp_sep_list_serializer,
+    sp_sep_list_deserializer,
+    False,
+)
+REQUIRED_LIST_OF_SP_SEP_STRINGS = (
+    [str],
+    True,
+    sp_sep_list_serializer,
+    sp_sep_list_deserializer,
+    False,
+)
+SINGLE_OPTIONAL_JSON = (dict, False, json_serializer, json_deserializer, False)
 
-SINGLE_REQUIRED_JSON = (dict, True, json_serializer, json_deserializer,
-                        False)
+SINGLE_REQUIRED_JSON = (dict, True, json_serializer, json_deserializer, False)
 
-REQUIRED = [SINGLE_REQUIRED_STRING, REQUIRED_LIST_OF_STRINGS,
-            REQUIRED_LIST_OF_SP_SEP_STRINGS]
+REQUIRED = [SINGLE_REQUIRED_STRING, REQUIRED_LIST_OF_STRINGS, REQUIRED_LIST_OF_SP_SEP_STRINGS]
 
 OPTIONAL_MESSAGE = (Message, False, msg_ser, msg_deser, False)
 REQUIRED_MESSAGE = (Message, True, msg_ser, msg_deser, False)
 
-OPTIONAL_LIST_OF_MESSAGES = ([Message], False, msg_list_ser, msg_list_deser,
-                             False)
+OPTIONAL_LIST_OF_MESSAGES = ([Message], False, msg_list_ser, msg_list_deser, False)
 
 
 def any_ser(val, sformat="urlencoded", lev=0):
