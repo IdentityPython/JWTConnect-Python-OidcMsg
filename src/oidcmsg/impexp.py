@@ -47,10 +47,14 @@ class ImpExp:
 
             info[attr] = self.dump_attr(cls, item, exclude_attributes)
 
-        for attr, d in self.special_load_dump.items():
+        for attr, func in self.special_load_dump.items():
             item = getattr(self, attr, None)
             if item:
-                info[attr] = d["dump"](item, exclude_attributes=exclude_attributes)
+                if "dump" in func:
+                    info[attr] = func["dump"](item, exclude_attributes=exclude_attributes)
+                else:
+                    cls = self.parameter[attr]
+                    info[attr] = self.dump_attr(cls, item, exclude_attributes)
 
         return info
 
@@ -127,7 +131,11 @@ class ImpExp:
 
         for attr, func in self.special_load_dump.items():
             if attr in item:
-                setattr(self, attr, func["load"](item[attr], **_kwargs))
+                if "load" in func:
+                    setattr(self, attr, func["load"](item[attr], **_kwargs))
+                else:
+                    cls = self.parameter[attr]
+                    setattr(self, attr, self.load_attr(cls, item[attr], **_kwargs))
 
         self.local_load_adjustments(**_load_args)
         return self
