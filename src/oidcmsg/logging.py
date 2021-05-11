@@ -1,12 +1,10 @@
 """Common logging functions"""
-
-import os
 import logging
+import os
 from logging.config import dictConfig
 from typing import Optional
 
 import yaml
-
 
 LOGGING_CONF = 'logging.yaml'
 

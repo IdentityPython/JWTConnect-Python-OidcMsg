@@ -107,7 +107,7 @@ simple symmetric one:
     >>> from oidcmsg.message import Message
     >>> from cryptojwt.jwk.hmac import SYMKey
     >>> msg = Message(key='value', another=2)
-    >>> keys = [SYMKey(key="A1B2C3D4")]
+    >>> keys = [SYMKey(key="A1B2C3D4E5F6G7H8")]
 
     >>> jws = msg.to_jwt(keys, "HS256")
     >>> print(jws)
