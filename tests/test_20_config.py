@@ -1,8 +1,8 @@
 import os
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Any
 
 import pytest
 
@@ -49,14 +49,16 @@ class EntityConfiguration(Base):
 
 
 def test_server_config():
-    c = create_from_config_file(Configuration,
-                                entity_conf=[{"class": EntityConfiguration, "attr": "entity"}],
-                                filename=os.path.join(_dirname, 'server_conf.json'),
-                                base_path=_dirname)
-    assert c
-    assert set(c.web_conf.keys()) == {'port', 'domain', 'server_cert', 'server_key', 'debug'}
+    configuration = create_from_config_file(Configuration,
+                                            entity_conf=[
+                                                {"class": EntityConfiguration, "attr": "entity"}],
+                                            filename=os.path.join(_dirname, 'server_conf.json'),
+                                            base_path=_dirname)
+    assert configuration
+    assert set(configuration.web_conf.keys()) == {'port', 'domain', 'server_cert', 'server_key',
+                                                  'debug'}
 
-    entity_config = c.entity
+    entity_config = configuration.entity
     assert entity_config.base_url == "https://127.0.0.1:8090"
     assert entity_config.httpc_params == {"verify": False}
 
@@ -74,4 +76,3 @@ def test_entity_config(filename):
     ni = dict(configuration.items())
     assert len(ni) == 4
     assert set(ni.keys()) == {'keys', 'base_url', 'httpc_params', 'hash_seed'}
-
