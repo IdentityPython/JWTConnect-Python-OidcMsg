@@ -1,7 +1,8 @@
 __author__ = "Roland Hedberg"
-__version__ = "1.3.1"
+__version__ = "1.3.2"
 
 import os
+from typing import Dict
 
 VERIFIED_CLAIM_PREFIX = "__verified"
 
@@ -33,8 +34,14 @@ def proper_path(path):
     return path
 
 
-# This is for adding a base path to path specified in a configuration
-def add_base_path(conf, item_paths, base_path):
+def add_base_path(conf: Dict[str, str], item_paths: dict, base_path: str):
+    """
+    This is for adding a base path to path specified in a configuration
+
+    :param conf: Configuration
+    :param item_paths: The relative item path
+    :param base_path: An absolute path to add to the relative
+    """
     for section, items in item_paths.items():
         if section == "":
             part = conf
