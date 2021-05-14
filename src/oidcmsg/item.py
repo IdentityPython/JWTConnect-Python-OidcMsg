@@ -1,10 +1,11 @@
 from typing import List
 from typing import Optional
 
+from cryptojwt.utils import importer
+from cryptojwt.utils import qualified_name
+
 from oidcmsg.impexp import ImpExp
 from oidcmsg.message import Message
-from oidcmsg.storage import importer
-from oidcmsg.storage.utils import qualified_name
 
 
 class DLDict(ImpExp):
