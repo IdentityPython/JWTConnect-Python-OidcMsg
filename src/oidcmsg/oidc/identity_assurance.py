@@ -2,6 +2,8 @@ import abc
 import datetime
 import json
 
+from cryptojwt.utils import importer
+
 from oidcmsg.message import OPTIONAL_MESSAGE
 from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
@@ -17,7 +19,6 @@ from oidcmsg.oidc import OpenIDSchema
 from oidcmsg.oidc import claims_request_deser
 from oidcmsg.oidc import deserialize_from_one_of
 from oidcmsg.oidc import msg_ser_json
-from oidcmsg.storage import importer
 
 
 class PlaceOfBirth(Message):
