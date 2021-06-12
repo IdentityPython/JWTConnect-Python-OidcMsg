@@ -1,5 +1,5 @@
 __author__ = "Roland Hedberg"
-__version__ = "1.3.2"
+__version__ = "1.3.2-1"
 
 import os
 from typing import Dict
