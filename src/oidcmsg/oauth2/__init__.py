@@ -421,3 +421,15 @@ def factory(msgtype, **kwargs):
                     return obj(**kwargs)
             except AttributeError:
                 pass
+
+
+def convert_to_pydantic():
+    for name, obj in inspect.getmembers(sys.modules[__name__]):
+        if inspect.isclass(obj) and issubclass(obj, Message):
+            for l in convert(obj):
+                print(l)
+            print()
+
+
+if __name__ == "__main__":
+    convert_to_pydantic()

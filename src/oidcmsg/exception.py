@@ -158,3 +158,7 @@ class InvalidRequest(OidcMsgError):
 
 class KeyIOError(OidcMsgError):
     pass
+
+
+class Unknown(OidcMsgError):
+    pass

@@ -16,6 +16,7 @@ from cryptojwt.jwt import JWT
 from oidcmsg import oauth2
 from oidcmsg import time_util
 from oidcmsg import verified_claim_name
+from oidcmsg.converter import convert
 from oidcmsg.exception import FormatError
 from oidcmsg.exception import InvalidRequest
 from oidcmsg.exception import IssuerMismatch
@@ -200,9 +201,7 @@ def dict_deser(val, sformat="json"):
         raise ValueError('sformat can not be "{}"'.format(sformat))
 
 
-OPTIONAL_ADDRESS = (Message, False, msg_ser, address_deser, False)
 OPTIONAL_LOGICAL = (bool, False, None, None, False)
-OPTIONAL_MULTIPLE_Claims = (Message, False, claims_ser, claims_deser, False)
 # SINGLE_OPTIONAL_USERINFO_CLAIM = (Message, False, msg_ser, userinfo_deser)
 # SINGLE_OPTIONAL_ID_TOKEN_CLAIM = (Message, False, msg_ser, idtokenclaim_deser)
 
@@ -545,6 +544,9 @@ class AddressClaim(Message):
         "postal_code": SINGLE_OPTIONAL_STRING,
         "country": SINGLE_OPTIONAL_STRING,
     }
+
+
+OPTIONAL_ADDRESS = (AddressClaim, False, msg_ser, address_deser, False)
 
 
 class OpenIDSchema(ResponseMessage):
@@ -1163,6 +1165,9 @@ class Claims(Message):
     pass
 
 
+OPTIONAL_MULTIPLE_Claims = (Claims, False, claims_ser, claims_deser, False)
+
+
 class ClaimsRequest(Message):
     c_param = {"userinfo": OPTIONAL_MULTIPLE_Claims, "id_token": OPTIONAL_MULTIPLE_Claims}
 
@@ -1242,3 +1247,15 @@ def claims_match(value, claimspec):
         return True
 
     return matched
+
+
+def convert_to_pydantic():
+    for name, obj in inspect.getmembers(sys.modules[__name__]):
+        if inspect.isclass(obj) and issubclass(obj, Message):
+            for l in convert(obj):
+                print(l)
+            print()
+
+
+if __name__ == "__main__":
+    convert_to_pydantic()

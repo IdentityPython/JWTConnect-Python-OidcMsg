@@ -366,7 +366,10 @@ class Message(MutableMapping):
                     try:
                         _val = []
                         for v in val:
-                            _val.append(vtype(**{str(x): y for x, y in v.items()}))
+                            if isinstance(v, Message):
+                                _val.append(v)
+                            else:
+                                _val.append(vtype(**{str(x): y for x, y in v.items()}))
                         val = _val
                     except Exception as exc:
                         raise DecodeError(ERRTXT % (key, exc))
@@ -402,16 +405,6 @@ class Message(MutableMapping):
                     except Exception as exc:
                         raise DecodeError(ERRTXT % (key, exc))
                     else:
-                        # if isinstance(val, str):
-                        #     self._dict[skey] = val
-                        # elif isinstance(val, list):
-                        #     if len(val) == 1:
-                        #         self._dict[skey] = val[0]
-                        #     elif not len(val):
-                        #         pass
-                        #     else:
-                        #         raise TooManyValues(key)
-                        # else:
                         self._dict[skey] = val
                 elif vtyp is int:
                     try:

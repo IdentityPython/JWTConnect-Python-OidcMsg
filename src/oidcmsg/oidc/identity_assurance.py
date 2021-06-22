@@ -1,14 +1,20 @@
 import abc
 import datetime
 import json
+from typing import Optional
+from typing import Union
 
 from cryptojwt.utils import importer
 
-from oidcmsg.message import OPTIONAL_MESSAGE
+from oidcmsg.exception import MissingRequiredAttribute
+from oidcmsg.exception import Unknown
+from oidcmsg.message import Message
+from oidcmsg.message import OPTIONAL_LIST_OF_STRINGS
+from oidcmsg.message import REQUIRED_LIST_OF_STRINGS
 from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
+from oidcmsg.message import SINGLE_REQUIRED_BOOLEAN
 from oidcmsg.message import SINGLE_REQUIRED_STRING
-from oidcmsg.message import Message
 from oidcmsg.message import msg_deser
 from oidcmsg.message import msg_list_ser
 from oidcmsg.message import msg_ser
@@ -16,6 +22,7 @@ from oidcmsg.oauth2 import error_chars
 from oidcmsg.oidc import AddressClaim
 from oidcmsg.oidc import ClaimsRequest
 from oidcmsg.oidc import OpenIDSchema
+from oidcmsg.oidc import ProviderConfigurationResponse
 from oidcmsg.oidc import claims_request_deser
 from oidcmsg.oidc import deserialize_from_one_of
 from oidcmsg.oidc import msg_ser_json
@@ -23,29 +30,21 @@ from oidcmsg.oidc import msg_ser_json
 
 class PlaceOfBirth(Message):
     c_param = {
-        "country": SINGLE_REQUIRED_STRING,
+        "country": SINGLE_OPTIONAL_STRING,
         "region": SINGLE_OPTIONAL_STRING,
-        "locality": SINGLE_REQUIRED_STRING,
+        "locality": SINGLE_OPTIONAL_STRING,
     }
 
 
 def place_of_birth_deser(val, sformat="json"):
-    # never 'urlencoded'
-    if sformat == "urlencoded":
-        sformat = "json"
-
-    if sformat == "json":
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-    elif sformat == "dict":
-        if isinstance(val, str):
-            val = json.loads(val)
-
-    return PlaceOfBirth().deserialize(val, sformat)
+    return deserialize_from_one_of(val, PlaceOfBirth, sformat)
 
 
-SINGLE_OPTIONAL_PLACE_OF_BIRTH = (PlaceOfBirth, False, msg_ser_json, place_of_birth_deser, False)
+SINGLE_OPTIONAL_PLACE_OF_BIRTH = (PlaceOfBirth,
+                                  False,
+                                  msg_ser_json,
+                                  place_of_birth_deser,
+                                  False)
 
 # YYYY-MM-DDThh:mm:ss±hh
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
@@ -164,24 +163,23 @@ class IdentityAssuranceClaims(OpenIDSchema):
     )
 
 
-OPTIONAL_IDA_CLAIMS = (IdentityAssuranceClaims, False, msg_ser, msg_deser, False)
+def identity_assurance_claims_deser(val, sformat="json"):
+    return deserialize_from_one_of(val, IdentityAssuranceClaims, sformat)
+
+
+OPTIONAL_IDA_CLAIMS = (IdentityAssuranceClaims, False, msg_ser,
+                       identity_assurance_claims_deser, False)
 
 
 class Verifier(Message):
     c_param = {"organization": SINGLE_REQUIRED_STRING, "txn": SINGLE_REQUIRED_STRING}
 
 
-def verifier_deser(val, sformat="urlencoded"):
-    if isinstance(val, Message):
-        return val
-    elif sformat in ["dict", "json"]:
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-    return Verifier().deserialize(val, sformat)
+def verifier_claims_deser(val, sformat="urlencoded"):
+    return deserialize_from_one_of(val, Verifier, sformat)
 
 
-REQUIRED_VERIFIER = (Verifier, True, msg_ser, verifier_deser, False)
+REQUIRED_VERIFIER = (Verifier, True, msg_ser, verifier_claims_deser, False)
 
 
 class Issuer(Message):
@@ -189,13 +187,7 @@ class Issuer(Message):
 
 
 def issuer_deser(val, sformat="urlencoded"):
-    if isinstance(val, Message):
-        return val
-    elif sformat in ["dict", "json"]:
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-    return Issuer().deserialize(val, sformat)
+    return deserialize_from_one_of(val, Issuer, sformat)
 
 
 REQUIRED_ISSUER = (Issuer, True, msg_ser, issuer_deser, False)
@@ -219,52 +211,36 @@ OPTIONAL_DOCUMENT = (Document, False, msg_ser, document_deser, False)
 
 
 class Evidence(Message):
-    c_param = {"type": SINGLE_OPTIONAL_STRING}
-
-    def verify(self, **kwargs):
-        _type = self.get("type")
-        if _type:
-            if _type == "id_document":
-                _doc = IdDocument(**self.to_dict())
-                _doc.verify(**kwargs)
-            elif _type == "utility_bill":
-                _bill = UtilityBill(**self.to_dict())
-                _bill.verify(**kwargs)
-            elif _type == "qes":
-                _qes = QES(**self.to_dict())
-                _qes.verify(**kwargs)
-            else:
-                raise ValueError("Unknown type")
-        else:  # let the guessing begin
-            if all(x in self.keys() for x in IdDocument.c_param.keys()):
-                _doc = IdDocument(**self.to_dict())
-                _doc.verify(**kwargs)
-                self["type"] = "id_document"
-            elif all(x in self.keys() for x in UtilityBill.c_param.keys()):
-                _bill = UtilityBill(**self.to_dict())
-                _bill.verify(**kwargs)
-                self["type"] = "utility_bill"
-            elif all(x in self.keys() for x in QES.c_param.keys()):
-                _qes = QES(**self.to_dict())
-                _qes.verify(**kwargs)
-                self["type"] = "qes"
-            else:
-                raise ValueError("Unknown object")
+    c_param = {"type": SINGLE_REQUIRED_STRING}
 
 
-def evidence_deser(val, sformat="urlencoded"):
-    return deserialize_from_one_of(val, Evidence, sformat)
+def evidence_deser(val, sformat="json"):
+    if sformat in ["dict", "json"]:
+        if isinstance(val, str):
+            val = json.loads(val)
+
+    return _map_evidence_type_to_class(val)
 
 
 def evidence_list_deser(val, sformat="urlencoded", lev=0):
     if isinstance(val, dict):
-        return [Message(**val)]
+        return [_map_evidence_type_to_class(val)]
 
     _res = [evidence_deser(v, sformat) for v in val]
     return _res
 
 
 OPTIONAL_EVIDENCE_LIST = ([Evidence], False, msg_list_ser, evidence_list_deser, True)
+
+
+def message_deser(val, msgtype, sformat="urlencoded"):
+    if isinstance(val, Message):
+        return val
+    elif sformat in ["dict", "json"]:
+        if not isinstance(val, str):
+            val = json.dumps(val)
+            sformat = "json"
+    return msgtype().deserialize(val, sformat)
 
 
 class IdDocument(Evidence):
@@ -280,13 +256,7 @@ class IdDocument(Evidence):
 
 
 def id_document_deser(val, sformat="urlencoded"):
-    if isinstance(val, Message):
-        return val
-    elif sformat in ["dict", "json"]:
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-    return IdDocument().deserialize(val, sformat)
+    return message_deser(val, IdDocument, sformat)
 
 
 REQUIRED_ID_DOCUMENT = (IdDocument, True, msg_ser, id_document_deser, False)
@@ -303,13 +273,7 @@ class Provider(AddressClaim):
 
 
 def provider_deser(val, sformat="urlencoded"):
-    if isinstance(val, Message):
-        return val
-    elif sformat in ["dict", "json"]:
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-    return Provider().deserialize(val, sformat)
+    return message_deser(val, Provider, sformat)
 
 
 REQUIRED_PROVIDER = (Provider, True, msg_ser, provider_deser, False)
@@ -321,13 +285,7 @@ class UtilityBill(Evidence):
 
 
 def utility_bill_deser(val, sformat="urlencoded"):
-    if isinstance(val, Message):
-        return val
-    elif sformat in ["dict", "json"]:
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-    return UtilityBill().deserialize(val, sformat)
+    return message_deser(val, UtilityBill, sformat)
 
 
 REQUIRED_UTILITY_BILL = (UtilityBill, True, msg_ser, utility_bill_deser, False)
@@ -346,13 +304,7 @@ class QES(Evidence):
 
 
 def qes_deser(val, sformat="urlencoded"):
-    if isinstance(val, Message):
-        return val
-    elif sformat in ["dict", "json"]:
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-    return QES().deserialize(val, sformat)
+    return message_deser(val, QES, sformat)
 
 
 REQUIRED_QES = (QES, True, msg_ser, qes_deser, False)
@@ -365,8 +317,27 @@ def address_deser(val, sformat="urlencoded"):
 
 OPTIONAL_ADDRESS = (AddressClaim, False, msg_ser, address_deser, False)
 
+EVIDENCE_TYPE_TO_CLASS = {
+    "id_document": IdDocument,
+    "utility_bill": UtilityBill,
+    "qes": QES
+}
 
-class VerificationElement(Message):
+
+def _map_evidence_type_to_class(val):
+    _type = val.get("type")
+    if _type:
+        try:
+            item = EVIDENCE_TYPE_TO_CLASS[_type](**val)
+        except KeyError:
+            raise Unknown(f"Evidence type: {_type}")
+    else:
+        raise MissingRequiredAttribute("type")
+
+    return item
+
+
+class Verification(Message):
     c_param = {
         "trust_framework": SINGLE_REQUIRED_STRING,
         "time": OPTIONAL_TIME_STAMP,
@@ -375,32 +346,38 @@ class VerificationElement(Message):
     }
 
 
-def verification_element_deser(val, sformat="urlencoded"):
-    if isinstance(val, Message):
-        return val
-    elif sformat in ["dict", "json"]:
-        if not isinstance(val, str):
-            val = json.dumps(val)
-            sformat = "json"
-    return VerificationElement().deserialize(val, sformat)
+def verification_deser(val, sformat="urlencoded"):
+    return message_deser(val, Verification, sformat)
 
 
-OPTIONAL_VERIFICATION_ELEMENT = (
-    VerificationElement,
+OPTIONAL_VERIFICATION = (
+    Verification,
     False,
     msg_ser,
-    verification_element_deser,
+    verification_deser,
+    False,
+)
+
+REQUIRED_VERIFICATION = (
+    Verification,
+    True,
+    msg_ser,
+    verification_deser,
     False,
 )
 
 
 class VerifiedClaims(Message):
-    c_param = {"verification": OPTIONAL_VERIFICATION_ELEMENT, "claims": OPTIONAL_IDA_CLAIMS}
+    c_param = {
+        "verification": REQUIRED_VERIFICATION,
+        "claims": REQUIRED_VERIFICATION}
 
+
+#
+# ===================== CLAIMS REQUESTS =====================
+#
 
 SINGLE_OPTIONAL_CLAIMSREQ = (ClaimsRequest, False, msg_ser_json, claims_request_deser, False)
-
-OPTIONAL_VERIFICATION_REQUEST = OPTIONAL_MESSAGE
 
 
 def _correct_value_type(val, value_type):
@@ -441,6 +418,7 @@ def _verify_claims_request_value(value, value_type=str):
 
 
 def verify_claims_request(instance, base_cls_instance):
+    # Verify that the claims request is correctly specified
     for key, spec in base_cls_instance.c_param.items():
         try:
             _val = instance[key]
@@ -470,48 +448,208 @@ def verify_claims_request(instance, base_cls_instance):
                     verify_claims_request(_v, _item_val_type())
 
 
-class VerificationElementRequest(Message):
-    c_param = {
-        "trust_framework": SINGLE_REQUIRED_STRING,
-        "time": OPTIONAL_TIME_STAMP,
-        "verification_process": SINGLE_OPTIONAL_STRING,
-        "evidence": OPTIONAL_EVIDENCE_LIST,
-    }
+class IdentityAssuranceClaimsRequest(Message):
+    base_class = Message
 
     def verify(self, **kwargs):
-        super(VerificationElementRequest, self).verify(**kwargs)
-        verify_claims_request(self, VerificationElement())
+        super(IdentityAssuranceClaimsRequest, self).verify(**kwargs)
+        # Verify that the claims request is correctly specified
+        for key, spec in self.base_class.c_param.items():
+            try:
+                _val = self[key]
+            except KeyError:
+                continue
+
+            _value_type = spec[0]
+
+            if _value_type in (str, int, bool):
+                if not _verify_claims_request_value(_val, _value_type):
+                    raise ValueError("{}: '{}'".format(key, _val))
+            elif type(_value_type) == abc.ABCMeta:
+                if _val is None:
+                    continue
+                verify_claims_request(_val, _value_type())
+            elif isinstance(_value_type, list):
+                if _val is None:
+                    continue
+                _item_val_type = _value_type[0]
+                for _v in _val:
+                    if _item_val_type in (str, int, bool):
+                        if not _verify_claims_request_value(_v, _item_val_type):
+                            raise ValueError("{}: '{}'".format(key, _v))
+                    elif type(_item_val_type) == abc.ABCMeta:
+                        if _v is None:
+                            continue
+                        verify_claims_request(_v, _item_val_type())
+
+    # def _item_match(self, item, response_claims, attr):
+    #     matched = {}
+    #     if isinstance(item, IdentityAssuranceClaimsRequest):
+    #         _m = item.match_against_response(response_claims.get(attr))
+    #         if _m:
+    #             matched.update(_m)
+    #     else:
+    #         _m = claims_match(item, response_claims.get(attr))
+    #         if _m:
+    #             matched.update(_m)
+    #     return matched
+    #
+    # def match_response(self, claims):
+    #     for attr, req in self.items():
+    #         if attr in self.c_param:
+    #             continue
+    #         if claims_match(claims.get(attr), req) is False:
+    #             return None
+    #     return copy.deepcopy(claims)
+    #
+    # def match_against_response(self, response_claims):
+    #     matched = {}
+    #     for attr in list(self.c_param.keys()):
+    #         _item = self.get(attr)
+    #         if _item:
+    #             if isinstance(_item, list):
+    #                 for _i in _item:
+    #                     _m = self._item_match(_i, response_claims, attr)
+    #                     if _m:
+    #                         try:
+    #                             matched[attr].append(_m)
+    #                         except KeyError:
+    #                             matched[attr] = [_m]
+    #             else:
+    #                 _m = self._item_match(_item, response_claims, attr)
+    #                 if _m:
+    #                     matched[attr] = [_m]
+    #
+    #     if isinstance(response_claims, list):
+    #         for resp in response_claims:
+    #             _m = self.match_response(resp)
+    #             if _m:
+    #                 try:
+    #                     matched.update(_m)
+    #                 except KeyError:
+    #                     matched[_key] = [_m]
+    #     else:
+    #         _key = self.base_class.__name__
+    #         _m = self.match_response(response_claims)
+    #         if _m:
+    #             matched[_key] = _m
+    #
+    #     return matched
 
 
-def verification_element_request_deser(val, sformat="urlencoded"):
-    return deserialize_from_one_of(val, VerificationElementRequest, sformat)
+OPTIONAL_CLAIMS_REQUEST = (IdentityAssuranceClaimsRequest, False, msg_ser, msg_deser, True)
 
 
-OPTIONAL_VERIFICATION_ELEMENT_REQUEST = (
-    VerificationElementRequest,
+def evidence_request_deser(val, sformat="json"):
+    if sformat in ["dict", "json"]:
+        if isinstance(val, str):
+            val = json.loads(val)
+
+    return EvidenceRequest(**val)
+
+
+def evidence_list_deser(val, sformat="urlencoded", lev=0):
+    if isinstance(val, dict):
+        return [EvidenceRequest(**val)]
+
+    _res = [evidence_request_deser(v, sformat) for v in val]
+    return _res
+
+
+class EvidenceRequest(IdentityAssuranceClaimsRequest):
+    base_class = Evidence
+
+
+OPTIONAL_EVIDENCE_REQUEST_LIST = ([EvidenceRequest], False, msg_list_ser, evidence_list_deser, True)
+
+
+class VerificationRequest(IdentityAssuranceClaimsRequest):
+    base_class = Verification
+    c_param = {'evidence': OPTIONAL_EVIDENCE_REQUEST_LIST}
+    # c_param = {
+    #     "trust_framework": SINGLE_REQUIRED_STRING,
+    #     "time": OPTIONAL_TIME_STAMP,
+    #     "verification_process": SINGLE_OPTIONAL_STRING,
+    #     "evidence": OPTIONAL_EVIDENCE_REQUEST_LIST,
+    # }
+
+    # def verify(self, **kwargs):
+    #     super(VerificationRequest, self).verify(**kwargs)
+    #     if "trust_framework" not in self:
+    #         raise MissingRequiredAttribute("trust_framework")
+
+
+def verification_request_deser(val, sformat="urlencoded"):
+    return deserialize_from_one_of(val, VerificationRequest, sformat)
+
+
+OPTIONAL_VERIFICATION_REQUEST = (
+    VerificationRequest,
     False,
     msg_ser,
-    verification_element_request_deser,
+    verification_request_deser,
     True,
 )
 
 
-class VerifiedClaimsRequest(Message):
-    c_param = {"verification": OPTIONAL_MESSAGE, "claims": OPTIONAL_IDA_CLAIMS}
-
-    def verify(self, **kwargs):
-        super(VerifiedClaimsRequest, self).verify(**kwargs)
-        verify_claims_request(self, VerifiedClaims())
+class VerifiedClaimsRequest(IdentityAssuranceClaimsRequest):
+    c_param = {"verification": OPTIONAL_VERIFICATION_REQUEST,
+               "claims": OPTIONAL_CLAIMS_REQUEST}
 
 
-class IDAClaimsRequest(ClaimsRequest):
-    def verify(self, **kwargs):
-        super(IDAClaimsRequest, self).verify(**kwargs)
-        _vc = self.get("verified_claims")
-        if _vc:
-            _vci = VerifiedClaimsRequest(**_vc)
-            _vci.verify()
-            self["verified_claims"] = _vci
+def verified_claims_request_deser(val, sformat="urlencoded"):
+    return deserialize_from_one_of(val, VerifiedClaimsRequest, sformat)
+
+
+def verified_claims_request_list_deser(val, sformat="urlencoded", lev=0):
+    if isinstance(val, dict):
+        return [VerifiedClaimsRequest(**val)]
+
+    _res = [verified_claims_request_deser(v, sformat) for v in val]
+    return _res
+
+
+OPTIONAL_LIST_OF_VERIFIED_CLAIMS_REQUEST = (
+    [VerifiedClaimsRequest], False, msg_list_ser, verified_claims_request_list_deser, True)
+
+
+class UserInfoClaimsRequest(IdentityAssuranceClaimsRequest):
+    c_param = {"verified_claims": OPTIONAL_LIST_OF_VERIFIED_CLAIMS_REQUEST}
+
+
+def userinfo_claims_request_deser(val, sformat="urlencoded"):
+    return deserialize_from_one_of(val, UserInfoClaimsRequest, sformat)
+
+
+OPTIONAL_USERINFO_CLAIMS_REQUEST = (
+    UserInfoClaimsRequest,
+    False,
+    msg_ser,
+    userinfo_claims_request_deser,
+    True,
+)
+
+
+class IdTokenClaimsRequest(IdentityAssuranceClaimsRequest):
+    c_param = {"verified_claims": OPTIONAL_LIST_OF_VERIFIED_CLAIMS_REQUEST}
+
+
+def idtoken_claims_request_deser(val, sformat="urlencoded"):
+    return deserialize_from_one_of(val, IdTokenClaimsRequest, sformat)
+
+
+OPTIONAL_IDTOKEN_CLAIMS_REQUEST = (
+    IdTokenClaimsRequest,
+    False,
+    msg_ser,
+    idtoken_claims_request_deser,
+    True,
+)
+
+
+class IDAClaimsRequest(IdentityAssuranceClaimsRequest):
+    c_param = {"userinfo": OPTIONAL_USERINFO_CLAIMS_REQUEST,
+               "id_token": OPTIONAL_IDTOKEN_CLAIMS_REQUEST}
 
 
 class ClaimsConstructor:
@@ -525,7 +663,7 @@ class ClaimsConstructor:
 
         self.info = {}
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value):
         """
 
         :param key:
@@ -546,7 +684,7 @@ class ClaimsConstructor:
 
         self.info[key] = value
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         res = {}
         for key, val in self.info.items():
             if isinstance(val, ClaimsConstructor):
@@ -555,5 +693,208 @@ class ClaimsConstructor:
                 res[key] = val
         return res
 
-    def to_json(self):
+    def to_json(self) -> str:
         return json.dumps(self.to_dict())
+
+
+# ----------------------
+
+def claims_match(value: Union[str, int], claimspec: Optional[dict]) -> bool:
+    """
+    Implements matching according to section 5.5.1 of
+    http://openid.net/specs/openid-connect-core-1_0.html
+    The lack of value is not checked here.
+    Also the text doesn't prohibit having both 'value' and 'values'.
+
+    :param value: single value
+    :param claimspec: None or dictionary with 'essential', 'value' or 'values'
+        as key
+    :return: Boolean
+    """
+    if value is None:
+        return False
+
+    if claimspec is None:  # match anything
+        return True
+
+    matched = False
+    for key, val in claimspec.items():
+        if key == "value":
+            if value == val:
+                matched = True
+        elif key == "values":
+            if value in val:
+                matched = True
+        elif key == "essential":
+            # Whether it's essential or not doesn't change anything here
+            continue
+
+        if matched:
+            break
+
+    if matched is False:
+        if list(claimspec.keys()) == ["essential"]:
+            return True
+
+    return matched
+
+
+def match_class_singles(provided, requested, strict=True) -> dict:
+    matched = {}
+    for key, req_val in requested.items():
+        _ver_val = provided.get(key)
+        if isinstance(req_val, IdentityAssuranceClaimsRequest):
+            matched[key] = match_class_singles(_ver_val, req_val)
+        elif claims_match(_ver_val, req_val):
+            matched[key] = _ver_val
+        else:
+            return {}
+
+    if not strict:  # Include those that wasn't asked for
+        for key, val in provided.items():
+            if key not in requested:
+                matched[key] = val
+
+    return matched
+
+
+def match_class(provided, requested, strict=True) -> Union[dict, bool]:
+    matched = {}
+    for key, req_val in requested.items():
+        _ver_val = provided.get(key)
+        if isinstance(req_val, list):
+            _matched = []
+            for _rval in req_val:
+                if isinstance(_ver_val, list):
+                    for _vval in _ver_val:
+                        _m = match_class(_vval, _rval, strict)
+                        if _m:
+                            _matched.append(_m)
+                else:
+                    _m = match_class(_ver_val, _rval, strict)
+                    if _m:
+                        _matched.append(_m)
+            if _matched:
+                matched[key] = _matched
+        elif isinstance(_ver_val, list):
+            _matched = []
+            for _vval in _ver_val:
+                _m = match_class(_vval, req_val, strict)
+                if _m:
+                    _matched.append(_m)
+            if _matched:
+                matched[key] = _matched
+        elif isinstance(req_val, IdentityAssuranceClaimsRequest):
+            matched[key] = match_class_singles(_ver_val, req_val)
+        elif claims_match(_ver_val, req_val):
+            matched[key] = _ver_val
+        else:
+            return False
+
+    if not strict:  # Include those that wasn't asked for
+        for key, val in provided.items():
+            if key not in requested:
+                matched[key] = val
+
+    return matched
+
+
+def match_claims(claims, claims_request, strict=True) -> dict:
+    matched = {}
+    for key, req_val in claims_request.items():
+        _claims_val = claims.get(key)
+        if claims_match(_claims_val, req_val) is False:
+            return {}
+        matched[key] = _claims_val
+
+    if not strict:  # Include those that wasn't asked for
+        for key, val in claims.items():
+            if key not in claims_request:
+                matched[key] = val
+
+    return matched
+
+
+def match_single_verified_claims(verified_claims, verified_claims_request):
+    matched_verification = match_class(verified_claims.get("verification"),
+                                       verified_claims_request.get("verification"),
+                                       strict=False)
+    if matched_verification:
+        matched_claims = match_claims(verified_claims.get("claims"),
+                                      verified_claims_request.get("claims"))
+    else:
+        matched_claims = {}
+
+    return {"verification": matched_verification, "claims": matched_claims}
+
+
+def match_verified_claims(verified_claims, verified_claims_request) -> list:
+    matched = []
+
+    if isinstance(verified_claims, list):
+        for _vc in verified_claims:
+            if isinstance(verified_claims_request, list):
+                for _vcr in verified_claims_request:
+                    _match = match_single_verified_claims(_vc, _vcr)
+                    if _match:
+                        matched.append(_match)
+            else:
+                _match = match_single_verified_claims(_vc, verified_claims_request)
+                if _match:
+                    matched.append(_match)
+    else:
+        if isinstance(verified_claims_request, list):
+            for _vcr in verified_claims_request:
+                _match = match_single_verified_claims(verified_claims, _vcr)
+                if _match:
+                    matched.append(_match)
+        else:
+            _match = match_single_verified_claims(verified_claims, verified_claims_request)
+            if _match:
+                matched.append(_match)
+
+    return matched
+
+
+def _hashable(key):
+    if isinstance(key, dict):
+        return json.dumps(key)
+
+    return key
+
+
+def verification_per_claim(matched):
+    res = {}
+    for m in matched:
+        for key, val in m['claims'].items():
+            _interim = {}
+            if isinstance(val, list):
+                for v in val:
+                    _interim[_hashable(v)] = [m["verification"]]
+            else:
+                _interim[_hashable(val)] = [m["verification"]]
+
+            if key is res:
+                for ikey, val in _interim.items():
+                    if ikey in res[key]:
+                        res[key][_hashable(ikey)].extend(val)
+                    else:
+                        res[key][_hashable(ikey)] = val
+            else:
+                res[key] = _interim
+
+    return res
+
+
+# ==========================================================================================
+
+class IDAOPMetadata(ProviderConfigurationResponse):
+    c_param = ProviderConfigurationResponse.c_param.copy()
+    c_param.update({
+        "verified_claims_supported": SINGLE_REQUIRED_BOOLEAN,
+        "trust_frameworks_supported": REQUIRED_LIST_OF_STRINGS,
+        "evidence_supported": REQUIRED_LIST_OF_STRINGS,
+        "id_documents_supported": OPTIONAL_LIST_OF_STRINGS,
+        "id_documents_verification_methods_supported": OPTIONAL_LIST_OF_STRINGS,
+        "claims_in_verified_claims_supported": REQUIRED_LIST_OF_STRINGS
+    })
