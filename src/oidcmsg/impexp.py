@@ -6,7 +6,7 @@ from cryptojwt.utils import as_bytes
 from cryptojwt.utils import importer
 from cryptojwt.utils import qualified_name
 
-from oidcmsg.abfile import DictType
+from oidcmsg.storage import DictType
 from oidcmsg.message import Message
 
 
