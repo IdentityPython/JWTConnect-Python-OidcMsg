@@ -3,8 +3,8 @@ import shutil
 
 import pytest
 
-from oidcmsg.storage.abfile import AbstractFileSystem
 from oidcmsg.impexp import ImpExp
+from oidcmsg.storage.abfile import AbstractFileSystem
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
