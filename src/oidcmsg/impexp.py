@@ -6,7 +6,12 @@ from cryptojwt.utils import as_bytes
 from cryptojwt.utils import importer
 from cryptojwt.utils import qualified_name
 
+from oidcmsg.abfile import DictType
 from oidcmsg.message import Message
+
+
+def fully_qualified_name(cls):
+    return cls.__module__ + "." + cls.__class__.__name__
 
 
 class ImpExp:
@@ -23,6 +28,15 @@ class ImpExp:
                 val = as_bytes(item)
             else:
                 val = item
+        elif cls == "DICT_TYPE":
+            if isinstance(item, dict):
+                val = item
+            else:
+                if isinstance(item, DictType):  # item should be a class instance
+                    val = {
+                        "DICT_TYPE": {"class": fully_qualified_name(item), "kwargs": item.kwargs}}
+                else:
+                    raise ValueError("Expected a DictType class")
         elif isinstance(item, Message):
             val = {qualified_name(item.__class__): item.to_dict()}
         elif cls == object:
@@ -81,6 +95,12 @@ class ImpExp:
         if cls in [None, 0, "", [], {}, bool, b'']:
             if cls == b'':
                 val = as_bytes(item)
+            else:
+                val = item
+        elif cls == "DICT_TYPE":
+            if list(item.keys()) == ["DICT_TYPE"]:
+                _spec = item["DICT_TYPE"]
+                val = importer(_spec["class"])(**_spec["kwargs"])
             else:
                 val = item
         elif cls == object:
