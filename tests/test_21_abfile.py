@@ -28,13 +28,13 @@ CLIENT_2 = {
     "response_types": ["code"]
 }
 
+
 class ImpExpTest(ImpExp):
     parameter = {
         "string": "",
         "list": [],
         "dict": "DICT_TYPE",
     }
-
 
 
 class TestAFS(object):
@@ -109,7 +109,6 @@ class TestAFS(object):
         assert b_copy
         assert isinstance(b_copy.dict, AbstractFileSystem)
         assert set(b_copy.dict.keys()) == {"client_1", "client_2"}
-
 
     def test_dump_load_dict(self):
         b = ImpExpTest()
