@@ -468,6 +468,28 @@ class Message(MutableMapping):
         _jws = JWS(self.to_json(lev), alg=algorithm)
         return _jws.sign_compact(key)
 
+    def _gather_keys(self, keyjar, jwt, header, **kwargs):
+        key = []
+
+        if keyjar:
+            _keys = keyjar.get_jwt_verify_keys(jwt, **kwargs)
+            if not _keys:
+                keyjar.update()
+                _keys = keyjar.get_jwt_verify_keys(jwt, **kwargs)
+            key.extend(_keys)
+
+        if "alg" in header and header["alg"] != "none":
+            if not key:
+                if keyjar:
+                    keyjar.update()
+                    key = keyjar.get_jwt_verify_keys(jwt, **kwargs)
+                    if not key:
+                        raise MissingSigningKey("alg=%s" % header["alg"])
+                else:
+                    raise MissingSigningKey("alg=%s" % header["alg"])
+
+        return key
+
     def from_jwt(self, txt, keyjar, verify=True, **kwargs):
         """
         Given a signed and/or encrypted JWT, verify its correctness and then
@@ -515,7 +537,6 @@ class Message(MutableMapping):
             jso = _jwt.payload()
             _header = _jwt.headers
 
-            key = []
             # if "sender" in kwargs:
             #     key.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
 
@@ -524,21 +545,13 @@ class Message(MutableMapping):
             if _header["alg"] == "none":
                 pass
             elif verify:
-                if keyjar:
-                    key.extend(keyjar.get_jwt_verify_keys(_jwt, **kwargs))
+                key = self._gather_keys(keyjar, _jwt, _header, **kwargs)
 
-                if "alg" in _header and _header["alg"] != "none":
-                    if not key:
-                        raise MissingSigningKey("alg=%s" % _header["alg"])
+                if not key:
+                    raise MissingSigningKey("alg=%s" % _header["alg"])
 
                 logger.debug("Found signing key.")
-                try:
-                    _verifier.verify_compact(txt, key)
-                except NoSuitableSigningKeys:
-                    if keyjar:
-                        keyjar.update()
-                        key = keyjar.get_jwt_verify_keys(_jwt, **kwargs)
-                        _verifier.verify_compact(txt, key)
+                _verifier.verify_compact(txt, key)
 
             self.jws_header = _jwt.headers
         else:
