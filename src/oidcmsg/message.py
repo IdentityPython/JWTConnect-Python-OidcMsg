@@ -314,10 +314,10 @@ class Message(MutableMapping):
                             self._dict[key] = val
                             continue
 
-            self._add_value(skey, vtyp, key, val, _deser, null_allowed)
+            self._add_value(skey, vtyp, key, val, _deser, null_allowed, sformat="dict")
         return self
 
-    def _add_value(self, skey, vtyp, key, val, _deser, null_allowed):
+    def _add_value(self, skey, vtyp, key, val, _deser, null_allowed, sformat="urlencoded"):
         """
         Main method for adding a value to the instance. Does all the
         checking on type of value and if among allowed values.
@@ -350,7 +350,7 @@ class Message(MutableMapping):
                     self._dict[skey] = [val]
                 elif _deser:
                     try:
-                        self._dict[skey] = _deser(val, sformat="urlencoded")
+                        self._dict[skey] = _deser(val, sformat=sformat)
                     except Exception as exc:
                         raise DecodeError(ERRTXT % (key, exc))
                 else:
@@ -402,16 +402,6 @@ class Message(MutableMapping):
                     except Exception as exc:
                         raise DecodeError(ERRTXT % (key, exc))
                     else:
-                        # if isinstance(val, str):
-                        #     self._dict[skey] = val
-                        # elif isinstance(val, list):
-                        #     if len(val) == 1:
-                        #         self._dict[skey] = val[0]
-                        #     elif not len(val):
-                        #         pass
-                        #     else:
-                        #         raise TooManyValues(key)
-                        # else:
                         self._dict[skey] = val
                 elif vtyp is int:
                     try:
@@ -863,8 +853,12 @@ def add_non_standard(msg1, msg2):
 
 
 def list_serializer(vals, sformat="urlencoded", lev=0):
-    if isinstance(vals, str) or not isinstance(vals, list):
+    if isinstance(vals, str) and sformat == "dict":
+        return [vals]
+
+    if not isinstance(vals, list):
         raise ValueError("Expected list: %s" % vals)
+
     if sformat == "urlencoded":
         return " ".join(vals)
     else:

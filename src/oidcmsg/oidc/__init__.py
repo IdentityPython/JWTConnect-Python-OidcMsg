@@ -797,7 +797,7 @@ class IdToken(OpenIDSchema):
                 # check that I'm among the recipients
                 if kwargs["client_id"] not in self["aud"]:
                     raise NotForMe(
-                        "{} not in aud:{}".format(kwargs["client_id"], self["aud"]), self
+                        '"{}" not in {}'.format(kwargs["client_id"], self["aud"]), self
                     )
 
             # Then azp has to be present and be one of the aud values
