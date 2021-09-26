@@ -1614,4 +1614,11 @@ def test_ID_Token_space_in_id():
         "iat": 1632495659
     })
 
-    assert idt["aud"] == "client_ifCttPphtLxtPWd20602 ^.+/"
+    assert idt["aud"] == ["client_ifCttPphtLxtPWd20602 ^.+/"]
+
+    idt = IdToken(**{'at_hash': 'rgMbiR-Dj11dQjxhCyLkOw', 'sub': 'user-subject-1234531',
+                     'aud': 'client_dVCwIQuSKklinFP70742;#__$',
+                     'iss': 'https://www.certification.openid.net/test/a/idpy/', 'exp': 1632639462,
+                     'nonce': 'hUT3RhSooxC9CilrD8al6bGx', 'iat': 1632639162})
+
+    assert idt["aud"] == ["client_dVCwIQuSKklinFP70742;#__$"]

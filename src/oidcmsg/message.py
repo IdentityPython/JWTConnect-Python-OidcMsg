@@ -871,8 +871,11 @@ def list_deserializer(val, sformat="urlencoded"):
             return val.split(" ")
         elif isinstance(val, list) and len(val) == 1:
             return val[0].split(" ")
-    else:
-        return val
+    elif sformat == "dict":
+        if isinstance(val, str):
+            val = [val]
+
+    return val
 
 
 def sp_sep_list_serializer(vals, sformat="urlencoded", lev=0):
