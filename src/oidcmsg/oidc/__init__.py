@@ -633,7 +633,7 @@ class RegistrationRequest(Message):
         # "client_id": SINGLE_OPTIONAL_STRING,
         # "client_secret": SINGLE_OPTIONAL_STRING,
         # "access_token": SINGLE_OPTIONAL_STRING,
-        "post_logout_redirect_uris": OPTIONAL_LIST_OF_STRINGS,
+        "post_logout_redirect_uri": SINGLE_OPTIONAL_STRING,
         "frontchannel_logout_uri": SINGLE_OPTIONAL_STRING,
         "frontchannel_logout_session_required": SINGLE_OPTIONAL_BOOLEAN,
         "backchannel_logout_uri": SINGLE_OPTIONAL_STRING,
