@@ -771,14 +771,6 @@ class IdToken(OpenIDSchema):
         else:
             self.pack_init()
 
-        # if 'jti' in self.c_param:
-        #     try:
-        #         _jti = kwargs['jti']
-        #     except KeyError:
-        #         _jti = uuid.uuid4().hex
-        #
-        #     self['jti'] = _jti
-
     def to_jwt(self, key=None, algorithm="", lev=0, lifetime=0):
         self.pack(alg=algorithm, lifetime=lifetime)
         return Message.to_jwt(self, key=key, algorithm=algorithm, lev=lev)
