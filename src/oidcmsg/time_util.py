@@ -348,7 +348,8 @@ def later_than(after, before):
 
 
 def utc_time_sans_frac():
-    return int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
+    now_timestampt = int(datetime.utcnow().timestamp())
+    return now_timestampt
 
 
 def time_sans_frac():
@@ -372,4 +373,5 @@ def epoch_in_a_while(
     """
 
     dt = time_in_a_while(days, seconds, microseconds, milliseconds, minutes, hours, weeks)
-    return int((dt - datetime(1970, 1, 1)).total_seconds())
+    dt_timestamp = int(dt.timestamp())
+    return dt_timestamp
