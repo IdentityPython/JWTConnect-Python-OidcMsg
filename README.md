@@ -1,4 +1,11 @@
 # oidcmsg
+
+![CI build](https://github.com/IdentityPython/oidcmsg/workflows/oidcmsg/badge.svg)
+![pypi](https://img.shields.io/pypi/v/oidcmsg.svg)
+[![Downloads](https://pepy.tech/badge/oidcmsg)](https://pepy.tech/project/oidcmsg)
+[![Downloads](https://pepy.tech/badge/oidcmsg/week)](https://pepy.tech/project/oidcmsg)
+![License](https://img.shields.io/badge/license-Apache%202-blue.svg)
+
 Implementation of OIDC protocol messages.
 
 oidcmsg is the 2nd layer in the
@@ -10,17 +17,17 @@ It also does verification of messages , that is :
 
 + verifies that all the required parameters are present and has a value
 + verifies that the parameter values are of the right type
-+ verifies that if there is a list of permitted values, a parameter value is on 
++ verifies that if there is a list of permitted values, a parameter value is on
 that list.
 
 and finally if the value is a signed and/or encrypted JWT this package
-will perform the necessary decryption and signature verification. 
+will perform the necessary decryption and signature verification.
 
 
-Also implements a **KeyJar** which keeps keys belonging to 
+Also implements a **KeyJar** which keeps keys belonging to
 different owners. One owner may have many keys.
 If some of these keys have a common origin, like described in a JWKS.
 Such a set will be kept in a **keyBundle**.
-Also implemented in this package. 
-   
+Also implemented in this package.
+
 Please read the [Official Documentation](https://oidcmsg.readthedocs.io/) for getting usage examples and further informations.
