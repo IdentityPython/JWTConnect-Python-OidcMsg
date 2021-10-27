@@ -46,7 +46,7 @@ jobs:
         pytest --cov=oidcmsg tests/
     - name: Bandit Security Scan
       run: |
-        bandit --skip B105,B106,B107 -r src/oidcop/
+        bandit --skip B105,B106,B107 -r src/oidcmsg/
     #- name: Upload coverage to Codecov
       #uses: codecov/codecov-action@v1
       #with:
