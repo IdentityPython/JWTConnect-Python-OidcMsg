@@ -6,7 +6,6 @@ import time
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
 
-import pytest
 from cryptojwt.exception import BadSignature
 from cryptojwt.exception import UnsupportedAlgorithm
 from cryptojwt.jws.exception import SignerAlgError
@@ -14,6 +13,7 @@ from cryptojwt.jws.utils import left_hash
 from cryptojwt.jwt import JWT
 from cryptojwt.key_bundle import KeyBundle
 from cryptojwt.key_jar import KeyJar
+import pytest
 
 from oidcmsg import proper_path
 from oidcmsg import time_util
@@ -21,9 +21,8 @@ from oidcmsg.exception import MessageException
 from oidcmsg.exception import MissingRequiredAttribute
 from oidcmsg.exception import NotAllowedValue
 from oidcmsg.exception import OidcMsgError
-from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.oauth2 import ROPCAccessTokenRequest
-from oidcmsg.oidc import JRD
+from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.oidc import AccessTokenRequest
 from oidcmsg.oidc import AccessTokenResponse
 from oidcmsg.oidc import AddressClaim
@@ -38,6 +37,7 @@ from oidcmsg.oidc import DiscoveryRequest
 from oidcmsg.oidc import EXPError
 from oidcmsg.oidc import IATError
 from oidcmsg.oidc import IdToken
+from oidcmsg.oidc import JRD
 from oidcmsg.oidc import Link
 from oidcmsg.oidc import OpenIDSchema
 from oidcmsg.oidc import ProviderConfigurationResponse
@@ -661,7 +661,7 @@ class TestRegistrationResponse(object):
             "client_secret_expires_at": 1577858400,
             "registration_access_token": "this.is.an.access.token.value.ffx83",
             "registration_client_uri": "https://server.example.com/connect/register?client_id"
-            "=s6BhdRkqt3",
+                                       "=s6BhdRkqt3",
             "token_endpoint_auth_method": "client_secret_basic",
             "application_type": "web",
             "redirect_uris": [
@@ -1601,3 +1601,24 @@ def test_correct_sign_alg():
         client_id="554295ce3770612820620000",
         allowed_sign_alg="HS256",
     )
+
+
+def test_ID_Token_space_in_id():
+    idt = IdToken(**{
+        "at_hash": "buCCujNN632UIV8-VbKhgw",
+        "sub": "user-subject-1234531",
+        "aud": "client_ifCttPphtLxtPWd20602 ^.+/",
+        "iss": "https://www.certification.openid.net/test/a/idpy/",
+        "exp": 1632495959,
+        "nonce": "B88En9UpdHkQZMQXK9U3KHzV",
+        "iat": 1632495659
+    })
+
+    assert idt["aud"] == ["client_ifCttPphtLxtPWd20602 ^.+/"]
+
+    idt = IdToken(**{'at_hash': 'rgMbiR-Dj11dQjxhCyLkOw', 'sub': 'user-subject-1234531',
+                     'aud': 'client_dVCwIQuSKklinFP70742;#__$',
+                     'iss': 'https://www.certification.openid.net/test/a/idpy/', 'exp': 1632639462,
+                     'nonce': 'hUT3RhSooxC9CilrD8al6bGx', 'iat': 1632639162})
+
+    assert idt["aud"] == ["client_dVCwIQuSKklinFP70742;#__$"]

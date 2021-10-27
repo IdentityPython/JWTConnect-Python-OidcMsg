@@ -633,7 +633,7 @@ class RegistrationRequest(Message):
         # "client_id": SINGLE_OPTIONAL_STRING,
         # "client_secret": SINGLE_OPTIONAL_STRING,
         # "access_token": SINGLE_OPTIONAL_STRING,
-        "post_logout_redirect_uris": OPTIONAL_LIST_OF_STRINGS,
+        "post_logout_redirect_uri": SINGLE_OPTIONAL_STRING,
         "frontchannel_logout_uri": SINGLE_OPTIONAL_STRING,
         "frontchannel_logout_session_required": SINGLE_OPTIONAL_BOOLEAN,
         "backchannel_logout_uri": SINGLE_OPTIONAL_STRING,
@@ -771,14 +771,6 @@ class IdToken(OpenIDSchema):
         else:
             self.pack_init()
 
-        # if 'jti' in self.c_param:
-        #     try:
-        #         _jti = kwargs['jti']
-        #     except KeyError:
-        #         _jti = uuid.uuid4().hex
-        #
-        #     self['jti'] = _jti
-
     def to_jwt(self, key=None, algorithm="", lev=0, lifetime=0):
         self.pack(alg=algorithm, lifetime=lifetime)
         return Message.to_jwt(self, key=key, algorithm=algorithm, lev=lev)
@@ -797,7 +789,7 @@ class IdToken(OpenIDSchema):
                 # check that I'm among the recipients
                 if kwargs["client_id"] not in self["aud"]:
                     raise NotForMe(
-                        "{} not in aud:{}".format(kwargs["client_id"], self["aud"]), self
+                        '"{}" not in {}'.format(kwargs["client_id"], self["aud"]), self
                     )
 
             # Then azp has to be present and be one of the aud values

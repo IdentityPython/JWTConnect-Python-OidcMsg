@@ -2,6 +2,7 @@ from typing import Any
 from typing import List
 from typing import Optional
 
+from cryptojwt import as_unicode
 from cryptojwt.utils import as_bytes
 from cryptojwt.utils import importer
 from cryptojwt.utils import qualified_name
@@ -25,7 +26,7 @@ class ImpExp:
     def dump_attr(self, cls, item, exclude_attributes: Optional[List[str]] = None) -> dict:
         if cls in [None, 0, "", [], {}, bool, b'']:
             if cls == b'':
-                val = as_bytes(item)
+                val = as_unicode(item)
             else:
                 val = item
         elif cls == "DICT_TYPE":

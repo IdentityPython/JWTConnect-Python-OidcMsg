@@ -179,6 +179,6 @@ class BackChannelLogoutRequest(Message):
             return False
 
         self[verified_claim_name("logout_token")] = idt
-        logger.info("Verified ID Token: {}".format(idt.to_dict()))
+        logger.info("Verified Logout Token: {}".format(idt.to_dict()))
 
         return True
