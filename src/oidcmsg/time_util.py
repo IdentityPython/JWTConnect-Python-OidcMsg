@@ -20,6 +20,7 @@ different types of information.
 """
 
 import calendar
+import logging
 import re
 import sys
 import time
@@ -29,6 +30,8 @@ from datetime import timedelta
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_WITH_FRAGMENT = re.compile("^(\d{4,4}-\d{2,2}-\d{2,2}T\d{2,2}:\d{2,2}:\d{2,2})\.\d*Z$")
 
+
+logger = logging.getLogger(__name__)
 
 class TimeUtilError(Exception):
     pass
@@ -287,7 +290,7 @@ def str_to_time(timestr, time_format=TIME_FORMAT):
         try:
             elem = TIME_FORMAT_WITH_FRAGMENT.match(timestr)
         except Exception as exc:
-            print >>sys.stderr, "Exception: %s on %s" % (exc, timestr)
+            logger.error("Exception: %s on %s" % (exc, timestr))
             raise
         then = time.strptime(elem.groups()[0] + "Z", TIME_FORMAT)
 
@@ -348,7 +351,8 @@ def later_than(after, before):
 
 
 def utc_time_sans_frac():
-    return int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
+    now_timestampt = int(datetime.utcnow().timestamp())
+    return now_timestampt
 
 
 def time_sans_frac():
@@ -372,4 +376,5 @@ def epoch_in_a_while(
     """
 
     dt = time_in_a_while(days, seconds, microseconds, milliseconds, minutes, hours, weeks)
-    return int((dt - datetime(1970, 1, 1)).total_seconds())
+    dt_timestamp = int(dt.timestamp())
+    return dt_timestamp

@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
 import re
 import sys
 
@@ -43,10 +44,15 @@ with open('src/oidcmsg/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
                         fd.read(), re.MULTILINE).group(1)
 
+with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
+    README = readme.read()
+
 setup(
     name="oidcmsg",
     version=version,
     description="Python implementation of OAuth2 and OpenID Connect messages",
+    long_description=README,
+    long_description_content_type='text/markdown',
     author="Roland Hedberg",
     author_email="roland@catalogix.se",
     license="Apache 2.0",

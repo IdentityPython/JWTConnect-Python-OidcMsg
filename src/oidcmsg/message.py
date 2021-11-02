@@ -314,10 +314,10 @@ class Message(MutableMapping):
                             self._dict[key] = val
                             continue
 
-            self._add_value(skey, vtyp, key, val, _deser, null_allowed)
+            self._add_value(skey, vtyp, key, val, _deser, null_allowed, sformat="dict")
         return self
 
-    def _add_value(self, skey, vtyp, key, val, _deser, null_allowed):
+    def _add_value(self, skey, vtyp, key, val, _deser, null_allowed, sformat="urlencoded"):
         """
         Main method for adding a value to the instance. Does all the
         checking on type of value and if among allowed values.
@@ -350,7 +350,7 @@ class Message(MutableMapping):
                     self._dict[skey] = [val]
                 elif _deser:
                     try:
-                        self._dict[skey] = _deser(val, sformat="urlencoded")
+                        self._dict[skey] = _deser(val, sformat=sformat)
                     except Exception as exc:
                         raise DecodeError(ERRTXT % (key, exc))
                 else:
@@ -402,16 +402,6 @@ class Message(MutableMapping):
                     except Exception as exc:
                         raise DecodeError(ERRTXT % (key, exc))
                     else:
-                        # if isinstance(val, str):
-                        #     self._dict[skey] = val
-                        # elif isinstance(val, list):
-                        #     if len(val) == 1:
-                        #         self._dict[skey] = val[0]
-                        #     elif not len(val):
-                        #         pass
-                        #     else:
-                        #         raise TooManyValues(key)
-                        # else:
                         self._dict[skey] = val
                 elif vtyp is int:
                     try:
@@ -468,6 +458,28 @@ class Message(MutableMapping):
         _jws = JWS(self.to_json(lev), alg=algorithm)
         return _jws.sign_compact(key)
 
+    def _gather_keys(self, keyjar, jwt, header, **kwargs):
+        key = []
+
+        if keyjar:
+            _keys = keyjar.get_jwt_verify_keys(jwt, **kwargs)
+            if not _keys:
+                keyjar.update()
+                _keys = keyjar.get_jwt_verify_keys(jwt, **kwargs)
+            key.extend(_keys)
+
+        if "alg" in header and header["alg"] != "none":
+            if not key:
+                if keyjar:
+                    keyjar.update()
+                    key = keyjar.get_jwt_verify_keys(jwt, **kwargs)
+                    if not key:
+                        raise MissingSigningKey("alg=%s" % header["alg"])
+                else:
+                    raise MissingSigningKey("alg=%s" % header["alg"])
+
+        return key
+
     def from_jwt(self, txt, keyjar, verify=True, **kwargs):
         """
         Given a signed and/or encrypted JWT, verify its correctness and then
@@ -515,7 +527,6 @@ class Message(MutableMapping):
             jso = _jwt.payload()
             _header = _jwt.headers
 
-            key = []
             # if "sender" in kwargs:
             #     key.extend(keyjar.get_verify_key(owner=kwargs["sender"]))
 
@@ -524,21 +535,13 @@ class Message(MutableMapping):
             if _header["alg"] == "none":
                 pass
             elif verify:
-                if keyjar:
-                    key.extend(keyjar.get_jwt_verify_keys(_jwt, **kwargs))
+                key = self._gather_keys(keyjar, _jwt, _header, **kwargs)
 
-                if "alg" in _header and _header["alg"] != "none":
-                    if not key:
-                        raise MissingSigningKey("alg=%s" % _header["alg"])
+                if not key:
+                    raise MissingSigningKey("alg=%s" % _header["alg"])
 
                 logger.debug("Found signing key.")
-                try:
-                    _verifier.verify_compact(txt, key)
-                except NoSuitableSigningKeys:
-                    if keyjar:
-                        keyjar.update()
-                        key = keyjar.get_jwt_verify_keys(_jwt, **kwargs)
-                        _verifier.verify_compact(txt, key)
+                _verifier.verify_compact(txt, key)
 
             self.jws_header = _jwt.headers
         else:
@@ -850,8 +853,12 @@ def add_non_standard(msg1, msg2):
 
 
 def list_serializer(vals, sformat="urlencoded", lev=0):
-    if isinstance(vals, str) or not isinstance(vals, list):
+    if isinstance(vals, str) and sformat == "dict":
+        return [vals]
+
+    if not isinstance(vals, list):
         raise ValueError("Expected list: %s" % vals)
+
     if sformat == "urlencoded":
         return " ".join(vals)
     else:
@@ -864,8 +871,11 @@ def list_deserializer(val, sformat="urlencoded"):
             return val.split(" ")
         elif isinstance(val, list) and len(val) == 1:
             return val[0].split(" ")
-    else:
-        return val
+    elif sformat == "dict":
+        if isinstance(val, str):
+            val = [val]
+
+    return val
 
 
 def sp_sep_list_serializer(vals, sformat="urlencoded", lev=0):
