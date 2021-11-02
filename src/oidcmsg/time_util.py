@@ -20,6 +20,7 @@ different types of information.
 """
 
 import calendar
+import logging
 import re
 import sys
 import time
@@ -29,6 +30,8 @@ from datetime import timedelta
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_WITH_FRAGMENT = re.compile("^(\d{4,4}-\d{2,2}-\d{2,2}T\d{2,2}:\d{2,2}:\d{2,2})\.\d*Z$")
 
+
+logger = logging.getLogger(__name__)
 
 class TimeUtilError(Exception):
     pass
@@ -287,7 +290,7 @@ def str_to_time(timestr, time_format=TIME_FORMAT):
         try:
             elem = TIME_FORMAT_WITH_FRAGMENT.match(timestr)
         except Exception as exc:
-            print >>sys.stderr, "Exception: %s on %s" % (exc, timestr)
+            logger.error("Exception: %s on %s" % (exc, timestr))
             raise
         then = time.strptime(elem.groups()[0] + "Z", TIME_FORMAT)
 
