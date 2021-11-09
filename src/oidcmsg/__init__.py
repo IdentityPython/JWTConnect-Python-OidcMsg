@@ -1,5 +1,5 @@
 __author__ = "Roland Hedberg"
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 
 import os
 from typing import Dict
@@ -34,37 +34,37 @@ def proper_path(path):
     return path
 
 
-def add_base_path(conf: Dict[str, str], item_paths: dict, base_path: str):
-    """
-    This is for adding a base path to path specified in a configuration
-
-    :param conf: Configuration
-    :param item_paths: The relative item path
-    :param base_path: An absolute path to add to the relative
-    """
-    for section, items in item_paths.items():
-        if section == "":
-            part = conf
-        else:
-            part = conf.get(section)
-
-        if part:
-            if isinstance(items, list):
-                for attr in items:
-                    _path = part.get(attr)
-                    if _path:
-                        if _path.startswith("/"):
-                            continue
-                        elif _path == "":
-                            part[attr] = "./" + _path
-                        else:
-                            part[attr] = os.path.join(base_path, _path)
-            elif items is None:
-                if part.startswith("/"):
-                    continue
-                elif part == "":
-                    conf[section] = "./"
-                else:
-                    conf[section] = os.path.join(base_path, part)
-            else:  # Assume items is dictionary like
-                add_base_path(part, items, base_path)
+# def add_base_path(conf: Dict[str, str], item_paths: dict, base_path: str):
+#     """
+#     This is for adding a base path to path specified in a configuration
+#
+#     :param conf: Configuration
+#     :param item_paths: The relative item path
+#     :param base_path: An absolute path to add to the relative
+#     """
+#     for section, items in item_paths.items():
+#         if section == "":
+#             part = conf
+#         else:
+#             part = conf.get(section)
+#
+#         if part:
+#             if isinstance(items, list):
+#                 for attr in items:
+#                     _path = part.get(attr)
+#                     if _path:
+#                         if _path.startswith("/"):
+#                             continue
+#                         elif _path == "":
+#                             part[attr] = "./" + _path
+#                         else:
+#                             part[attr] = os.path.join(base_path, _path)
+#             elif items is None:
+#                 if part.startswith("/"):
+#                     continue
+#                 elif part == "":
+#                     conf[section] = "./"
+#                 else:
+#                     conf[section] = os.path.join(base_path, part)
+#             else:  # Assume items is dictionary like
+#                 add_base_path(part, items, base_path)

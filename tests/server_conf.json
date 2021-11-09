@@ -38,6 +38,7 @@
   "httpc_params": {
     "verify": false
   },
+  "hash_seed": "MustangSally",
   "keys": {
     "private_path": "private/jwks.json",
     "key_defs": [
