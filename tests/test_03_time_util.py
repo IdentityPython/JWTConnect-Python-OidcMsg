@@ -258,9 +258,3 @@ def test_later_than_str():
     b = in_a_while(seconds=20)
     assert later_than(b, a)
     assert later_than(a, b) is False
-
-
-def test_utc_time():
-    utc_now = utc_time_sans_frac()
-    expected_utc_now = int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
-    assert utc_now == expected_utc_now
