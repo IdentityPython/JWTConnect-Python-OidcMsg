@@ -10,7 +10,6 @@ from oidcmsg.configure import Base
 from oidcmsg.configure import Configuration
 from oidcmsg.configure import create_from_config_file
 from oidcmsg.configure import lower_or_upper
-from oidcmsg.configure import set_domain_and_port
 from oidcmsg.util import rndstr
 
 _dirname = os.path.dirname(os.path.abspath(__file__))
@@ -26,22 +25,13 @@ class EntityConfiguration(Base):
                  domain: Optional[str] = "",
                  port: Optional[int] = 0,
                  file_attributes: Optional[List[str]] = None,
-                 uris: Optional[List[str]] = None
+                 uris: Optional[List[str]] = None,
+                 dir_attributes: Optional[List[str]] = None
                  ):
-
-        Base.__init__(self, conf, base_path=base_path, file_attributes=file_attributes)
+        Base.__init__(self, conf, base_path=base_path, file_attributes=file_attributes,
+                      dir_attributes=dir_attributes)
 
         self.keys = lower_or_upper(conf, 'keys')
-
-        if not domain:
-            domain = conf.get("domain", "127.0.0.1")
-
-        if not port:
-            port = conf.get("port", 80)
-
-        if uris is None:
-            uris = URIS
-        conf = set_domain_and_port(conf, uris, domain, port)
 
         self.hash_seed = lower_or_upper(conf, 'hash_seed', rndstr(32))
         self.base_url = conf.get("base_url")
@@ -74,5 +64,6 @@ def test_entity_config(filename):
     assert configuration.httpc_params == {"verify": False}
     assert configuration['keys']
     ni = dict(configuration.items())
-    assert len(ni) == 4
-    assert set(ni.keys()) == {'keys', 'base_url', 'httpc_params', 'hash_seed'}
+    assert len(ni) == 9
+    assert set(ni.keys()) == {'base_url', '_dir_attributes', '_file_attributes', 'hash_seed',
+                              'httpc_params', 'keys', 'conf', 'port', 'domain'}
