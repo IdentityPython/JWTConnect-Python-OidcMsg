@@ -18,7 +18,6 @@ Contents:
    oidcmsg/index
    howto/message
    howto/msg_extend
-   howto/jwt
 
 
 Indices and tables
