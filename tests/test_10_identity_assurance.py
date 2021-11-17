@@ -3,6 +3,9 @@ from urllib.parse import quote_plus
 
 from oidcmsg.oidc import Claims
 from oidcmsg.oidc.identity_assurance import ClaimsConstructor
+from oidcmsg.oidc.identity_assurance import Document
+from oidcmsg.oidc.identity_assurance import EmbeddedAttachment
+from oidcmsg.oidc.identity_assurance import ExternalAttachment
 from oidcmsg.oidc.identity_assurance import IDAClaimsRequest
 from oidcmsg.oidc.identity_assurance import VerificationElement
 from oidcmsg.oidc.identity_assurance import VerifiedClaims
@@ -268,7 +271,7 @@ def test_example_6_1():
                 "verification_process": "676q3636461467647q8498785747q487",
                 "evidence": [
                     {
-                        "type": "id_document",
+                        "type": "document",
                         "method": "pipp",
                         "document": {
                             "type": "idcard",
@@ -299,7 +302,7 @@ def test_example_6_1():
     vc = VerifiedClaims(**verified_claims["verified_claims"])
     vc.verify()
     assert vc["verification"]["trust_framework"] == "de_aml"
-    assert vc["verification"]["evidence"][0]["type"] == "id_document"
+    assert vc["verification"]["evidence"][0]["type"] == "document"
 
 
 def test_example_6_2():
@@ -311,7 +314,7 @@ def test_example_6_2():
                 "verification_process": "676q3636461467647q8498785747q487",
                 "evidence": [
                     {
-                        "type": "id_document",
+                        "type": "document",
                         "method": "pipp",
                         "document": {
                             "document_type": "de_erp_replacement_idcard",
@@ -355,7 +358,7 @@ def test_example_6_2():
     assert len(vc["verification"]["evidence"]) == 2
 
     evidence_types = [e["type"] for e in vc["verification"]["evidence"]]
-    assert set(evidence_types) == {"id_document", "utility_bill"}
+    assert set(evidence_types) == {"document", "utility_bill"}
 
 
 def test_example_6_3():
@@ -395,7 +398,7 @@ def test_example_6_4_2():
                 "verification_process": "676q3636461467647q8498785747q487",
                 "evidence": [
                     {
-                        "type": "id_document",
+                        "type": "document",
                         "method": "pipp",
                         "document": {
                             "type": "idcard",
@@ -427,3 +430,127 @@ def test_construct_5_2_1():
 
     _val = verified_claims.to_json()
     assert _val == '{"verification": {"time": null, "evidence": null}, "claims": null}'
+
+
+
+def test_5_1_2_1():
+    resp = {
+        "verified_claims": {
+            "verification": {
+                "trust_framework": "eidas",
+                "assurance_level": "substantial",
+                "evidence": [
+                    {
+                        "type": "document",
+                        "method": "pipp",
+                        "time": "2012-04-22T11:30Z",
+                        "document_details": {
+                            "type": "idcard",
+                            "issuer": {
+                                "name": "Stadt Augsburg",
+                                "country": "DE"
+                            },
+                            "document_number": "53554554",
+                            "date_of_issuance": "2010-03-23",
+                            "date_of_expiry": "2020-03-22"
+                        },
+                        "attachments": [
+                            {
+                                "desc": "Front of id document",
+                                "content_type": "image/png",
+                                "content":
+                                    "Wkd0bWFtVnlhWFI2Wlc0Mk16VER2RFUyY0RRMWFUbDBNelJ1TlRjd31dzdaM1pTQXJaWGRsTXpNZ2RETmxDZwo="
+                            },
+                            {
+                                "desc": "Back of id document",
+                                "content_type": "image/png",
+                                "content":
+                                    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAADSFsjdkhjwhAABJRU5ErkJggg=="
+                            }
+                        ]
+                    }
+                ]
+            },
+            "claims": {
+                "given_name": "Max",
+                "family_name": "Mustermann",
+                "birthdate": "1956-01-28"
+            }
+        }
+    }
+
+    vc = VerifiedClaims(**resp["verified_claims"])
+    vc.verify()
+    assert isinstance(vc["verification"]["evidence"][0] , Document)
+    evidence = vc["verification"]["evidence"][0]
+    assert len(evidence["attachments"]) == 2
+    assert isinstance(evidence["attachments"][0], EmbeddedAttachment)
+
+def test_5_1_2_2():
+    resp = {
+        "verified_claims": {
+            "verification": {
+                "trust_framework": "eidas",
+                "assurance_level": "substantial",
+                "evidence": [
+                    {
+                        "type": "document",
+                        "method": "pipp",
+                        "time": "2012-04-22T11:30Z",
+                        "document_details": {
+                            "type": "idcard",
+                            "issuer": {
+                                "name": "Stadt Augsburg",
+                                "country": "DE"
+                            },
+                            "document_number": "53554554",
+                            "date_of_issuance": "2010-03-23",
+                            "date_of_expiry": "2020-03-22"
+                        },
+                        "attachments": [
+                            {
+                                "desc": "Front of id document",
+                                "digest": {
+                                    "alg": "SHA-256",
+                                    "value": "nVW19w6EVNWNQ8fmRCxrxqw4xLUs+T8eI0tpjZo820Bc"
+                                },
+                                "url": "https://example.com/attachments/pGL9yz4hZQ",
+                                "access_token": "ksj3n283dke",
+                                "expires_in": 30
+                            },
+                            {
+                                "desc": "Back of id document",
+                                "digest": {
+                                    "alg": "SHA-256",
+                                    "value": "2QcDeLJ/qeXJn4nP+v3nijMgxOBCT9WJaV0LjRS4aT8"
+                                },
+                                "url": "https://example.com/attachments/4Ag8IpOf95"
+                            },
+                            {
+                                "desc": "Signed document",
+                                "digest": {
+                                    "alg": "SHA-256",
+                                    "value": "i3O7U79LiyKmmesIgULKT2Q8LAxNO0CpwJVcbepaYf8"
+                                },
+                                "url": "https://example.com/attachments/4Ag8IpOf95",
+                                "access_token": None,
+                                "expires_in": 30
+                            }
+                        ]
+                    }
+                ]
+            },
+            "claims": {
+                "given_name": "Max",
+                "family_name": "Mustermann",
+                "birthdate": "1956-01-28"
+            }
+        }
+    }
+
+    vc = VerifiedClaims(**resp["verified_claims"])
+    vc.verify()
+    assert isinstance(vc["verification"]["evidence"][0] , Document)
+    evidence = vc["verification"]["evidence"][0]
+    assert len(evidence["attachments"]) == 3
+    assert isinstance(evidence["attachments"][0], ExternalAttachment)

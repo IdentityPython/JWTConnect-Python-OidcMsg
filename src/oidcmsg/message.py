@@ -78,6 +78,9 @@ class Message(MutableMapping):
         for key, val in self.c_default.items():
             self._dict.setdefault(key, val)
 
+    def set_value(self, key, val):
+        self._dict[key] = val
+
     def to_urlencoded(self, lev=0):
         """
         Creates a string using the application/x-www-form-urlencoded format
@@ -604,6 +607,8 @@ class Message(MutableMapping):
                     if required:
                         raise MissingRequiredAttribute("%s" % attribute)
                     continue
+                elif isinstance(val,  Message):
+                    val.verify(**kwargs)
 
             try:
                 _allowed_val = _allowed[attribute]
@@ -984,7 +989,6 @@ REQUIRED_LIST_OF_SP_SEP_STRINGS = (
     False,
 )
 SINGLE_OPTIONAL_JSON = (dict, False, json_serializer, json_deserializer, False)
-
 SINGLE_REQUIRED_JSON = (dict, True, json_serializer, json_deserializer, False)
 
 REQUIRED = [SINGLE_REQUIRED_STRING, REQUIRED_LIST_OF_STRINGS, REQUIRED_LIST_OF_SP_SEP_STRINGS]
