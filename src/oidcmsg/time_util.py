@@ -26,6 +26,7 @@ import sys
 import time
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_WITH_FRAGMENT = re.compile("^(\d{4,4}-\d{2,2}-\d{2,2}T\d{2,2}:\d{2,2}:\d{2,2})\.\d*Z$")
@@ -351,7 +352,7 @@ def later_than(after, before):
 
 
 def utc_time_sans_frac():
-    now_timestampt = int(datetime.utcnow().timestamp())
+    now_timestampt = int(datetime.now(timezone.utc).timestamp())
     return now_timestampt
 
 
