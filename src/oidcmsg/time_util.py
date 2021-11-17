@@ -182,7 +182,8 @@ def time_in_a_while(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0
     :return: datetime instance using UTC time
     """
     delta = timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks)
-    return datetime.utcnow() + delta
+    res = datetime.now(timezone.utc) + delta
+    return res.replace(tzinfo=None)
 
 
 def time_a_while_ago(
@@ -201,7 +202,8 @@ def time_a_while_ago(
     :return: datetime instance using UTC time
     """
     delta = timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks)
-    return datetime.utcnow() - delta
+    res = datetime.now(timezone.utc) - delta
+    return res.replace(tzinfo=None)
 
 
 def in_a_while(
