@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Implements some usefull functions when dealing with validity of
+Implements some useful functions when dealing with validity of
 different types of information.
 """
 
