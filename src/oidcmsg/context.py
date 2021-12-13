@@ -35,6 +35,9 @@ class OidcContext(ImpExp):
             if "keys" in conf:
                 keys_args = {k: v for k, v in conf["keys"].items() if k != "uri_path"}
                 _keyjar = init_key_jar(**keys_args)
+            elif "key_conf" in conf:
+                keys_args = {k: v for k, v in conf["key_conf"].items() if k != "uri_path"}
+                _keyjar = init_key_jar(**keys_args)
             else:
                 _keyjar = KeyJar()
                 if "jwks" in conf:

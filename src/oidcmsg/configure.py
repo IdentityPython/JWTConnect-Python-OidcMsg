@@ -9,7 +9,7 @@ from typing import Optional
 from oidcmsg.logging import configure_logging
 from oidcmsg.util import load_yaml_config
 
-DEFAULT_FILE_ATTRIBUTE_NAMES = ['server_key', 'server_cert', 'filename',
+DEFAULT_FILE_ATTRIBUTE_NAMES = ['server_key', 'server_cert', 'filename', 'template_dir',
                                 'private_path', 'public_path', 'db_file', 'jwks_file']
 
 DEFAULT_DIR_ATTRIBUTE_NAMES = ['template_dir']
