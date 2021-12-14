@@ -15,17 +15,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Implements some usefull functions when dealing with validity of
+Implements some useful functions when dealing with validity of
 different types of information.
 """
 
 import calendar
-import logging
-import re
-import sys
-import time
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
+import logging
+import re
+import time
 
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_WITH_FRAGMENT = re.compile("^(\d{4,4}-\d{2,2}-\d{2,2}T\d{2,2}:\d{2,2}:\d{2,2})\.\d*Z$")
@@ -181,7 +181,8 @@ def time_in_a_while(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0
     :return: datetime instance using UTC time
     """
     delta = timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks)
-    return datetime.utcnow() + delta
+    res = datetime.now(timezone.utc) + delta
+    return res.replace(tzinfo=None)
 
 
 def time_a_while_ago(
@@ -200,7 +201,8 @@ def time_a_while_ago(
     :return: datetime instance using UTC time
     """
     delta = timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks)
-    return datetime.utcnow() - delta
+    res = datetime.now(timezone.utc) - delta
+    return res.replace(tzinfo=None)
 
 
 def in_a_while(
@@ -350,8 +352,8 @@ def later_than(after, before):
     return after >= before
 
 
-def utc_time_sans_frac():
-    now_timestampt = int(datetime.utcnow().timestamp())
+def utc_time_sans_frac():  # MUST be the same as utc_time_sans_frac in cryptojwt
+    now_timestampt = int(datetime.now(timezone.utc).timestamp())
     return now_timestampt
 
 
