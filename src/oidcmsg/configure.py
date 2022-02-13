@@ -105,7 +105,7 @@ class Base(dict):
             return default
 
     def __setattr__(self, key, value):
-        if key in self:
+        if key in self and self.key:
             raise KeyError('{} has already been set'.format(key))
         super(Base, self).__setitem__(key, value)
 
