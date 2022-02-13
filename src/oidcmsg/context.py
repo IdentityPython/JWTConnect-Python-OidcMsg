@@ -5,7 +5,6 @@ from cryptojwt import KeyJar
 from cryptojwt.key_jar import init_key_jar
 
 from oidcmsg.impexp import ImpExp
-from oidcmsg.message import Message
 
 
 def add_issuer(conf, issuer):
