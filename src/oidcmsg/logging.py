@@ -1,10 +1,12 @@
 """Common logging functions"""
-import logging
+
 import os
+import logging
 from logging.config import dictConfig
 from typing import Optional
 
 import yaml
+
 
 LOGGING_CONF = 'logging.yaml'
 
@@ -38,7 +40,7 @@ def configure_logging(debug: Optional[bool] = False,
         config_source = 'dictionary'
     elif filename is not None and os.path.exists(filename):
         with open(filename, "rt") as file:
-            config_dict = yaml.safe_load(file)
+            config_dict = yaml.load(file)
         config_source = 'file'
     else:
         config_dict = LOGGING_DEFAULT

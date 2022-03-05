@@ -5,11 +5,10 @@ from collections.abc import MutableMapping
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
 
-from cryptojwt.jwe.jwe import JWE
 from cryptojwt.jwe.jwe import factory as jwe_factory
-from cryptojwt.jws.exception import NoSuitableSigningKeys
-from cryptojwt.jws.jws import JWS
+from cryptojwt.jwe.jwe import JWE
 from cryptojwt.jws.jws import factory as jws_factory
+from cryptojwt.jws.jws import JWS
 from cryptojwt.utils import as_unicode
 
 from oidcmsg.exception import DecodeError

@@ -2,6 +2,7 @@ import importlib
 import json
 import logging
 import os
+import sys
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -51,19 +52,29 @@ def add_base_path(conf: dict, base_path: str, attributes: List[str], attribute_t
     return conf
 
 
-def set_domain_and_port(conf: dict, uris: List[str], domain: str, port: int):
-    for key, val in conf.items():
-        if key in uris:
-            if not val:
-                continue
+def _conv(val, domain, port):
+    if isinstance(val, str) and ("{domain}" in val or "{port}" in val):
+        return val.format(domain=domain, port=port)
 
-            if isinstance(val, list):
-                _new = [v.format(domain=domain, port=port) for v in val]
-            else:
-                _new = val.format(domain=domain, port=port)
-            conf[key] = _new
+    return val
+
+def set_domain_and_port(conf: dict, domain: str, port: int):
+    update = {}
+    for key, val in conf.items():
+        if not val:
+            continue
+
+        if isinstance(val, list):
+            _new = [_conv(v, domain=domain, port=port) for v in val]
         elif isinstance(val, dict):
-            conf[key] = set_domain_and_port(val, uris, domain, port)
+            _new = set_domain_and_port(val, domain, port)
+        else:
+            _new = _conv(val, domain=domain, port=port)
+
+        if _new != val:
+            update[key] = _new
+    if update:
+        conf.update(update)
     return conf
 
 
@@ -71,7 +82,6 @@ class Base(dict):
     """ Configuration base class """
 
     parameter = {}
-    uris = ["issuer", "base_url"]
 
     def __init__(self,
                  conf: Dict,
@@ -96,7 +106,7 @@ class Base(dict):
         self.domain = domain or conf.get("domain", "127.0.0.1")
         self.port = port or conf.get("port", 80)
 
-        self.conf = set_domain_and_port(conf, self.uris, self.domain, self.port)
+        self.conf = set_domain_and_port(conf, self.domain, self.port)
 
     def __getattr__(self, item, default=None):
         if item in self:
@@ -231,6 +241,7 @@ def create_from_config_file(cls,
     elif filename.endswith(".py"):
         head, tail = os.path.split(filename)
         tail = tail[:-3]
+        sys.path.append(head)
         module = importlib.import_module(tail)
         _cnf = getattr(module, "CONFIG")
     else:
