@@ -3,9 +3,10 @@ import json
 from urllib.parse import parse_qs
 from urllib.parse import urlparse
 
-import pytest
 from cryptojwt.key_jar import build_keyjar
+import pytest
 
+from oidcmsg import verified_claim_name
 from oidcmsg.exception import MissingRequiredAttribute
 from oidcmsg.message import DecodeError
 from oidcmsg.message import json_deserializer
@@ -17,9 +18,10 @@ from oidcmsg.oauth2 import AuthorizationErrorResponse
 from oidcmsg.oauth2 import AuthorizationRequest
 from oidcmsg.oauth2 import AuthorizationResponse
 from oidcmsg.oauth2 import CCAccessTokenRequest
+from oidcmsg.oauth2 import JWTSecuredAuthorizationRequest
+from oidcmsg.oauth2 import ROPCAccessTokenRequest
 from oidcmsg.oauth2 import RefreshAccessTokenRequest
 from oidcmsg.oauth2 import ResponseMessage
-from oidcmsg.oauth2 import ROPCAccessTokenRequest
 from oidcmsg.oauth2 import TokenErrorResponse
 from oidcmsg.oauth2 import TokenExchangeRequest
 from oidcmsg.oauth2 import TokenExchangeResponse
@@ -42,16 +44,11 @@ keym = [
 ]
 
 KEYJAR = build_keyjar(keys)
+KEYJAR.import_jwks(KEYJAR.export_jwks(private=True), "issuer")
+
 IKEYJAR = build_keyjar(keys)
 IKEYJAR.import_jwks(IKEYJAR.export_jwks(private=True), "issuer")
 del IKEYJAR[""]
-
-KEYJARS = {}
-for iss in ["A", "B", "C"]:
-    _kj = build_keyjar(keym)
-    _kj.import_jwks(_kj.export_jwks(private=True), iss)
-    del _kj[""]
-    KEYJARS[iss] = _kj
 
 
 def url_compare(url1, url2):
@@ -367,6 +364,59 @@ class TestAuthorizationRequest(object):
         assert _eq(are["scope"], ["openid", "foxtrot"])
 
 
+class TestMerge:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.req_obj = {
+            "scope": ["openid", "fox"],
+            "state": "id-b0be8bb64118c3ec5f70093a1174b039",
+            "redirect_uri": "http://localhost:8087authz",
+            "response_type": ["code id_token"],
+            "response_mode": "form_post",
+            "client_id": "a1b2c3"
+        }
+
+        self.req_obj = AuthorizationRequest(
+            scope=["openid"],
+            state="id-b0be8bb64118c3ec5f70093a1174b039",
+            redirect_uri="http://localhost:8087authz",
+            response_type=["code"],
+            client_id="a1b2c3"
+
+        )
+
+    def test_merge_strict(self):
+        _areq = AuthorizationRequest(**self.req_obj)
+        # Some modifications
+        _areq["scope"] = ["openid", "fox"]
+        _areq["response_mode"] = "form_post"
+
+        _areq.merge(self.req_obj)  # strict is default
+        assert "response_mode" not in _areq
+        assert _areq["scope"] == ["openid"]
+
+    def test_merge_lax(self):
+        _areq = AuthorizationRequest(**self.req_obj)
+        # Some modifications
+        _areq["scope"] = ["openid", "fox"]
+        _areq["response_mode"] = "form_post"
+        _areq.merge(self.req_obj, treatement="lax")
+        assert _areq
+        assert "response_mode" in _areq
+        assert _areq["scope"] == ["openid"]
+
+    def test_merge_whitelist(self):
+        _areq = AuthorizationRequest(**self.req_obj)
+        # Some modifications
+        _areq["scope"] = ["openid", "fox"]
+        _areq["response_mode"] = "form_post"
+        _areq["extra"] = "lopp"
+        _areq.merge(self.req_obj, treatement="whitelist", whitelist=["extra"])
+        assert "response_mode" not in _areq
+        assert _areq["scope"] == ["openid"]
+        assert "extra" in _areq
+
+
 class TestAuthorizationErrorResponse(object):
     def test_init(self):
         aer = AuthorizationErrorResponse(error="access_denied", state="xyz")
@@ -616,3 +666,21 @@ def test_set_default():
     assert list(ar.keys()) == []
     ar.set_defaults()
     assert "grant_type" in ar
+
+
+class TestJWTSecuredAuthorizationRequest:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.auth_req = {
+            "response_type": ["code"],
+            "client_id": "foobar",
+            "redirect_uri": "http://foobar.example.com/oaclient",
+            "state": "cold"
+        }
+
+    def test_1(self):
+        _req = JWTSecuredAuthorizationRequest(**self.auth_req)
+        _keys = KEYJAR.get_signing_key()
+        _req["request"] = _req.to_jwt(key=_keys, algorithm="RS256")
+        assert _req.verify(keyjar=KEYJAR)
+        assert verified_claim_name("request") in _req

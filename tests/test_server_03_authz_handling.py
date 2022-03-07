@@ -1,8 +1,12 @@
+from oidcmsg.server import do_endpoints
 import pytest
 
 from oidcmsg.oidc import AuthorizationRequest
 from oidcmsg.server import Server
 from oidcmsg.server.authn_event import create_authn_event
+from oidcmsg.server.authz import Implicit
+from oidcmsg.server.authz import factory
+from oidcmsg.server.endpoint import Endpoint
 from oidcmsg.server.session.grant import Grant
 
 KEYDEFS = [
@@ -42,10 +46,29 @@ AREQ_3 = AuthorizationRequest(
     },
 )
 
+
+class Endpoint_1(Endpoint):
+    name = "userinfo"
+
+
 conf = {
     "issuer": "https://example.com/",
     "template_dir": "template",
     "keys": {"uri_path": "static/jwks.json", "key_defs": KEYDEFS, "read_only": True},
+    "endpoint": {
+        "userinfo": {
+            "path": "userinfo",
+            "class": Endpoint_1,
+            "kwargs": {
+                "client_authn_method": [
+                    "private_key_jwt",
+                    "client_secret_jwt",
+                    "client_secret_post",
+                    "client_secret_basic",
+                ]
+            }
+        }
+    },
     "authz": {
         "class": "oidcmsg.server.authz.AuthzHandling",
         "kwargs": {
@@ -103,6 +126,7 @@ class TestEndpoint(object):
         server.endpoint_context.keyjar.add_symmetric(
             "client_1", "hemligtochintekort", ["sig", "enc"]
         )
+        server.endpoint = do_endpoints(conf, server.server_get)
         self.session_manager = server.endpoint_context.session_manager
         self.user_id = USER_ID
         self.server = server
@@ -156,3 +180,12 @@ class TestEndpoint(object):
             "id_token",
         ]
         assert _usage_rules["refresh_token"] == {}
+
+    def test_factory(self):
+        _mod = factory('Implicit', server_get=self.server.server_get)
+        assert isinstance(_mod, Implicit)
+
+    def test_call(self):
+        sid = self._create_session(AREQ)
+        _grant = self.authz(sid, AREQ)
+        assert isinstance(_grant, Grant)

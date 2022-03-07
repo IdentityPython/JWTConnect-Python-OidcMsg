@@ -62,6 +62,7 @@ def construct_endpoint_info(default_capabilities, **kwargs):
                     "Proposed set of values outside set of permitted, "
                     f"'{attr}' sould be {_permitted} it's instead {_proposal}"
                 )
+
             _info[attr] = _proposal
         else:
             if default_val is not None:
@@ -80,7 +81,7 @@ def construct_endpoint_info(default_capabilities, **kwargs):
             for i in _info[attr]:
                 if i in WEAK_ALGS:
                     logger.warning(
-                        f"Found {i} in {attr}. This is a weak algorithm "
+                        f"Found '{i}' in {attr}. This is a weak algorithm "
                         "that MUST not be used in production!"
                     )
     return _info

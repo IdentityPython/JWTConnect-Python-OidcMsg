@@ -1,14 +1,16 @@
 import abc
 import datetime
 import json
+from typing import List
+from typing import Optional
 
 from cryptojwt.utils import importer
 
+from oidcmsg.message import Message
 from oidcmsg.message import OPTIONAL_MESSAGE
 from oidcmsg.message import SINGLE_OPTIONAL_JSON
 from oidcmsg.message import SINGLE_OPTIONAL_STRING
 from oidcmsg.message import SINGLE_REQUIRED_STRING
-from oidcmsg.message import Message
 from oidcmsg.message import msg_deser
 from oidcmsg.message import msg_list_ser
 from oidcmsg.message import msg_ser
@@ -48,11 +50,11 @@ def place_of_birth_deser(val, sformat="json"):
 SINGLE_OPTIONAL_PLACE_OF_BIRTH = (PlaceOfBirth, False, msg_ser_json, place_of_birth_deser, False)
 
 # YYYY-MM-DDThh:mm:ss±hh
-TIME_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
-DATE_FORMAT = "%Y-%m-%d"
+TIME_FORMATS = ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M%z", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%MZ"]
+DATE_FORMATS = ["%Y-%m-%d"]
 
 
-def to_iso8601_2004(val=0, format=TIME_FORMAT):
+def to_iso8601_2004(val=0, format=TIME_FORMATS[0]):
     """
     :param val: integer/float/datetime.datetime
     :return: A string following the DATE_FORMAT format
@@ -74,29 +76,40 @@ def to_iso8601_2004(val=0, format=TIME_FORMAT):
     return d.replace(tzinfo=ltz).strftime(format)
 
 
-def from_iso8601_2004(isotime, format=TIME_FORMAT):
+def from_iso8601_2004(isotime: str,
+                      formats: Optional[List[str]] = ""):
     """
     :param isotime: A string following the DATE_FORMAT format
     :return: A time stamp (int)
     """
-    d = datetime.datetime.strptime(isotime, format)
-    return d.timestamp()
+    if not formats:
+        formats = TIME_FORMATS
+
+    for _format in formats:
+        try:
+            d = datetime.datetime.strptime(isotime, _format)
+        except ValueError:
+            continue
+        else:
+            return d.timestamp()
+
+    raise ValueError()
 
 
 def to_iso8601_2004_time(val=0):
-    return to_iso8601_2004(val, format=TIME_FORMAT)
+    return to_iso8601_2004(val, format=TIME_FORMATS[0])
 
 
 def to_iso8601_2004_date(val=0):
-    return to_iso8601_2004(val, format=DATE_FORMAT)
+    return to_iso8601_2004(val, format=DATE_FORMATS[0])
 
 
 def from_iso8601_2004_time(val):
-    return from_iso8601_2004(val, format=TIME_FORMAT)
+    return from_iso8601_2004(val, formats=TIME_FORMATS)
 
 
 def from_iso8601_2004_date(val):
-    return from_iso8601_2004(val, format=DATE_FORMAT)
+    return from_iso8601_2004(val, formats=DATE_FORMATS)
 
 
 def time_stamp_ser(val, sformat="", lev=0):
@@ -108,7 +121,8 @@ def time_stamp_ser(val, sformat="", lev=0):
     elif isinstance(val, float):
         return to_iso8601_2004_time(int(val))
     elif isinstance(val, str):
-        return to_iso8601_2004_time(int(val))
+        _ = from_iso8601_2004(val)  # verify that it is a proper string
+        return val
     else:
         raise ValueError("Wrong type of value")
 
@@ -267,7 +281,7 @@ def evidence_list_deser(val, sformat="urlencoded", lev=0):
 OPTIONAL_EVIDENCE_LIST = ([Evidence], False, msg_list_ser, evidence_list_deser, True)
 
 
-class IdDocument(Evidence):
+class Document(Evidence):
     c_param = Evidence.c_param.copy()
     c_param.update(
         {
@@ -278,15 +292,18 @@ class IdDocument(Evidence):
         }
     )
 
+    def verify(self, **kwargs):
+        Message.verify(self)
 
-def id_document_deser(val, sformat="urlencoded"):
+
+def document_deser(val, sformat="urlencoded"):
     if isinstance(val, Message):
         return val
     elif sformat in ["dict", "json"]:
         if not isinstance(val, str):
             val = json.dumps(val)
             sformat = "json"
-    return IdDocument().deserialize(val, sformat)
+    return Document().deserialize(val, sformat)
 
 
 REQUIRED_ID_DOCUMENT = (IdDocument, True, msg_ser, id_document_deser, False)

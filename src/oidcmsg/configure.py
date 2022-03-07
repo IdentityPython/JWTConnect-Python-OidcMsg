@@ -189,7 +189,7 @@ class Base(dict):
             if dir_attributes:
                 add_base_path(conf, base_path, dir_attributes, attribute_type="dir")
             if isinstance(conf, dict):
-                set_domain_and_port(conf, self.uris, domain=domain, port=port)
+                set_domain_and_port(conf, domain=domain, port=port)
 
 
 class Configuration(Base):

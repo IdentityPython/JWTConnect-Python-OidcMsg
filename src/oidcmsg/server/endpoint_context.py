@@ -5,15 +5,12 @@ from typing import Callable
 from typing import Optional
 from typing import Union
 
-import requests
 from cryptojwt import KeyJar
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
-from oidcmsg.server.session.manager import create_session_manager
+import requests
 
 from oidcmsg.context import OidcContext
-
-from oidcmsg.util import rndstr
 from oidcmsg.server.configure import OPConfiguration
 from oidcmsg.server.scopes import SCOPE2CLAIMS
 from oidcmsg.server.scopes import Scopes
@@ -21,6 +18,7 @@ from oidcmsg.server.session.manager import SessionManager
 from oidcmsg.server.template_handler import Jinja2TemplateHandler
 from oidcmsg.server.util import get_http_params
 from oidcmsg.util import importer
+from oidcmsg.util import rndstr
 
 logger = logging.getLogger(__name__)
 

@@ -3,18 +3,17 @@ from typing import Callable
 from typing import Optional
 from unittest.mock import MagicMock
 
-import pytest
 from cryptojwt.jws.exception import NoSuitableSigningKeys
 from cryptojwt.jwt import JWT
-from cryptojwt.key_jar import build_keyjar
 from cryptojwt.key_jar import KeyJar
+from cryptojwt.key_jar import build_keyjar
 from cryptojwt.utils import as_bytes
 from cryptojwt.utils import as_unicode
+import pytest
 
 from oidcmsg.client.defaults import JWT_BEARER
-from oidcmsg.server import do_endpoints
 from oidcmsg.server import Server
-from oidcmsg.server.client_authn import basic_authn
+from oidcmsg.server import do_endpoints
 from oidcmsg.server.client_authn import BearerBody
 from oidcmsg.server.client_authn import BearerHeader
 from oidcmsg.server.client_authn import ClientSecretBasic
@@ -22,15 +21,11 @@ from oidcmsg.server.client_authn import ClientSecretJWT
 from oidcmsg.server.client_authn import ClientSecretPost
 from oidcmsg.server.client_authn import JWSAuthnMethod
 from oidcmsg.server.client_authn import PrivateKeyJWT
+from oidcmsg.server.client_authn import basic_authn
 from oidcmsg.server.client_authn import verify_client
 from oidcmsg.server.endpoint import Endpoint
 from oidcmsg.server.exception import ClientAuthenticationError
 from oidcmsg.server.exception import InvalidToken
-
-# from oidcop.oidc.authorization import Authorization
-# from oidcop.oidc.registration import Registration
-# from oidcop.oidc.token import Token
-# from oidcop.oidc.userinfo import UserInfo
 
 KEYDEFS = [
     {"type": "RSA", "key": "", "use": ["sig"]},
@@ -514,7 +509,8 @@ class TestVerify:
     def test_verify_client_client_secret_post(self):
         request = {"client_id": client_id, "client_secret": client_secret}
         res = verify_client(
-            self.endpoint_context, request, endpoint=self.server.server_get("endpoint", "token"),
+            self.endpoint_context, request,
+            endpoint=self.server.server_get("endpoint", "endpoint_1"),
         )
         assert set(res.keys()) == {"method", "client_id"}
         assert res["method"] == "client_secret_post"
@@ -556,7 +552,8 @@ class TestVerify:
     # def test_verify_client_client_secret_post(self):
     #     request = {"client_id": client_id, "client_secret": client_secret}
     #     res = verify_client(
-    #         self.endpoint_context, request, endpoint=self.server.server_get("endpoint", "endpoint_1"),
+    #         self.endpoint_context, request, endpoint=self.server.server_get("endpoint",
+    #         "endpoint_1"),
     #     )
     #     assert set(res.keys()) == {"method", "client_id"}
     #     assert res["method"] == "client_secret_post"

@@ -359,7 +359,7 @@ class ClientSecretJWT(JWSAuthnMethod):
             **kwargs
     ):
         res = super()._verify(
-            endpoint_context, request=request, key_type="client_secret", **kwargs
+            endpoint_context, request=request, key_type="client_secret", endpoint=endpoint, **kwargs
         )
         # Verify that a HS alg was used
         return res
@@ -480,9 +480,7 @@ def verify_client(
         allowed_methods = list(methods.keys())
 
     for _method in (methods[meth] for meth in allowed_methods):
-        if not _method.is_usable(
-                request=request, authorization_token=authorization_token
-        ):
+        if not _method.is_usable(request=request, authorization_token=authorization_token):
             continue
         try:
             auth_info = _method.verify(

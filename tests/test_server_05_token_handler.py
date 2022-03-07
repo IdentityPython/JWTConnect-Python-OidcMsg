@@ -15,7 +15,7 @@ from oidcmsg.server.token.id_token import IDToken
 from oidcmsg.server.token.jwt_token import JWTToken
 from oidcmsg.time_util import utc_time_sans_frac
 
-from oidcop.server import Server
+from oidcmsg.server import Server
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
