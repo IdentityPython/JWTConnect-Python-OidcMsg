@@ -1,10 +1,13 @@
-from cryptojwt.key_jar import build_keyjar
 import pytest
+from cryptojwt.key_jar import build_keyjar
 
 from oidcmsg.server import do_endpoints
 from oidcmsg.server import get_capabilities
 from oidcmsg.server.endpoint import Endpoint
 from oidcmsg.server.endpoint_context import EndpointContext
+from oidcmsg.server.exception import OidcEndpointError
+from oidcmsg.server.session.manager import create_session_manager
+from oidcmsg.server.util import allow_refresh_token
 from . import full_path
 
 KEYDEFS = [
@@ -30,6 +33,15 @@ conf = {
     "issuer": "https://example.com/",
     "template_dir": "template",
     "keys": {"uri_path": "static/jwks.json", "key_defs": KEYDEFS, "read_only": True},
+    "capabilities": {
+        "subject_types_supported": ["public", "pairwise"],
+        "grant_types_supported": [
+            "authorization_code",
+            "implicit",
+            "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "refresh_token",
+        ],
+    },
     "endpoint": {
         "userinfo": {
             "path": "userinfo",
@@ -93,9 +105,40 @@ class TestEndpointContext:
         assert set(pi.keys()) == {'claim_types_supported',
                                   'claims_supported',
                                   'client_authn_method',
+                                  'grant_types_supported',
                                   'issuer',
                                   'scopes_supported',
+                                  'subject_types_supported',
                                   'userinfo_encryption_alg_values_supported',
                                   'userinfo_encryption_enc_values_supported',
                                   'userinfo_signing_alg_values_supported',
                                   'version'}
+
+    def test_allow_refresh_token(self):
+        self.endpoint_context.session_manager = create_session_manager(
+            self.server_get,
+            self.endpoint_context.th_args,
+            sub_func=self.endpoint_context._sub_func,
+            conf=conf,
+        )
+
+        assert allow_refresh_token(self.endpoint_context)
+
+        # Have the software but is not expected to use it.
+        self.endpoint_context.conf["capabilities"]["grant_types_supported"] = [
+            "authorization_code",
+            "implicit",
+            "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        ]
+        assert allow_refresh_token(self.endpoint_context) is False
+
+        # Don't have the software but are expected to use it.
+        self.endpoint_context.conf["capabilities"]["grant_types_supported"] = [
+            "authorization_code",
+            "implicit",
+            "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "refresh_token"
+        ]
+        del self.endpoint_context.session_manager.token_handler.handler["refresh_token"]
+        with pytest.raises(OidcEndpointError):
+            assert allow_refresh_token(self.endpoint_context) is False

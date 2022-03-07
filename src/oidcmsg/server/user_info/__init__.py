@@ -41,8 +41,7 @@ class UserInfo(object):
     def filter(self, userinfo, user_info_claims=None):
         """
         Return only those claims that are asked for.
-        It's a best effort task; if essential claims are not present
-        no error is flagged.
+        It's a best effort task; if essential claims are not present, no errors is flagged.
 
         :param userinfo: A dictionary containing the available info for one user
         :param user_info_claims: A dictionary specifying the asked for claims

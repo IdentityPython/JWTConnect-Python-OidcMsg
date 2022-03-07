@@ -121,3 +121,21 @@ class TestAFS(object):
         b_copy = ImpExpTest().load(dump)
         assert b_copy
         assert isinstance(b_copy.dict, dict)
+
+    def test_get(self):
+        abf = AbstractFileSystem(fdir=full_path("afs"), value_conv='oidcmsg.util.JSON')
+        # add a client
+        abf['client_1'] = CLIENT_1
+        # add another one
+        abf['client_2'] = CLIENT_2
+
+        val = abf['client_2']
+        assert val == CLIENT_2
+
+        del abf['client_2']
+
+        assert set(abf.keys()) == {"client_1"}
+
+        abf.clear()
+        assert set(abf.keys()) == set()
+
