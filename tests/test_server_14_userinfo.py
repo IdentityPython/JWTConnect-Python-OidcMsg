@@ -5,6 +5,8 @@ from oidcmsg.oidc import OpenIDRequest
 from oidcmsg.server.scopes import convert_scopes2claims
 from oidcmsg.server.scopes import SCOPE2CLAIMS
 from oidcmsg.server.session.claims import STANDARD_CLAIMS
+from oidcmsg.server.user_info import dict_subset
+from oidcmsg.server.user_info import UserInfo
 
 CLAIMS = {
     "userinfo": {
@@ -140,3 +142,29 @@ def test_custom_scopes():
                "sub",
                "eduperson_scoped_affiliation",
            }
+
+
+def test_dict_subset_true():
+    a = {"foo": 1, "bar": 2}
+
+    assert dict_subset(a, {"foo": 1, "bar": 2, "xty": 3})
+    assert dict_subset(a, {"foo": 1, "bar": [2, 3], "xty": 3})
+
+    a = {"foo": [1, 3], "bar": 2}
+    assert dict_subset(a, {"foo": [1, 3], "bar": [2, 3], "xty": 3})
+
+
+def test_dict_subset_false():
+    a = {"foo": 1, "bar": 2}
+
+    assert dict_subset(a, {"foo": 1, "xty": 3}) is False
+    assert dict_subset(a, {"foo": 1, "bar": [3, 4], "xty": 3}) is False
+
+    a = {"foo": [1, 3], "bar": 2}
+    assert dict_subset(a, {"foo": [2, 3], "bar": [2, 3]}) is False
+
+
+def test_userinfo():
+    ui = UserInfo()
+    res = ui.filter(USERINFO_DB["diana"], CLAIMS["userinfo"])
+    assert set(res.keys()) == {"given_name", "nickname", "email", "email_verified"}
