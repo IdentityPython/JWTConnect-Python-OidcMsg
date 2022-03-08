@@ -11,7 +11,7 @@ from cryptojwt.utils import as_bytes
 from cryptojwt.utils import as_unicode
 import pytest
 
-from oidcmsg.client.defaults import JWT_BEARER
+from oidcmsg.defaults import JWT_BEARER
 from oidcmsg.server import Server
 from oidcmsg.server import do_endpoints
 from oidcmsg.server.client_authn import BearerBody

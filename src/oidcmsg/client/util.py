@@ -1,7 +1,7 @@
 """Utilities"""
-import logging
 from http.cookiejar import Cookie
 from http.cookiejar import http2time
+import logging
 from urllib.parse import parse_qs
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
@@ -19,7 +19,7 @@ try:
 except ImportError:
     import random as rnd
 
-from .defaults import BASECHR
+from oidcmsg.defaults import BASECHR
 from .exception import TimeFormatError
 from .exception import WrongContentType
 

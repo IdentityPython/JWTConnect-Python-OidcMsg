@@ -6,7 +6,7 @@ from urllib.parse import urlsplit
 
 import pytest
 
-from oidcmsg.client.defaults import BASECHR
+from oidcmsg.defaults import BASECHR
 from oidcmsg.client.exception import WrongContentType
 from oidcmsg.client.util import get_deserialization_method
 from oidcmsg.client.util import get_http_body

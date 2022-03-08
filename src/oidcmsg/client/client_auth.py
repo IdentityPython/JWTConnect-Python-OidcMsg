@@ -7,16 +7,16 @@ from cryptojwt.exception import MissingKey
 from cryptojwt.exception import UnsupportedAlgorithm
 from cryptojwt.jws.jws import SIGNER_ALGS
 from cryptojwt.jws.utils import alg2keytype
+
+from oidcmsg.defaults import DEF_SIGN_ALG
+from oidcmsg.defaults import JWT_BEARER
 from oidcmsg.message import VREQUIRED
 from oidcmsg.oauth2 import AccessTokenRequest
 from oidcmsg.oauth2 import SINGLE_OPTIONAL_STRING
 from oidcmsg.oidc import AuthnToken
 from oidcmsg.time_util import utc_time_sans_frac
 from oidcmsg.util import rndstr
-
 from .util import sanitize
-from .defaults import DEF_SIGN_ALG
-from .defaults import JWT_BEARER
 
 LOGGER = logging.getLogger(__name__)
 
