@@ -23,17 +23,17 @@ from oidcmsg.util import rndstr
 logger = logging.getLogger(__name__)
 
 
-def add_path(url: str, path: str) -> str:
-    if url.endswith("/"):
-        if path.startswith("/"):
-            return "{}{}".format(url, path[1:])
-
-        return "{}{}".format(url, path)
-
-    if path.startswith("/"):
-        return "{}{}".format(url, path)
-
-    return "{}/{}".format(url, path)
+# def add_path(url: str, path: str) -> str:
+#     if url.endswith("/"):
+#         if path.startswith("/"):
+#             return "{}{}".format(url, path[1:])
+#
+#         return "{}{}".format(url, path)
+#
+#     if path.startswith("/"):
+#         return "{}{}".format(url, path)
+#
+#     return "{}/{}".format(url, path)
 
 
 def init_user_info(conf, cwd: str):
