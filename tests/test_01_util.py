@@ -1,6 +1,7 @@
 from oidcmsg.util import add_path
 from oidcmsg.util import get_http_params
 from oidcmsg.util import load_yaml_config
+from oidcmsg.util import split_uri
 from . import full_path
 
 
@@ -35,3 +36,17 @@ def test_add_path():
 
 def test_load_yaml():
     _cnf = load_yaml_config(full_path("logging.yaml"))
+
+
+def test_split_uri():
+    a, b = split_uri("https://example.com")
+    assert a == "https://example.com"
+    assert b is None
+
+    a, b = split_uri("https://example.com?foo=bar&cue=ball")
+    assert a == "https://example.com"
+    assert b == {"foo": ["bar"], "cue": ["ball"]}
+
+    a, b = split_uri("https://example.com#foobar")
+    assert a == "https://example.com"
+    assert b is None

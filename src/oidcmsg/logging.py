@@ -7,6 +7,7 @@ from typing import Optional
 
 import yaml
 
+from oidcmsg.util import load_config_file
 
 LOGGING_CONF = 'logging.yaml'
 
@@ -39,8 +40,7 @@ def configure_logging(debug: Optional[bool] = False,
         config_dict = config
         config_source = 'dictionary'
     elif filename is not None and os.path.exists(filename):
-        with open(filename, "rt") as file:
-            config_dict = yaml.load(file)
+        config_dict = load_config_file(filename)
         config_source = 'file'
     else:
         config_dict = LOGGING_DEFAULT

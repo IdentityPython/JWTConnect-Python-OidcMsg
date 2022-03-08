@@ -8,6 +8,7 @@ from typing import List
 from typing import Optional
 
 from oidcmsg.logging import configure_logging
+from oidcmsg.util import load_config_file
 from oidcmsg.util import load_yaml_config
 
 DEFAULT_FILE_ATTRIBUTE_NAMES = ['server_key', 'server_cert', 'filename', 'template_dir',
@@ -57,6 +58,7 @@ def _conv(val, domain, port):
         return val.format(domain=domain, port=port)
 
     return val
+
 
 def set_domain_and_port(conf: dict, domain: str, port: int):
     update = {}
@@ -232,22 +234,7 @@ def create_from_config_file(cls,
                             port: Optional[int] = 0,
                             dir_attributes: Optional[List[str]] = None
                             ):
-    if filename.endswith(".yaml"):
-        """Load configuration as YAML"""
-        _cnf = load_yaml_config(filename)
-    elif filename.endswith(".json"):
-        _str = open(filename).read()
-        _cnf = json.loads(_str)
-    elif filename.endswith(".py"):
-        head, tail = os.path.split(filename)
-        tail = tail[:-3]
-        sys.path.append(head)
-        module = importlib.import_module(tail)
-        _cnf = getattr(module, "CONFIG")
-    else:
-        raise ValueError("Unknown file type")
-
-    return cls(_cnf,
+    return cls(load_config_file(filename),
                entity_conf=entity_conf,
                base_path=base_path, file_attributes=file_attributes,
                domain=domain, port=port, dir_attributes=dir_attributes)

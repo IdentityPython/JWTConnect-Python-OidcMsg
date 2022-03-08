@@ -1,13 +1,18 @@
+import importlib
 import json
+import os
 import secrets
+import sys
+from typing import List
+from typing import Union
 from urllib.parse import parse_qs
 from urllib.parse import quote_plus
 from urllib.parse import unquote_plus
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 
-from cryptojwt.utils import importer
 import yaml
+from cryptojwt.utils import importer
 
 
 def rndstr(size=16):
@@ -38,19 +43,39 @@ def load_yaml_config(filename):
     return config_dict
 
 
-# def split_uri(uri):
-#     p = urlsplit(uri)
-#
-#     if p.fragment:
-#         p = p._replace(fragment="")
-#
-#     if p.query:
-#         o = p._replace(query="")
-#         base = urlunsplit(o)
-#         return base, parse_qs(p.query)
-#     else:
-#         base = urlunsplit(p)
-#         return base, ""
+def load_config_file(filename):
+    if filename.endswith(".yaml"):
+        """Load configuration as YAML"""
+        _cnf = load_yaml_config(filename)
+    elif filename.endswith(".json"):
+        _str = open(filename).read()
+        _cnf = json.loads(_str)
+    elif filename.endswith(".py"):
+        head, tail = os.path.split(filename)
+        tail = tail[:-3]
+        sys.path.append(head)
+        module = importlib.import_module(tail)
+        _cnf = getattr(module, "CONFIG")
+    else:
+        raise ValueError("Unknown file type")
+
+    return _cnf
+
+
+def split_uri(uri: str) -> [str, Union[dict, None]]:
+    """ Removes fragment and separates the query part from the rest."""
+    p = urlsplit(uri)
+
+    if p.fragment:
+        p = p._replace(fragment="")
+
+    if p.query:
+        o = p._replace(query="")
+        base = urlunsplit(o)
+        return [base, parse_qs(p.query)]
+    else:
+        base = urlunsplit(p)
+        return [base, None]
 
 
 # Converters
