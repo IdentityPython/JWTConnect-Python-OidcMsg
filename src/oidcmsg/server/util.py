@@ -61,11 +61,11 @@ def build_endpoints(conf, server_get, issuer):
         _instance.endpoint_path = _path
         _instance.full_path = "{}/{}".format(_url, _path)
 
-        if _instance.endpoint_name:
-            try:
-                _instance.endpoint_info[_instance.endpoint_name] = _instance.full_path
-            except TypeError:
-                _instance.endpoint_info = {_instance.endpoint_name: _instance.full_path}
+        # if _instance.endpoint_name:
+        #     try:
+        #         _instance.endpoint_info[_instance.endpoint_name] = _instance.full_path
+        #     except TypeError:
+        #         _instance.endpoint_info = {_instance.endpoint_name: _instance.full_path}
 
         endpoint[_instance.name] = _instance
 
@@ -178,6 +178,29 @@ def allow_refresh_token(endpoint_context):
         raise OidcEndpointError('Grant type "refresh_token" lacks support')
 
     return False
+
+
+def execute(spec, **kwargs):
+    extra_args = spec.get("kwargs", {})
+    kwargs.update(extra_args)
+
+    _class = spec.get("class")
+    if _class:
+        # class can be a string (class path) or a class reference
+        if isinstance(_class, str):
+            return importer(_class)(**kwargs)
+        else:
+            return _class(**kwargs)
+    else:
+        _function = spec.get("func")
+        if _function:
+            if isinstance(_function, str):
+                _func = importer(_function)
+            else:
+                _func = _function
+            return _func(**kwargs)
+        else:
+            return kwargs
 
 
 # def sector_id_from_redirect_uris(uris):

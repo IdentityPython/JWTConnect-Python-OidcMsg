@@ -12,6 +12,7 @@ from oidcmsg.server.configure import ASConfiguration
 from oidcmsg.server.configure import OPConfiguration
 from oidcmsg.server.endpoint import Endpoint
 from oidcmsg.server.endpoint_context import EndpointContext
+from oidcmsg.server.endpoint_context import get_provider_capabilities
 from oidcmsg.server.endpoint_context import init_service
 from oidcmsg.server.endpoint_context import init_user_info
 from oidcmsg.server.session.manager import create_session_manager
@@ -22,41 +23,15 @@ from oidcmsg.server.util import build_endpoints
 
 
 def do_endpoints(conf, server_get):
-    endpoints = build_endpoints(conf["endpoint"], server_get=server_get, issuer=conf["issuer"])
-
-    _cap = conf.get("capabilities", {})
-
-    for endpoint, endpoint_instance in endpoints.items():
-        if endpoint in ["webfinger", "provider_config"]:
-            continue
-
-        if endpoint_instance.endpoint_info:
-            for key, val in endpoint_instance.endpoint_info.items():
-                if key not in _cap:
-                    _cap[key] = val
-
-    return endpoints
-
-
-def get_capabilities(conf, endpoints):
-    _cap = conf.get("capabilities", {})
-    if _cap is None:
-        _cap = {}
-
-    for endpoint, endpoint_instance in endpoints.items():
-        if endpoint in ["webfinger", "provider_config"]:
-            continue
-
-        if endpoint_instance.endpoint_info:
-            for key, val in endpoint_instance.endpoint_info.items():
-                if key not in _cap:
-                    _cap[key] = val
-
-    return _cap
+    _endpoints = conf.get("endpoint")
+    if _endpoints:
+        return build_endpoints(_endpoints, server_get=server_get, issuer=conf["issuer"])
+    else:
+        return {}
 
 
 class Server(ImpExp):
-    parameter = {"endpoint_context": EndpointContext}
+    parameter = {"endpoint": [Endpoint], "endpoint_context": EndpointContext}
 
     def __init__(
             self,
@@ -80,6 +55,12 @@ class Server(ImpExp):
 
         self.do_authentication(self.endpoint_context)
 
+        self.endpoint = do_endpoints(conf, self.server_get)
+        _cap = get_provider_capabilities(conf, self.endpoint)
+
+        self.endpoint_context.provider_info = self.endpoint_context.create_providerinfo(_cap)
+        self.endpoint_context.do_add_on(endpoints=self.endpoint)
+
         self.endpoint_context.session_manager = create_session_manager(
             self.server_get,
             self.endpoint_context.th_args,
@@ -92,6 +73,12 @@ class Server(ImpExp):
         self.endpoint_context.set_remember_token()
 
         self.do_client_authn_methods()
+        for endpoint_name, _ in self.endpoint.items():
+            self.endpoint[endpoint_name].server_get = self.server_get
+
+        _token_endp = self.endpoint.get("token")
+        if _token_endp:
+            _token_endp.allow_refresh = allow_refresh_token(self.endpoint_context)
 
         self.endpoint_context.claims_interface = init_service(
             conf["claims_interface"], self.server_get

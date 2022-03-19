@@ -21,6 +21,7 @@ from ..token import handler
 from ..token import UnknownToken
 from ..token import WrongTokenClass
 from ..token.handler import TokenHandler
+from ...item import DLDict
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,8 @@ class SessionManager(Database):
             if "ephemeral" not in sub_func:
                 self.sub_func["ephemeral"] = ephemeral_id
 
+        self.auth_req_id_map = {}
+
     def load_key(self):
         """returns the original key assigned in init"""
         return self._key
@@ -134,7 +137,7 @@ class SessionManager(Database):
         if key in ("_key", "_salt"):
             if hasattr(self, key):
                 # not first time we configure it!
-                raise AttributeError(f"{key} is a ReadOnly attribute " "that can't be overwritten!")
+                raise AttributeError(f"{key} is a ReadOnly attribute that can't be overwritten!")
         super().__setattr__(key, value)
 
     def _init_db(self):
@@ -183,9 +186,14 @@ class SessionManager(Database):
         :param token_usage_rules:
         :return:
         """
-        sector_identifier = auth_req.get("sector_identifier_uri", "")
-
-        _claims = auth_req.get("claims", {})
+        if auth_req:
+            sector_identifier = auth_req.get("sector_identifier_uri", "")
+            _claims = auth_req.get("claims", {})
+            if scopes is None:
+                scopes = auth_req.get("scope")
+        else:
+            sector_identifier = ""
+            _claims = {}
 
         grant = Grant(
             authorization_request=auth_req,

@@ -61,7 +61,13 @@ setup(
               "oidcmsg/client", "oidcmsg/server", "oidcmsg/server/session",
               "oidcmsg/server/token", "oidcmsg/server/authz",
               "oidcmsg/server/user_authn",
-              "oidcmsg/server/user_info"
+              "oidcmsg/server/user_info",
+              "oidcmsg/server/oauth2", "oidcmsg/server/oauth2/add_on",
+              "oidcmsg/server/oidc", "oidcmsg/server/oidc/add_on",
+              "oidcmsg/client/oidc", "oidcmsg/client/oidc/add_on",
+              "oidcmsg/client/provider",
+              "oidcmsg/client/oauth2", "oidcmsg/client/oauth2/add_on",
+              "oidcmsg/client/oauth2/client_credentials"
               ],
     package_dir={"": "src"},
     classifiers=[

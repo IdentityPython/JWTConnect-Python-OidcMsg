@@ -834,6 +834,15 @@ class Message(MutableMapping):
 
         return None
 
+    def has_none_or_one_of(self, claims):
+        found_one = False
+        for c in claims:
+            if c in self:
+                if found_one:
+                    return False
+                else:
+                    found_one = True
+        return True
 
 # =============================================================================
 

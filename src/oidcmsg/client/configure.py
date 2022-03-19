@@ -37,16 +37,28 @@ class RPConfiguration(Base):
                       dir_attributes=dir_attributes)
 
         self.key_conf = lower_or_upper(conf, 'rp_keys') or lower_or_upper(conf, 'oidc_keys')
-        self.clients = lower_or_upper(conf, "clients")
 
         hash_seed = lower_or_upper(conf, 'hash_seed')
         if not hash_seed:
             hash_seed = rnd_token(32)
         self.hash_seed = hash_seed
 
-        self.services = lower_or_upper(conf, "services")
         self.base_url = lower_or_upper(conf, "base_url")
         self.httpc_params = lower_or_upper(conf, "httpc_params", {"verify": True})
+
+        self.default = lower_or_upper(conf, "default", {})
+
+        for param in ["services", "client_preferences", "add_ons"]:
+            _val = lower_or_upper(conf, param, {})
+            if _val and param not in self.default:
+                self.default[param] = _val
+
+        self.clients = lower_or_upper(conf, "clients")
+        for id, client in self.clients.items():
+            for param in ["services", "client_preferences", "add_ons"]:
+                if param not in client:
+                    if param in self.default:
+                        client[param] = self.default[param]
 
         if entity_conf:
             self.extend(entity_conf=entity_conf, conf=conf, base_path=base_path,

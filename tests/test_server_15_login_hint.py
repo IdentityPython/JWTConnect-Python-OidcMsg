@@ -20,7 +20,7 @@ def test_login_hint():
          "kwargs": {"db_file": full_path("users.json")}, },
         "",
     )
-    login_hint_lookup = init_service({"class": "oidcop.login_hint.LoginHintLookup"}, None)
+    login_hint_lookup = init_service({"class": "oidcmsg.server.login_hint.LoginHintLookup"}, None)
     login_hint_lookup.userinfo = userinfo
 
     assert login_hint_lookup("tel:0907865000") == "diana"

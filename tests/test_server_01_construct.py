@@ -1,6 +1,6 @@
 import pytest
 
-from oidcmsg.server.construct import construct_endpoint_info
+from oidcmsg.server.construct import construct_provider_info
 
 
 def test_construct():
@@ -16,7 +16,7 @@ def test_construct():
         "grant_types_supported": ["authorization_code", "implicit"],
         "scopes_supported": [],
     }
-    _info = construct_endpoint_info(
+    _info = construct_provider_info(
         default_capabilities,
         request_object_signing_alg_values_supported=["RS256", "RS384", "RS512"],
         grant_types_supported=["authorization_code"]
@@ -26,7 +26,7 @@ def test_construct():
     assert "A128KW" in _info["request_object_encryption_alg_values_supported"]
 
     with pytest.raises(ValueError):
-        _info = construct_endpoint_info(
+        _info = construct_provider_info(
             default_capabilities,
             request_object_encryption_alg_values_supported=['X'],
         )

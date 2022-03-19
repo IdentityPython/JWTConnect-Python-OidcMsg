@@ -3,10 +3,10 @@ import os
 from urllib.parse import urlparse
 
 import pytest
-from oidcmsg.server import do_endpoints
 
 from oidcmsg.message import Message
 from oidcmsg.server import Server
+from oidcmsg.server import do_endpoints
 from oidcmsg.server.configure import OPConfiguration
 from oidcmsg.server.endpoint import Endpoint
 from oidcmsg.server.user_authn.authn_context import INTERNETPROTOCOLPASSWORD
@@ -200,7 +200,8 @@ class TestEndpoint(object):
         assert ("Content-type", "application/json; charset=utf-8") in info["http_headers"]
         assert (
                 info[
-                    "response"] == '{"name": "Doe, Jane", "given_name": "Jane", "family_name": "Doe"}'
+                    "response"] == '{"name": "Doe, Jane", "given_name": "Jane", "family_name": '
+                                   '"Doe"}'
         )
 
     def test_do_response_placement_url(self):
@@ -216,10 +217,9 @@ class TestEndpoint(object):
             EXAMPLE_MSG, return_uri="https://example.org/cb", fragment_enc=True
         )
         assert ("Content-type", "application/x-www-form-urlencoded") in info["http_headers"]
-        assert (
-                info["response"]
-                == "https://example.org/cb#name=Doe%2C+Jane&given_name=Jane&family_name=Doe"
-        )
+        assert info["response"] == ("https://example.org/cb#name=Doe%2C+Jane&given_name=Jane"
+                                    "&family_name=Doe")
+
 
     def test_do_response_error(self):
         info = self.endpoint.do_response(

@@ -7,7 +7,7 @@ from cryptojwt.jws.jws import factory
 from cryptojwt.jws.utils import left_hash
 from cryptojwt.jwt import JWT
 
-from oidcmsg.server.construct import construct_endpoint_info
+from oidcmsg.server.construct import construct_provider_info
 from oidcmsg.server.exception import ToOld
 from oidcmsg.server.session.claims import claims_match
 from . import is_expired
@@ -127,7 +127,7 @@ class IDToken(Token):
         self.server_get = server_get
         self.kwargs = kwargs
         self.scope_to_claims = None
-        self.provider_info = construct_endpoint_info(self.default_capabilities, **kwargs)
+        self.provider_info = construct_provider_info(self.default_capabilities, **kwargs)
 
     def payload(
             self,

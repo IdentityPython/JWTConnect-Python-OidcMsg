@@ -57,18 +57,22 @@ conf = {
     "endpoint": {
         "authorization_endpoint": {
             "path": "authorization",
-            "class": "oidcop.oidc.authorization.Authorization",
+            "class": "oidcmsg.server.oidc.authorization.Authorization",
             "kwargs": {},
         },
-        "token_endpoint": {"path": "token", "class": "oidcop.oidc.token.Token", "kwargs": {}, },
+        "token_endpoint": {
+            "path": "token",
+            "class": "oidcmsg.server.oidc.token.Token",
+            "kwargs": {},
+        },
         "userinfo_endpoint": {
             "path": "userinfo",
-            "class": "oidcop.oidc.userinfo.UserInfo",
+            "class": "oidcmsg.server.oidc.userinfo.UserInfo",
             "kwargs": {},
         },
         "introspection_endpoint": {
             "path": "introspection",
-            "class": "oidcop.oauth2.introspection.Introspection",
+            "class": "oidcmsg.server.oauth2.introspection.Introspection",
             "kwargs": {},
         },
     },

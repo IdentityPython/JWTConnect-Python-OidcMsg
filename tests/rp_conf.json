@@ -5,22 +5,6 @@
   "httpc_params": {
     "verify": false
   },
-  "keydefs": [
-    {
-      "type": "RSA",
-      "key": "",
-      "use": [
-        "sig"
-      ]
-    },
-    {
-      "type": "EC",
-      "crv": "P-256",
-      "use": [
-        "sig"
-      ]
-    }
-  ],
   "rp_keys": {
     "private_path": "private/jwks.json",
     "key_defs": [
@@ -65,27 +49,27 @@
   },
   "services": {
     "discovery": {
-      "class": "oidcservice.oidc.provider_info_discovery.ProviderInfoDiscovery",
+      "class": "oidcmsg.client.oidc.provider_info_discovery.ProviderInfoDiscovery",
       "kwargs": {}
     },
     "registration": {
-      "class": "oidcservice.oidc.registration.Registration",
+      "class": "oidcmsg.client.oidc.registration.Registration",
       "kwargs": {}
     },
     "authorization": {
-      "class": "oidcservice.oidc.authorization.Authorization",
+      "class": "oidcmsg.client.oidc.authorization.Authorization",
       "kwargs": {}
     },
     "accesstoken": {
-      "class": "oidcservice.oidc.access_token.AccessToken",
+      "class": "oidcmsg.client.oidc.access_token.AccessToken",
       "kwargs": {}
     },
     "userinfo": {
-      "class": "oidcservice.oidc.userinfo.UserInfo",
+      "class": "oidcmsg.client.oidc.userinfo.UserInfo",
       "kwargs": {}
     },
     "end_session": {
-      "class": "oidcservice.oidc.end_session.EndSession",
+      "class": "oidcmsg.client.oidc.end_session.EndSession",
       "kwargs": {}
     }
   },
@@ -115,27 +99,27 @@
       "redirect_uris": "None",
       "services": {
         "discovery": {
-          "class": "oidcservice.oidc.provider_info_discovery.ProviderInfoDiscovery",
+          "class": "oidcmsg.client.oidc.provider_info_discovery.ProviderInfoDiscovery",
           "kwargs": {}
         },
         "registration": {
-          "class": "oidcservice.oidc.registration.Registration",
+          "class": "oidcmsg.client.oidc.registration.Registration",
           "kwargs": {}
         },
         "authorization": {
-          "class": "oidcservice.oidc.authorization.Authorization",
+          "class": "oidcmsg.client.oidc.authorization.Authorization",
           "kwargs": {}
         },
         "accesstoken": {
-          "class": "oidcservice.oidc.access_token.AccessToken",
+          "class": "oidcmsg.client.oidc.access_token.AccessToken",
           "kwargs": {}
         },
         "userinfo": {
-          "class": "oidcservice.oidc.userinfo.UserInfo",
+          "class": "oidcmsg.client.oidc.userinfo.UserInfo",
           "kwargs": {}
         },
         "end_session": {
-          "class": "oidcservice.oidc.end_session.EndSession",
+          "class": "oidcmsg.client.oidc.end_session.EndSession",
           "kwargs": {}
         }
       }
@@ -175,33 +159,33 @@
       "backchannel_logout_session_required": true,
       "services": {
         "discovery": {
-          "class": "oidcservice.oidc.provider_info_discovery.ProviderInfoDiscovery",
+          "class": "oidcmsg.client.oidc.provider_info_discovery.ProviderInfoDiscovery",
           "kwargs": {}
         },
         "registration": {
-          "class": "oidcservice.oidc.registration.Registration",
+          "class": "oidcmsg.client.oidc.registration.Registration",
           "kwargs": {}
         },
         "authorization": {
-          "class": "oidcservice.oidc.authorization.Authorization",
+          "class": "oidcmsg.client.oidc.authorization.Authorization",
           "kwargs": {}
         },
         "accesstoken": {
-          "class": "oidcservice.oidc.access_token.AccessToken",
+          "class": "oidcmsg.client.oidc.access_token.AccessToken",
           "kwargs": {}
         },
         "userinfo": {
-          "class": "oidcservice.oidc.userinfo.UserInfo",
+          "class": "oidcmsg.client.oidc.userinfo.UserInfo",
           "kwargs": {}
         },
         "end_session": {
-          "class": "oidcservice.oidc.end_session.EndSession",
+          "class": "oidcmsg.client.oidc.end_session.EndSession",
           "kwargs": {}
         }
       },
       "add_ons": {
         "pkce": {
-          "function": "oidcservice.oidc.add_on.pkce.add_pkce_support",
+          "function": "oidcmsg.client.oidc.add_on.pkce.add_pkce_support",
           "kwargs": {
             "code_challenge_length": 64,
             "code_challenge_method": "S256"
@@ -243,27 +227,27 @@
       ],
       "services": {
         "discovery": {
-          "class": "oidcservice.oidc.provider_info_discovery.ProviderInfoDiscovery",
+          "class": "oidcmsg.client.oidc.provider_info_discovery.ProviderInfoDiscovery",
           "kwargs": {}
         },
         "registration": {
-          "class": "oidcservice.oidc.registration.Registration",
+          "class": "oidcmsg.client.oidc.registration.Registration",
           "kwargs": {}
         },
         "authorization": {
-          "class": "oidcservice.oidc.authorization.Authorization",
+          "class": "oidcmsg.client.oidc.authorization.Authorization",
           "kwargs": {}
         },
         "accesstoken": {
-          "class": "oidcservice.oidc.access_token.AccessToken",
+          "class": "oidcmsg.client.oidc.access_token.AccessToken",
           "kwargs": {}
         },
         "userinfo": {
-          "class": "oidcservice.oidc.userinfo.UserInfo",
+          "class": "oidcmsg.client.oidc.userinfo.UserInfo",
           "kwargs": {}
         },
         "end_session": {
-          "class": "oidcservice.oidc.end_session.EndSession",
+          "class": "oidcmsg.client.oidc.end_session.EndSession",
           "kwargs": {}
         }
       },

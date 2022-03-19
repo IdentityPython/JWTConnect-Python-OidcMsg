@@ -7,11 +7,12 @@ from urllib.parse import urlparse
 
 from oidcmsg.exception import MissingRequiredAttribute
 from oidcmsg.exception import MissingRequiredValue
+from oidcmsg.exception import ParameterError
 from oidcmsg.message import Message
 from oidcmsg.oauth2 import ResponseMessage
 from oidcmsg.oidc import RegistrationRequest
 from oidcmsg.server.client_authn import verify_client
-from oidcmsg.server.construct import construct_endpoint_info
+from oidcmsg.server.construct import construct_provider_info
 from oidcmsg.server.exception import UnAuthorizedClient
 from oidcmsg.server.util import OAUTH2_NOCACHE_HEADERS
 from oidcmsg.util import sanitize
@@ -88,6 +89,8 @@ class Endpoint(object):
     response_placement = "body"
     client_authn_method = ""
     default_capabilities = None
+    provider_info_attributes = None
+    auth_method_attribute = ""
 
     def __init__(self, server_get: Callable, **kwargs):
         self.server_get = server_get
@@ -109,27 +112,44 @@ class Endpoint(object):
             if _val:
                 setattr(self, param, _val)
 
-        _methods = kwargs.get("client_authn_method")
-        self.client_authn_method = []
-        if _methods:
-            self.client_authn_method = _methods
-        elif _methods is not None:  # [] or '' or something not None but regarded as nothing.
-            self.client_authn_method = ["none"]  # Ignore default value
-        elif self.default_capabilities:
-            self.client_authn_method = self.default_capabilities.get("client_authn_method")
-        self.endpoint_info = construct_endpoint_info(self.default_capabilities, **kwargs)
-
+        self.kwargs = self.set_client_authn_methods(**kwargs)
         # This is for matching against aud in JWTs
         # By default the endpoint's endpoint URL is an allowed target
         self.allowed_targets = [self.name]
         self.client_verification_method = []
+
+    def set_client_authn_methods(self, **kwargs):
+        self.client_authn_method = []
+        _ama = kwargs.get(self.auth_method_attribute)
+        if _ama:
+            _methods = _ama
+        else:
+            _methods = kwargs.get("client_authn_method")
+
+        if _methods:
+            self.client_authn_method = _methods
+            if self.auth_method_attribute:
+                kwargs[self.auth_method_attribute] = _methods
+        elif _methods is not None:  # [] or '' or something not None but regarded as nothing.
+            self.client_authn_method = ["none"]  # Ignore default value
+        return kwargs
+
+    def get_provider_info_attributes(self):
+        _pia = construct_provider_info(self.provider_info_attributes, **self.kwargs)
+        if self.endpoint_name:
+            _pia[self.endpoint_name] = self.full_path
+        return _pia
 
     def process_verify_error(self, exception):
         _error = "invalid_request"
         return self.error_cls(error=_error, error_description="%s" % exception)
 
     def parse_request(
-            self, request: Union[Message, dict, str], http_info: Optional[dict] = None, **kwargs
+            self,
+            request: Union[Message, dict, str],
+            http_info: Optional[dict] = None,
+            verify_args: Optional[dict] = None,
+            **kwargs
     ):
         """
 
@@ -182,8 +202,12 @@ class Endpoint(object):
 
         # verify that the request message is correct
         try:
-            req.verify(keyjar=keyjar, opponent_id=_client_id)
-        except (MissingRequiredAttribute, ValueError, MissingRequiredValue) as err:
+            if verify_args is None:
+                req.verify(keyjar=keyjar, opponent_id=_client_id)
+            else:
+                req.verify(keyjar=keyjar, opponent_id=_client_id, **verify_args)
+        except (MissingRequiredAttribute, ValueError, MissingRequiredValue,
+                ParameterError) as err:
             _error = "invalid_request"
             if isinstance(err, ValueError) and self.request_cls == RegistrationRequest:
                 if len(err.args) > 1:
@@ -262,7 +286,7 @@ class Endpoint(object):
             request: Optional[Union[Message, dict]] = None,
             http_info: Optional[dict] = None,
             **kwargs
-    ):
+    ) -> Union[Message, dict]:
         """
 
         :param http_info: Information on the HTTP request

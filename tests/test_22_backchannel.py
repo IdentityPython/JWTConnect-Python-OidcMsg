@@ -1,7 +1,7 @@
-import pytest
 from cryptojwt.jwt import utc_time_sans_frac
+import pytest
 
-from oidcmsg.exception import MissingAttribute
+from oidcmsg.exception import MissingRequiredAttribute
 from oidcmsg.oidc.backchannel_authentication import AuthenticationRequest
 from oidcmsg.oidc.backchannel_authentication import AuthenticationRequestJWT
 from oidcmsg.util import rndstr
@@ -23,7 +23,7 @@ def test_2():
         login_hint="foobar@example.com"
     )
 
-    with pytest.raises(MissingAttribute):
+    with pytest.raises(MissingRequiredAttribute):
         areq.verify(mode="ping")
 
 
@@ -46,17 +46,10 @@ def test_3():
 
 
 def test_4():
-    now = utc_time_sans_frac()
-    areq = AuthenticationRequestJWT(
+    areq = AuthenticationRequest(
         scope=["openid"],
         login_hint="foobar@example.com",
-        iss="https://rp.example.com",
-        aud=["https://op.example.com"],
-        iat=now,
-        exp=now + 3600,
-        nbf=now + 30,
-        jti=rndstr(32)
     )
 
-    with pytest.raises(MissingAttribute):
+    with pytest.raises(MissingRequiredAttribute):
         areq.verify(mode="ping")

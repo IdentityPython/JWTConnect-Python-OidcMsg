@@ -22,7 +22,7 @@ OP_DEFAULT_CONFIG = {
         ],
     },
     "cookie_handler": {
-        "class": "oidcop.cookie_handler.CookieHandler",
+        "class": "oidcmsg.server.cookie_handler.CookieHandler",
         "kwargs": {
             "keys": {
                 "private_path": "private/cookie_jwks.json",
@@ -64,6 +64,51 @@ OP_DEFAULT_CONFIG = {
         },
     },
     "httpc_params": {"verify": False, "timeout": 4},
+    "endpoint": {
+        "provider_info": {
+            "path": ".well-known/openid-configuration",
+            "class": "oidcmsg.server.oidc.provider_config.ProviderConfiguration",
+            "kwargs": {"client_authn_method": None},
+        },
+        "authorization": {
+            "path": "authorization",
+            "class": "oidcmsg.server.oidc.authorization.Authorization",
+            "kwargs": {
+                "client_authn_method": None,
+                "claims_parameter_supported": True,
+                "request_parameter_supported": True,
+                "request_uri_parameter_supported": True,
+                "response_types_supported": [
+                    "code",
+                    "token",
+                    "id_token",
+                    "code token",
+                    "code id_token",
+                    "id_token token",
+                    "code id_token token",
+                    # "none"
+                ],
+                "response_modes_supported": ["query", "fragment", "form_post"],
+            },
+        },
+        "token": {
+            "path": "token",
+            "class": "oidcmsg.server.oidc.token.Token",
+            "kwargs": {
+                "client_authn_method": [
+                    "client_secret_post",
+                    "client_secret_basic",
+                    "client_secret_jwt",
+                    "private_key_jwt",
+                ]
+            },
+        },
+        "userinfo": {
+            "path": "userinfo",
+            "class": "oidcmsg.server.oidc.userinfo.UserInfo",
+            "kwargs": {"claim_types_supported": ["normal", "aggregated", "distributed"]},
+        },
+    },
     "issuer": "https://{domain}:{port}",
     "template_dir": "templates",
     "token_handler_args": {
@@ -220,11 +265,11 @@ class ASConfiguration(EntityConfiguration):
 DEFAULT_EXTENDED_CONF = {
     "add_on": {
         "pkce": {
-            "function": "oidcop.oidc.add_on.pkce.add_pkce_support",
+            "function": "oidcmsg.server.oidc.add_on.pkce.add_pkce_support",
             "kwargs": {"essential": False, "code_challenge_method": "S256 S384 S512"},
         },
         "claims": {
-            "function": "oidcop.oidc.add_on.custom_scopes.add_custom_scopes",
+            "function": "oidcmsg.server.oidc.add_on.custom_scopes.add_custom_scopes",
             "kwargs": {
                 "research_and_scholarship": [
                     "name",
@@ -270,7 +315,7 @@ DEFAULT_EXTENDED_CONF = {
                 "verify_endpoint": "verify/user",
                 "template": "user_pass.jinja2",
                 "db": {
-                    "class": "oidcop.util.JSONDictDB",
+                    "class": "oidcmsg.server.util.JSONDictDB",
                     "kwargs": {"filename": "passwd.json"},
                 },
                 "page_header": "Testing log in",
@@ -290,7 +335,7 @@ DEFAULT_EXTENDED_CONF = {
         ],
     },
     "cookie_handler": {
-        "class": "oidcop.cookie_handler.CookieHandler",
+        "class": "oidcmsg.server.cookie_handler.CookieHandler",
         "kwargs": {
             "keys": {
                 "private_path": "private/cookie_jwks.json",
@@ -310,17 +355,17 @@ DEFAULT_EXTENDED_CONF = {
     "endpoint": {
         "webfinger": {
             "path": ".well-known/webfinger",
-            "class": "oidcop.oidc.discovery.Discovery",
+            "class": "oidcmsg.server.oidc.discovery.Discovery",
             "kwargs": {"client_authn_method": None},
         },
         "provider_info": {
             "path": ".well-known/openid-configuration",
-            "class": "oidcop.oidc.provider_config.ProviderConfiguration",
+            "class": "oidcmsg.server.oidc.provider_config.ProviderConfiguration",
             "kwargs": {"client_authn_method": None},
         },
         "registration": {
             "path": "registration",
-            "class": "oidcop.oidc.registration.Registration",
+            "class": "oidcmsg.server.oidc.registration.Registration",
             "kwargs": {
                 "client_authn_method": None,
                 "client_secret_expiration_time": 432000,
@@ -328,12 +373,12 @@ DEFAULT_EXTENDED_CONF = {
         },
         "registration_api": {
             "path": "registration_api",
-            "class": "oidcop.oidc.read_registration.RegistrationRead",
+            "class": "oidcmsg.server.oidc.read_registration.RegistrationRead",
             "kwargs": {"client_authn_method": ["bearer_header"]},
         },
         "introspection": {
             "path": "introspection",
-            "class": "oidcop.oauth2.introspection.Introspection",
+            "class": "oidcmsg.server.oauth2.introspection.Introspection",
             "kwargs": {
                 "client_authn_method": ["client_secret_post"],
                 "release": ["username"],
@@ -341,7 +386,7 @@ DEFAULT_EXTENDED_CONF = {
         },
         "authorization": {
             "path": "authorization",
-            "class": "oidcop.oidc.authorization.Authorization",
+            "class": "oidcmsg.server.oidc.authorization.Authorization",
             "kwargs": {
                 "client_authn_method": None,
                 "claims_parameter_supported": True,
@@ -362,7 +407,7 @@ DEFAULT_EXTENDED_CONF = {
         },
         "token": {
             "path": "token",
-            "class": "oidcop.oidc.token.Token",
+            "class": "oidcmsg.server.oidc.token.Token",
             "kwargs": {
                 "client_authn_method": [
                     "client_secret_post",
@@ -374,12 +419,12 @@ DEFAULT_EXTENDED_CONF = {
         },
         "userinfo": {
             "path": "userinfo",
-            "class": "oidcop.oidc.userinfo.UserInfo",
+            "class": "oidcmsg.server.oidc.userinfo.UserInfo",
             "kwargs": {"claim_types_supported": ["normal", "aggregated", "distributed"]},
         },
         "end_session": {
             "path": "session",
-            "class": "oidcop.oidc.session.Session",
+            "class": "oidcmsg.server.oidc.session.Session",
             "kwargs": {
                 "logout_verify_url": "verify_logout",
                 "post_logout_uri_path": "post_logout",
@@ -405,7 +450,7 @@ DEFAULT_EXTENDED_CONF = {
         "uri_path": "static/jwks.json",
     },
     "login_hint2acrs": {
-        "class": "oidcop.login_hint.LoginHint2Acrs",
+        "class": "oidcmsg.server.login_hint.LoginHint2Acrs",
         "kwargs": {
             "scheme_map": {
                 "email": ["urn:oasis:names:tc:SAML:2.0:ac:classes:InternetProtocolPassword"]
@@ -446,7 +491,7 @@ DEFAULT_EXTENDED_CONF = {
         },
     },
     "userinfo": {
-        "class": "oidcop.user_info.UserInfo",
+        "class": "oidcmsg.server.user_info.UserInfo",
         "kwargs": {"db_file": "users.json"},
     },
     "scopes_to_claims": SCOPE2CLAIMS,

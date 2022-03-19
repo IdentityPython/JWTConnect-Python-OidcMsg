@@ -40,12 +40,12 @@ def assign_algorithms(typ):
         return jwe.SUPPORTED["enc"]
 
 
-def construct_endpoint_info(default_capabilities, **kwargs):
-    if default_capabilities is None:
-        return default_capabilities
+def construct_provider_info(configuration_attributes, **kwargs):
+    if configuration_attributes is None:
+        return {}
 
     _info = {}
-    for attr, default_val in default_capabilities.items():
+    for attr, default_val in configuration_attributes.items():
         if attr in kwargs:
             _proposal = kwargs[attr]
             _permitted = None
@@ -68,11 +68,12 @@ def construct_endpoint_info(default_capabilities, **kwargs):
             if default_val is not None:
                 _info[attr] = default_val
             elif "signing_alg_values_supported" in attr:
+                # Add all supported signing algorithms
                 _info[attr] = assign_algorithms("signing_alg")
                 if "none" in _info[attr]:
                     _info[attr].remove("none")
             elif "encryption_alg_values_supported" in attr:
-                # RSA1_5 not among defaults
+                # add all supported encryption algs except those deemed weak.
                 _info[attr] = [s for s in assign_algorithms("encryption_alg") if s not in WEAK_ALGS]
             elif "encryption_enc_values_supported" in attr:
                 _info[attr] = assign_algorithms("encryption_enc")

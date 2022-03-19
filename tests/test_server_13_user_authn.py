@@ -55,7 +55,7 @@ class TestUserAuthn(object):
             },
             "template_dir": "templates",
             "cookie_handler": {
-                "class": "oidcop.cookie_handler.CookieHandler",
+                "class": "oidcmsg.server.cookie_handler.CookieHandler",
                 "kwargs": {
                     "sign_key": "ghsNKDDLshZTPn974nOsIGhedULrsqnsGoBFBLwUKuJhE2ch",
                     "name": {

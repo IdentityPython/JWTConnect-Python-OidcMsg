@@ -23,17 +23,20 @@ from oidcmsg.util import rndstr
 logger = logging.getLogger(__name__)
 
 
-# def add_path(url: str, path: str) -> str:
-#     if url.endswith("/"):
-#         if path.startswith("/"):
-#             return "{}{}".format(url, path[1:])
-#
-#         return "{}{}".format(url, path)
-#
-#     if path.startswith("/"):
-#         return "{}{}".format(url, path)
-#
-#     return "{}/{}".format(url, path)
+def get_provider_capabilities(conf, endpoints):
+    _cap = conf.get("capabilities", {})
+    if _cap is None:
+        _cap = {}
+
+    for endpoint, endpoint_instance in endpoints.items():
+        if endpoint in ["webfinger", "provider_config"]:
+            continue
+
+        for key, val in endpoint_instance.get_provider_info_attributes().items():
+            if key not in _cap:
+                _cap[key] = val
+
+    return _cap
 
 
 def init_user_info(conf, cwd: str):

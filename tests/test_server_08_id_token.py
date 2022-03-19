@@ -557,7 +557,7 @@ class TestEndpoint(object):
         client_keyjar.import_jwks(_jwks, self.endpoint_context.issuer)
         _jwt = JWT(key_jar=client_keyjar, iss="client_1")
         res = _jwt.unpack(id_token.value)
-        assert "address" not in res
+        assert "address" in res
         assert "email" in res
         assert "nickname" not in res
 
