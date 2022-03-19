@@ -143,9 +143,12 @@ class UserInfo(Endpoint):
             #     pass
 
         if allowed:
-            _claims = _grant.claims.get("userinfo")
-            info = self.server_get("endpoint_context").claims_interface.get_user_claims(
-                user_id=_session_info["user_id"], claims_restriction=_claims
+            _cntxt = self.server_get("endpoint_context")
+            _claims_restriction = _cntxt.claims_interface.get_claims(
+                _session_info["session_id"], scopes=token.scope, claims_release_point="userinfo"
+            )
+            info = _cntxt.claims_interface.get_user_claims(
+                _session_info["user_id"], claims_restriction=_claims_restriction
             )
             info["sub"] = _grant.sub
             if _grant.add_acr_value("userinfo"):

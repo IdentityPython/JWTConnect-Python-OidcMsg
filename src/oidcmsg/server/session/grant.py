@@ -19,6 +19,7 @@ from .token import IDToken
 from .token import Item
 from .token import RefreshToken
 from .token import SessionToken
+from ...oauth2 import TokenExchangeRequest
 
 logger = logging.getLogger(__name__)
 
@@ -314,6 +315,11 @@ class Grant(Item):
                 else:
                     scope = self.scope
 
+            _token_args = kwargs.get("token_args")
+            if _token_args:
+                del kwargs["token_args"]
+                class_args.update(_token_args)
+
             item = _class(
                 token_class=token_class,
                 based_on=_base_on_ref,
@@ -472,12 +478,15 @@ class ExchangeGrant(Grant):
             authorization_details: Optional[dict] = None,
             issued_token: Optional[list] = None,
             usage_rules: Optional[dict] = None,
+            exchange_request: Optional[TokenExchangeRequest] = None,
+            original_session_id: str = "",
             issued_at: int = 0,
             expires_in: int = 0,
             expires_at: int = 0,
             revoked: bool = False,
             token_map: Optional[dict] = None,
             users: list = None,
+            sub: Optional[str] = "",
     ):
         Grant.__init__(
             self,
@@ -492,9 +501,12 @@ class ExchangeGrant(Grant):
             expires_at=expires_at,
             revoked=revoked,
             token_map=token_map,
+            sub=sub
         )
 
         self.users = users or []
         self.usage_rules = {
             "access_token": {"supports_minting": ["access_token"], "expires_in": 60}
         }
+        self.exchange_request = exchange_request
+        self.original_session_id = original_session_id

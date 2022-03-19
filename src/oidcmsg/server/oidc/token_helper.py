@@ -8,7 +8,8 @@ from cryptojwt.jwt import utc_time_sans_frac
 
 from oidcmsg.message import Message
 from oidcmsg.oidc import RefreshAccessTokenRequest
-from oidcmsg.server.oauth2.token import TokenEndpointHelper
+from oidcmsg.server import oauth2
+from oidcmsg.server.oauth2.token_helper import TokenEndpointHelper
 from oidcmsg.server.session.grant import AuthorizationCode
 from oidcmsg.server.session.grant import RefreshToken
 from oidcmsg.server.session.token import MintingNotAllowed
@@ -353,3 +354,11 @@ class RefreshTokenHelper(TokenEndpointHelper):
                 )
 
         return request
+
+
+class TokenExchangeHelper(oauth2.token_helper.TokenExchangeHelper):
+    token_types_mapping = {
+        "urn:ietf:params:oauth:token-type:access_token": "access_token",
+        "urn:ietf:params:oauth:token-type:refresh_token": "refresh_token",
+        "urn:ietf:params:oauth:token-type:id_token": "id_token",
+    }

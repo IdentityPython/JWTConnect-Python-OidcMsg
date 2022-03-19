@@ -3,16 +3,16 @@ import logging
 from oidcmsg import oidc
 from oidcmsg.message import Message
 from oidcmsg.oidc import TokenErrorResponse
-from oidcmsg.server import oauth2
-from oidcmsg.server.oauth2.token import TokenEndpointHelper
+from oidcmsg.server.oauth2 import token
 from oidcmsg.server.oidc.backchannel_authentication import CIBATokenHelper
 from oidcmsg.server.oidc.token_helper import AccessTokenHelper
 from oidcmsg.server.oidc.token_helper import RefreshTokenHelper
+from oidcmsg.server.oidc.token_helper import TokenExchangeHelper
 
 logger = logging.getLogger(__name__)
 
 
-class Token(oauth2.token.Token):
+class Token(token.Token):
     request_cls = Message
     response_cls = oidc.AccessTokenResponse
     error_cls = TokenErrorResponse
@@ -32,5 +32,6 @@ class Token(oauth2.token.Token):
     helper_by_grant_type = {
         "authorization_code": AccessTokenHelper,
         "refresh_token": RefreshTokenHelper,
-        "urn:openid:params:grant-type:ciba": CIBATokenHelper
+        "urn:openid:params:grant-type:ciba": CIBATokenHelper,
+        "urn:ietf:params:oauth:grant-type:token-exchange": TokenExchangeHelper,
     }
