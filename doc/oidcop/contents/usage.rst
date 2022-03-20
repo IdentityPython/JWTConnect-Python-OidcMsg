@@ -3,46 +3,38 @@ Usage
 
 Some examples, how to run [flask_op](https://github.com/IdentityPython/oidc-op/tree/master/example/flask_op) and [django_op](https://github.com/peppelinux/django-oidc-op) but also some typical configuration in relation to common use cases.
 
-
-
 Configure flask-rp
 ------------------
 
-_JWTConnect-Python-OidcRP_ is Relaing Party for tests, see [related page](https://github.com/openid/JWTConnect-Python-OidcRP).
+_JWTConnect-Python-OidcRP_ is Relaying Party for tests, see [related page](https://github.com/openid/JWTConnect-Python-OidcRP).
 You can run a working instance of `JWTConnect-Python-OidcRP.flask_rp` with:
 
-````
-pip install git+https://github.com/openid/JWTConnect-Python-OidcRP.git
+    pip install git+https://github.com/openid/JWTConnect-Python-OidcRP.git
 
-# get entire project to have examples files
+get entire project to have examples files
 git clone https://github.com/openid/JWTConnect-Python-OidcRP.git
 cd JWTConnect-Python-OidcRP/example/flask_rp
 
-# run it as it come
-bash run.sh
-````
+run it as it comes
+
+    bash run.sh
 
 Now you can connect to `https://127.0.0.1:8090/` to see the RP landing page and select your authentication endpoint.
 
-### Authentication examples
+Authentication examples
++++++++++++++++++++++++
 
 ![RP](../_images/1.png)
 
 Get to the RP landing page to choose your authentication endpoint. The first option aims to use _Provider Discovery_.
 
-----------------------------------
-
 ![OP Auth](../_images/2.png)
 
 The AS/OP supports dynamic client registration, it accepts the authentication request and prompt to us the login form. Read [passwd.json](https://github.com/IdentityPython/oidc-op/blob/master/example/flask_op/passwd.json) file to get credentials.
 
-----------------------------------
-
 ![Access](../_images/3.png)
 
 The identity representation with the information fetched from the user info endpoint.
-
-----------------------------------
 
 ![Logout](../_images/4.png)
 
@@ -53,7 +45,7 @@ Refresh token
 -------------
 
 Here an example about how to refresh a token.
-It is important to consider that only scope=offline_access will get a usable refresh token.
+It is important to consider that only scope=offline_access will get a usable refresh token::
 
 
     import requests
@@ -127,9 +119,9 @@ oidc-op will return a json response like this::
     }
 
 Token exchange
--------------
+--------------
 
-Here an example about how to exchange an access token for a new access token.
+Here an example about how to exchange an access token for a new access token.::
 
     import requests
 
@@ -162,7 +154,7 @@ oidc-op will return a json response like this::
 In order to request a refresh token the value of `requested_token_type` should be set to
 `urn:ietf:params:oauth:token-type:refresh_token`.
 
-The [RFC-8693](https://datatracker.ietf.org/doc/html/rfc8693) describes the `audience` parameter that 
+The [RFC-8693](https://datatracker.ietf.org/doc/html/rfc8693) describes the `audience` parameter that
 defines the authorized targets of a token exchange request.
 If `subject_token = urn:ietf:params:oauth:token-type:refresh_token` then `audience` should not be
-included in the token exchange request. 
+included in the token exchange request.

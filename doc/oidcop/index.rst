@@ -58,7 +58,7 @@ under the `Apache 2.0 <https://en.wikipedia.org/wiki/Apache_License>`_.
    :maxdepth: 2
    :caption: Usage
 
-   contents/usage.md
+   contents/usage.rst
 
 .. toctree::
    :maxdepth: 2
@@ -70,7 +70,7 @@ under the `Apache 2.0 <https://en.wikipedia.org/wiki/Apache_License>`_.
    :maxdepth: 2
    :caption: Developer's
 
-   contents/developers.md
+   contents/developers.rst
 
 .. toctree::
    :maxdepth: 2
@@ -82,4 +82,4 @@ under the `Apache 2.0 <https://en.wikipedia.org/wiki/Apache_License>`_.
    :maxdepth: 2
    :caption: FAQ
 
-   contents/faq.md
+   contents/faq.rst

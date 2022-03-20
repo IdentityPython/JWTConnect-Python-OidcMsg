@@ -18,6 +18,8 @@ Contents:
    oidcmsg/index
    howto/message
    howto/msg_extend
+   oidcop/index
+   oidcrp/index
 
 
 Indices and tables

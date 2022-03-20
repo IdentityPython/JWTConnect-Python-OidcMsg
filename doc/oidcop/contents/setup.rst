@@ -50,7 +50,7 @@ An easy way can be to configure the auto creation of JWKS files directly in your
 Using `read_only: False` in `OIDC_KEYS` it will create the path within the JWKS files.
 Change it to `True` if you don't want to overwrite them on each execution.
 
-In genral configuration:
+In general configuration:
 
     OIDC_KEY_DEFS = [
         {

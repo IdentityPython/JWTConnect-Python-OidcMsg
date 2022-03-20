@@ -9,7 +9,7 @@
 Implementation of OIDC protocol messages.
 
 oidcmsg is the 2nd layer in the
-JwtConnect stack (cryptojwt, oidcmsg, oidcservice, oidcrp)
+JwtConnect stack (cryptojwt, oidcmsg)
 
 Handles serialising into a couple of formats (jwt, json, urlencoded and dict) and deserialising from said formats.
 

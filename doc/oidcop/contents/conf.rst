@@ -679,111 +679,105 @@ passed to the callable.
 
 The key `""` represents a fallback policy that will be used if the subject token
 type can't be found. If a subject token type is defined in the `policy` but is
-not in the `subject_token_types_supported` list then it is ignored.
+not in the `subject_token_types_supported` list then it is ignored::
 
-```
-"grant_types_supported":{
-  "urn:ietf:params:oauth:grant-type:token-exchange": {
-    "class": "oidcop.oauth2.token.TokenExchangeHelper",
-    "kwargs": {
-      "subject_token_types_supported": [
-        "urn:ietf:params:oauth:token-type:access_token",
-        "urn:ietf:params:oauth:token-type:refresh_token",
-        "urn:ietf:params:oauth:token-type:id_token"
-      ],
-      "requested_token_types_supported": [
-        "urn:ietf:params:oauth:token-type:access_token",
-        "urn:ietf:params:oauth:token-type:refresh_token",
-        "urn:ietf:params:oauth:token-type:id_token"
-      ],
-      "policy": {
-        "urn:ietf:params:oauth:token-type:access_token": {
-          "callable": "/path/to/callable",
-          "kwargs": {
-            "audience": ["https://example.com"],
-            "scopes": ["openid"]
-          }
-        },
-        "urn:ietf:params:oauth:token-type:refresh_token": {
-          "callable": "/path/to/callable",
-          "kwargs": {
-            "resource": ["https://example.com"],
-            "scopes": ["openid"]
-          }
-        },
-        "": {
-          "callable": "/path/to/callable",
-          "kwargs": {
-            "scopes": ["openid"]
+    "grant_types_supported":{
+      "urn:ietf:params:oauth:grant-type:token-exchange": {
+        "class": "oidcop.oauth2.token.TokenExchangeHelper",
+        "kwargs": {
+          "subject_token_types_supported": [
+            "urn:ietf:params:oauth:token-type:access_token",
+            "urn:ietf:params:oauth:token-type:refresh_token",
+            "urn:ietf:params:oauth:token-type:id_token"
+          ],
+          "requested_token_types_supported": [
+            "urn:ietf:params:oauth:token-type:access_token",
+            "urn:ietf:params:oauth:token-type:refresh_token",
+            "urn:ietf:params:oauth:token-type:id_token"
+          ],
+          "policy": {
+            "urn:ietf:params:oauth:token-type:access_token": {
+              "callable": "/path/to/callable",
+              "kwargs": {
+                "audience": ["https://example.com"],
+                "scopes": ["openid"]
+              }
+            },
+            "urn:ietf:params:oauth:token-type:refresh_token": {
+              "callable": "/path/to/callable",
+              "kwargs": {
+                "resource": ["https://example.com"],
+                "scopes": ["openid"]
+              }
+            },
+            "": {
+              "callable": "/path/to/callable",
+              "kwargs": {
+                "scopes": ["openid"]
+              }
+            }
           }
         }
       }
     }
-  }
-}
-```
 
 For the per-client configuration a similar configuration scheme should be present in the client's
 metadata under the `token_exchange` key.
 
-For example:
+For example::
 
-```
-"token_exchange":{
-  "urn:ietf:params:oauth:grant-type:token-exchange": {
-    "class": "oidcop.oidc.token.TokenExchangeHelper",
-    "kwargs": {
-      "subject_token_types_supported": [
-        "urn:ietf:params:oauth:token-type:access_token",
-        "urn:ietf:params:oauth:token-type:refresh_token",
-        "urn:ietf:params:oauth:token-type:id_token"
-      ],
-      "requested_token_types_supported": [
-        "urn:ietf:params:oauth:token-type:access_token",
-        "urn:ietf:params:oauth:token-type:refresh_token",
-        "urn:ietf:params:oauth:token-type:id_token"
-      ],
-      "policy": {
-        "urn:ietf:params:oauth:token-type:access_token": {
-          "callable": "/path/to/callable",
-          "kwargs": {
-            "audience": ["https://example.com"],
-            "scopes": ["openid"]
-          }
-        },
-        "urn:ietf:params:oauth:token-type:refresh_token": {
-          "callable": "/path/to/callable",
-          "kwargs": {
-            "resource": ["https://example.com"],
-            "scopes": ["openid"]
-          }
-        },
-        "": {
-          "callable": "/path/to/callable",
-          "kwargs": {
-            "scopes": ["openid"]
+    "token_exchange":{
+      "urn:ietf:params:oauth:grant-type:token-exchange": {
+        "class": "oidcop.oidc.token.TokenExchangeHelper",
+        "kwargs": {
+          "subject_token_types_supported": [
+            "urn:ietf:params:oauth:token-type:access_token",
+            "urn:ietf:params:oauth:token-type:refresh_token",
+            "urn:ietf:params:oauth:token-type:id_token"
+          ],
+          "requested_token_types_supported": [
+            "urn:ietf:params:oauth:token-type:access_token",
+            "urn:ietf:params:oauth:token-type:refresh_token",
+            "urn:ietf:params:oauth:token-type:id_token"
+          ],
+          "policy": {
+            "urn:ietf:params:oauth:token-type:access_token": {
+              "callable": "/path/to/callable",
+              "kwargs": {
+                "audience": ["https://example.com"],
+                "scopes": ["openid"]
+              }
+            },
+            "urn:ietf:params:oauth:token-type:refresh_token": {
+              "callable": "/path/to/callable",
+              "kwargs": {
+                "resource": ["https://example.com"],
+                "scopes": ["openid"]
+              }
+            },
+            "": {
+              "callable": "/path/to/callable",
+              "kwargs": {
+                "scopes": ["openid"]
+              }
+            }
           }
         }
       }
     }
-  }
-}
-```
 
 The policy callable accepts a specific argument list and must return the altered token exchange
 request or raise an exception.
 
-For example:
+For example::
 
-```
-def custom_token_exchange_policy(request, context, subject_token, **kwargs):
-    if some_condition in request:
-      return TokenErrorResponse(
-            error="invalid_request", error_description="Some error occured"
-        )
+    def custom_token_exchange_policy(request, context, subject_token, **kwargs):
+        if some_condition in request:
+          return TokenErrorResponse(
+                error="invalid_request", error_description="Some error occured"
+            )
 
-    return request
-```
+        return request
 
 =======
 Clients
