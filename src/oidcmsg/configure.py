@@ -51,19 +51,30 @@ def add_base_path(conf: dict, base_path: str, attributes: List[str], attribute_t
     return conf
 
 
-def set_domain_and_port(conf: dict, uris: List[str], domain: str, port: int):
-    for key, val in conf.items():
-        if key in uris:
-            if not val:
-                continue
+def _conv(val, domain, port):
+    if isinstance(val, str) and ("{domain}" in val or "{port}" in val):
+        return val.format(domain=domain, port=port)
 
-            if isinstance(val, list):
-                _new = [v.format(domain=domain, port=port) for v in val]
-            else:
-                _new = val.format(domain=domain, port=port)
-            conf[key] = _new
+    return val
+
+
+def set_domain_and_port(conf: dict, uris: List[str], domain: str, port: int):
+    update = {}
+    for key, val in conf.items():
+        if not val:
+            continue
+
+        if isinstance(val, list):
+            _new = [_conv(v, domain=domain, port=port) for v in val]
         elif isinstance(val, dict):
-            conf[key] = set_domain_and_port(val, uris, domain, port)
+            _new = set_domain_and_port(val, uris, domain, port)
+        else:
+            _new = _conv(val, domain=domain, port=port)
+
+        if _new != val:
+            update[key] = _new
+    if update:
+        conf.update(update)
     return conf
 
 
